@@ -1,0 +1,81 @@
+{
+  "Qwen3.8-27B-Uncensored-FP8": {
+    "source_repo": "orcarouter/Qwen3.8-27B-Uncensored-FP8",
+    "download_repo": "id-2/Qwen3.8-27B-Uncensored-FP8",
+    "revision": "72e3e3d9d1a8e02ecb6c688ac40742e3ee419103",
+    "files": [
+      {
+        "name": "chat_template.jinja",
+        "size": 8952
+      },
+      {
+        "name": "config.json",
+        "size": 51350
+      },
+      {
+        "name": "generation_config.json",
+        "size": 202
+      },
+      {
+        "name": "merges.txt",
+        "size": 3353259
+      },
+      {
+        "name": "model-00001-of-00007.safetensors",
+        "size": 3969317448
+      },
+      {
+        "name": "model-00002-of-00007.safetensors",
+        "size": 4939321704
+      },
+      {
+        "name": "model-00003-of-00007.safetensors",
+        "size": 4939863424
+      },
+      {
+        "name": "model-00004-of-00007.safetensors",
+        "size": 4971328696
+      },
+      {
+        "name": "model-00005-of-00007.safetensors",
+        "size": 4955596064
+      },
+      {
+        "name": "model-00006-of-00007.safetensors",
+        "size": 4071440632
+      },
+      {
+        "name": "model-00007-of-00007.safetensors",
+        "size": 3019999168
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 156034
+      },
+      {
+        "name": "preprocessor_config.json",
+        "size": 390
+      },
+      {
+        "name": "README.md",
+        "size": 1031
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 17928
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 12809320
+      },
+      {
+        "name": "video_preprocessor_config.json",
+        "size": 385
+      },
+      {
+        "name": "vocab.json",
+        "size": 6722759
+      }
+    ]
+  }
+}

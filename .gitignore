@@ -1,0 +1,12 @@
+.env
+.env.*
+studio_config.json
+studio_settings.json
+workspace_saved.py
+workspace_saved_*.py
+*.zip
+__pycache__/
+node_modules/
+.venv/
+models/
+outputs/
