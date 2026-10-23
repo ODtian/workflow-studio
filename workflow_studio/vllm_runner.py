@@ -104,8 +104,6 @@ def start_server(params, ctx):
     if _process is not None and _process.poll() is None and key == _server_key:
         return
     release()
-    if "fast_runner" in sys.modules:
-        sys.modules["fast_runner"].release()
     import llama_runner
     llama_runner.release()
     if "comfy.model_management" in sys.modules:

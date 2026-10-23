@@ -182,10 +182,8 @@ class WorkflowSession:
                         signature, module, params = self.prepare_pending
                         self.prepare_pending = None
                     context = PrepareContext(self, threading.Event())
-                    if module.SPEC.get("output") != "text":
-                        for name in ("vllm_runner", "fast_runner"):
-                            if name in sys.modules:
-                                sys.modules[name].release()
+                    if module.SPEC.get("output") != "text" and "vllm_runner" in sys.modules:
+                        sys.modules["vllm_runner"].release()
                     module.prepare(params, context)
                     self.prepared_signature = signature
                     self.update(initialization="模型已就绪")
@@ -221,10 +219,8 @@ class WorkflowSession:
                 acquired = INFERENCE_LOCK.acquire(timeout=0.2)
             context.check_cancelled()
             self.update(phase="running", message="准备工作流…")
-            if module.SPEC.get("output") != "text":
-                for name in ("vllm_runner", "fast_runner"):
-                    if name in sys.modules:
-                        sys.modules[name].release()
+            if module.SPEC.get("output") != "text" and "vllm_runner" in sys.modules:
+                sys.modules["vllm_runner"].release()
             result = module.run(params, context)
             context.check_cancelled()
             if module.SPEC.get("output") == "text":
