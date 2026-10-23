@@ -4,7 +4,14 @@
 
 LLM 使用 vLLM 0.32.0、FP8 和 MTP，默认模型为 [OrcaRouter Qwen3.8-27B Uncensored FP8](https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored-FP8)。支持图片输入、Thinking、多轮分支和流式输出。默认上下文为 32768 tokens，MTP 为 2 步。
 
-在 RTX PRO 6000 Blackwell Server Edition 上，以关闭 Thinking 的 128-token 中文输出测试，热服务生成速度为 70.8 tokens/s，请求首字延迟为 0.082 秒。首次完整冷启动的实测阶段耗时为：环境安装 314.6 秒，服务初始化 311.9 秒，首轮请求 0.122 秒，合计 626.6 秒。已有运行库和编译缓存时，服务重新启动实测 74.8 秒。模型文件已在本地；权重从 Drive 恢复的时间另计。
+在 RTX PRO 6000 Blackwell Server Edition、4 CPU 的 Molab 环境中，使用本地模型文件、关闭 Thinking、seed 42、128-token 中文请求测试：
+
+| vLLM 启动流程 | 全新运行库安装 | 服务准备至首字 | 阶段耗时合计 |
+| --- | ---: | ---: | ---: |
+| 初始配置 | 314.6 秒 | 312.0 秒 | 626.6 秒 |
+| 当前配置 | 92.8 秒 | 70.5 秒 | 163.3 秒 |
+
+各阶段分别实测后相加。当前配置仅安装当前 GPU 架构的 FlashInfer 预编译包，并从 Git 源码恢复 11.6 MB 的 SM120 内核缓存，解码使用 FULL_DECODE_ONLY CUDA Graph。持续输出实测 70.7 tokens/s，请求首字 0.109 秒。
 
 ## 启动
 

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tarfile
 import threading
 import time
 
@@ -17,11 +18,13 @@ from template_parameters import template_options
 ROOT = Path(__file__).parent
 MODELS = Path(os.environ.get("WORKFLOW_MODELS_DIR", "/tmp/molab-comfy-runtime/models"))
 RUNTIME = Path("/tmp/workflow-studio-vllm")
+CACHE = Path("/tmp/workflow-studio-vllm-cache")
 VERSION = "0.32.0"
 ENDPOINT = "http://127.0.0.1:8787"
 LOG = Path("/tmp/workflow-studio-vllm.log")
 _process = None
 _server_key = None
+_startup = {}
 
 
 def catalog():
@@ -71,17 +74,21 @@ def ensure_model(name, ctx):
 
 
 def ensure_runtime(ctx):
+    if not CACHE.exists():
+        with tarfile.open(ROOT / "runtime_cache/sm120-cu132.tar.gz") as archive:
+            archive.extractall(CACHE, filter="data")
     executable = RUNTIME / "bin/vllm"
     if executable.exists():
         return executable
     ctx.status("准备 vLLM GPU 运行环境…")
     with Path("/tmp/workflow-studio-vllm-install.log").open("w") as log:
-        subprocess.run(["uv", "venv", "--python", sys.executable, str(RUNTIME)],
+        subprocess.run(["uv", "venv", "--seed", "--python", sys.executable, str(RUNTIME)],
                        stdout=log, stderr=subprocess.STDOUT, check=True)
         subprocess.run(["uv", "pip", "install", "--python", str(RUNTIME / "bin/python"),
                         "vllm==" + VERSION, "--torch-backend=auto"],
                        stdout=log, stderr=subprocess.STDOUT, check=True)
-        subprocess.run([str(executable), "download-kernels"],
+        subprocess.run([str(RUNTIME / "bin/python"), "-m", "flashinfer",
+                        "install-jit-cache-wheel", "--mode", "minimal"],
                        stdout=log, stderr=subprocess.STDOUT, check=True)
     return executable
 
@@ -97,22 +104,29 @@ def release():
 
 
 def start_server(params, ctx):
-    global _process, _server_key
+    global _process, _server_key, _startup
+    preparation_started = time.monotonic()
     path = ensure_model(params["model"], ctx)
+    model_seconds = time.monotonic() - preparation_started
     key = (str(path), int(params["n_ctx"]), int(params["n_batch"]),
            float(params["gpu_memory_utilization"]), int(params["speculative_tokens"]))
     if _process is not None and _process.poll() is None and key == _server_key:
+        ctx.metadata(**_startup)
         return
     release()
     import llama_runner
     llama_runner.release()
     if "comfy.model_management" in sys.modules:
         sys.modules["comfy.model_management"].soft_empty_cache()
+    runtime_started = time.monotonic()
     executable = ensure_runtime(ctx)
+    runtime_seconds = time.monotonic() - runtime_started
     command = [str(executable), "serve", str(path), "--host", "127.0.0.1", "--port", "8787",
                "--served-model-name", "studio-llm", "--max-model-len", str(key[1]),
                "--max-num-batched-tokens", str(key[2]), "--max-num-seqs", "1",
                "--gpu-memory-utilization", str(key[3]),
+               "--skip-mm-profiling", "--compilation-config",
+               json.dumps({"mode": 0, "cudagraph_mode": "FULL_DECODE_ONLY"}),
                "--reasoning-parser", "qwen3", "--enable-auto-tool-choice",
                "--tool-call-parser", "qwen3_coder", "--limit-mm-per-prompt",
                json.dumps({"image": 8, "video": 0})]
@@ -120,7 +134,10 @@ def start_server(params, ctx):
         command += ["--speculative-config", json.dumps({"method": "mtp", "num_speculative_tokens": key[4]})]
     environment = {**os.environ, "VLLM_USE_FLASHINFER_SAMPLER": "0",
                    "VLLM_NO_USAGE_STATS": "1", "HF_HUB_OFFLINE": "1",
-                   "OMP_NUM_THREADS": "1", "TORCHINDUCTOR_COMPILE_THREADS": "2"}
+                   "OMP_NUM_THREADS": "1", "TORCHINDUCTOR_COMPILE_THREADS": "2",
+                   "VLLM_CACHE_ROOT": str(CACHE / "vllm"),
+                   "TRITON_CACHE_DIR": str(CACHE / "triton"),
+                   "CUDA_CACHE_PATH": str(CACHE / "cuda")}
     ctx.status("加载 vLLM · FP8 + MTP…")
     started = time.monotonic()
     with LOG.open("w") as log:
@@ -138,9 +155,12 @@ def start_server(params, ctx):
         except requests.ConnectionError:
             pass
         time.sleep(0.5)
+    _startup = {"模型恢复秒": round(model_seconds, 2), "运行库准备秒": round(runtime_seconds, 2),
+                "服务启动秒": round(time.monotonic() - started, 2),
+                "初始化合计秒": round(time.monotonic() - preparation_started, 2)}
     ctx.metadata(引擎="vLLM · FP8 + MTP", 模型=params["model"],
                  上下文长度=key[1], MTP预测步数=key[4],
-                 服务启动秒=round(time.monotonic() - started, 2), 输入模态="文本 + 图片")
+                 输入模态="文本 + 图片", **_startup)
 
 
 def prepare_vllm(params, ctx):
@@ -191,7 +211,9 @@ def run_vllm(params, ctx):
                 if text or thought:
                     if first_token is None:
                         first_token = time.monotonic()
-                        ctx.metadata(首字秒=round(first_token - started, 3))
+                        _startup.setdefault("首次启动至首字秒", round(
+                            _startup["初始化合计秒"] + first_token - started, 3))
+                        ctx.metadata(请求首字秒=round(first_token - started, 3), **_startup)
                     answer += text
                     reasoning += thought
                     ctx.response(answer, reasoning)
