@@ -104,6 +104,8 @@ def start_server(params, ctx):
     if _process is not None and _process.poll() is None and key == _server_key:
         return
     release()
+    if "fast_runner" in sys.modules:
+        sys.modules["fast_runner"].release()
     import llama_runner
     llama_runner.release()
     if "comfy.model_management" in sys.modules:
@@ -140,7 +142,7 @@ def start_server(params, ctx):
         time.sleep(0.5)
     ctx.metadata(引擎="vLLM · FP8 + MTP", 模型=params["model"],
                  上下文长度=key[1], MTP预测步数=key[4],
-                 模型加载秒=round(time.monotonic() - started, 2), 输入模态="文本 + 图片")
+                 服务启动秒=round(time.monotonic() - started, 2), 输入模态="文本 + 图片")
 
 
 def prepare_vllm(params, ctx):
