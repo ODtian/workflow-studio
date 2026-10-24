@@ -5,6 +5,7 @@
   import {BaseTextbox} from '@gradio/textbox';
   import {BaseChatBot} from '@gradio/chatbot';
   import ChatImages from './ChatImages.svelte';
+  import PiStatus from './PiStatus.svelte';
   import Field from './Field.svelte';
   import {i18n} from './bridge.js';
   import {followTail} from './followTail.js';
@@ -121,6 +122,7 @@
     </section>
   {/if}
 
+  {#if panel.spec.chat_engine === 'pi'}<PiStatus {panel} />{/if}
   <div class="conversation-bar">
     <div class="conversation-picker"><Block allow_overflow={true}><BaseDropdown label="本次启动的对话" show_label={false}
       value={root} choices={roots.map((node, index) => [`${index + 1}. ${node.label ?? node.content.slice(0,45)}`, node.id])}

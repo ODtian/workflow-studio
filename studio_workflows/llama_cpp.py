@@ -1,10 +1,11 @@
 """In-process llama.cpp text and image chat with GGUF and MTP."""
 from llama_runner import (MODELS, DEFAULT_MODEL, DEFAULT_MTP, DEFAULT_MMPROJ,
                           model_files, companion_files, prepare_llama, run_llama, reasoning_control)
+from pi_runner import prepare_pi, run_pi
 
 _models = model_files()
 SPEC = {
-    "name": "llama.cpp · 对话", "output": "text", "chat": True, "images": True,
+    "name": "pi · 对话", "tab_name": "pi", "chat_engine": "pi", "output": "text", "chat": True, "images": True,
     "run_label": "发送", "refresh_label": "刷新模型列表", "model_root": str(MODELS / "LLM"),
     "model_binding_fields": ["thinking", "reasoning_effort", "mmproj", "mtp", "speculative_tokens"],
     "prepare_fields": ["model", "mmproj", "mtp", "n_ctx", "n_gpu_layers", "n_batch", "chat_format", "speculative_tokens"],
@@ -59,8 +60,9 @@ SPEC = {
 
 
 def run(params, ctx):
-    return run_llama(params, ctx)
+    return run_pi(params, ctx)
 
 
 def prepare(params, ctx):
-    return prepare_llama(params, ctx)
+    prepare_llama(params, ctx)
+    prepare_pi(ctx)
