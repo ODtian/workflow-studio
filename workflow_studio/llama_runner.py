@@ -250,6 +250,7 @@ def run_llama(params, ctx):
     reasoning_delta = ""
     answer = ""
     reasoning = ""
+    tool_deltas = {}
     first_token = None
     completion = params.get("mode") == "completion"
     if completion:
@@ -275,6 +276,11 @@ def run_llama(params, ctx):
             ctx.check_cancelled()
             choice = chunk["choices"][0]
             delta = choice.get("delta", {})
+            for call in delta.get("tool_calls", []):
+                item = tool_deltas.setdefault(call["index"], {"id":call.get("id", ""), "name":"", "arguments":""})
+                function = call.get("function", {})
+                item["name"] += function.get("name", "")
+                item["arguments"] += function.get("arguments", "")
             piece = choice.get("text", "") if completion else delta.get("content", "") or ""
             thought = delta.get("reasoning_content", "") or ""
             if piece or thought:
@@ -289,7 +295,7 @@ def run_llama(params, ctx):
             stats = llm.scheduler.speculative_stats
             ctx.metadata(MTP预测tokens=stats["draft_tokens_proposed"], MTP接受tokens=stats["draft_tokens_accepted"])
         if params.get("tools"):
-            calls = parse_calls(answer, params["tools"])
+            calls = [{**call, "arguments":json.loads(call["arguments"])} for call in tool_deltas.values()] or parse_calls(answer, params["tools"])
             if calls:
                 ctx.tool_calls(calls)
             answer = visible_text(answer)
