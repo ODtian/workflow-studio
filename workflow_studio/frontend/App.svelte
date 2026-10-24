@@ -294,8 +294,6 @@
 
 <main class="studio" class:expanded class:nav-closed={!sidebarOpen}>
   <aside class="app-sidebar">
-    <div class="workspace-title">工作台</div>
-    <div class="nav-label">工作空间</div>
     <nav aria-label="工作空间导航">
       {#each state.panels as panel (panel.id)}
         <button class:active={activeId===panel.id} onclick={()=>{activeId=panel.id;toolsOpen=false;}}>
@@ -306,20 +304,19 @@
       {/each}
       <button class:active={activeId==='__files__'} onclick={()=>{activeId='__files__';toolsOpen=false;}}><FolderOpen size={17}/><span>文件与传输</span></button>
     </nav>
-    <div class="sidebar-bottom"><button class:active={toolsOpen} onclick={()=>toolsOpen=!toolsOpen}><Settings2 size={17}/>工作流管理</button><div class="runtime-label"><i class="status-dot"></i>Notebook 运行时</div><small>llama.cpp · Comfy · Pi</small></div>
+    <div class="sidebar-bottom"><button class:active={toolsOpen} onclick={()=>toolsOpen=!toolsOpen}><Settings2 size={17}/>工作流管理</button></div>
   </aside>
   <div class="app-main">
     <header class="app-topbar">
       <Button class="sidebar-toggle" variant="ghost" size="icon" aria-label="切换侧栏" onclick={()=>sidebarOpen=!sidebarOpen}>{#if sidebarOpen}<PanelLeftClose size={17}/>{:else}<PanelLeftOpen size={17}/>{/if}</Button>
-      <div class="breadcrumb"><span class="breadcrumb-root">工作空间</span><span class="breadcrumb-separator">/</span><strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
-      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" onclick={()=>expanded=expand()}>{expanded?'返回 notebook':'展开工作台'}<ArrowUpRight size={13}/></Button></div>
+      <div class="breadcrumb"><strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
+      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice==='正在保存设置…'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" onclick={()=>expanded=expand()}>{expanded?'返回 notebook':'展开工作台'}<ArrowUpRight size={13}/></Button></div>
     </header>
     {#if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
     <div class="app-content">
       {#if toolsOpen}
         <section class="management page-padding">
-          <div class="page-title"><div><p class="eyebrow">WORKSPACE</p><h1>工作流管理</h1><p>组合工作空间，管理 Python 工作流。</p></div><Badge variant="outline">{state.panels.length} 个面板</Badge></div>
           <div class="surface management-add"><Dropdown label="可用工作流" bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加工作流</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button></div>
           <div class="workflow-list">{#each state.panels as panel}<div class="surface workflow-row"><div class="workflow-icon">{#if panel.spec.chat}<MessageSquare size={20}/>{:else}<Image size={20}/>{/if}</div><div><h3>{panel.spec.name}</h3><p>{panel.selected}</p></div><Badge variant="secondary">{panel.busy?'运行中':'已就绪'}</Badge><Button variant="outline" onclick={()=>send('export',{id:panel.id})}>导出代码</Button><Button variant="ghost" disabled={panel.busy} onclick={()=>send('remove',{id:panel.id})}>移除</Button></div>{/each}</div>
         </section>

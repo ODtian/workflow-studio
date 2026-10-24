@@ -67,14 +67,21 @@ async function snapshot(item){
     extensions:loader.getExtensions().extensions.map(e=>({path:e.resolvedPath||e.path})),diagnostics:[...loader.getSkills().diagnostics,...loader.getPrompts().diagnostics,...loader.getExtensions().errors]};
 }
 async function command(request){
-  let item=await ensure(request);const {action}=request;
+  let item=await ensure(request);const {action}=request;let editor;
   if(action==='abort'){await item.session.abort();return;}
   if(action==='steer'||action==='follow_up')await item.session[action==='steer'?'steer':'followUp'](request.text);
   else if(['new','switch','fork'].includes(action)){
     const manager=action==='new'?SessionManager.create(cwd,item.dir):action==='switch'?SessionManager.open(request.file,item.dir,cwd):SessionManager.forkFrom(item.manager.getSessionFile(),cwd,item.dir);
     item.session.dispose();item=await create(request.panel,request.config,manager);
   }else if(action==='rename')item.manager.appendSessionInfo(request.name);
-  else if(action==='navigate')await item.session.navigateTree(request.entry,{summarize:false});
+  else if(action==='navigate'){
+    const target=item.manager.getEntry(request.entry);
+    const result=await item.session.navigateTree(request.entry,{summarize:false});
+    if(!result.cancelled&&target.type==='message'&&target.message.role==='user'){
+      const parts=typeof target.message.content==='string'?[{type:'text',text:target.message.content}]:target.message.content;
+      editor={text:result.editorText??parts.filter(p=>p.type==='text').map(p=>p.text).join('\n'),images:parts.filter(p=>p.type==='image')};
+    }
+  }
   else if(action==='tools')item.session.setActiveToolsByName(request.tools);
   else if(action==='reload')await item.session.reload();
   else if(action==='read_skill')send({type:'skill',request:request.request,path:request.path,source:await readFile(request.path,'utf8')});
@@ -88,7 +95,7 @@ async function command(request){
       const last=item.session.messages.at(-1);if(last?.stopReason==='error')throw new Error(last.errorMessage);
     }finally{off();}
   }
-  send({type:'result',request:request.request,snapshot:await snapshot(item),content:item.session.getLastAssistantText()||''});
+  send({type:'result',request:request.request,snapshot:{...await snapshot(item),...(editor?{editor}:{})},content:item.session.getLastAssistantText()||''});
 }
 let buffer='';process.stdin.setEncoding('utf8');process.stdin.on('data',chunk=>{
   buffer+=chunk;let end;while((end=buffer.indexOf('\n'))!==-1){const line=buffer.slice(0,end);buffer=buffer.slice(end+1);if(!line)continue;const record=JSON.parse(line);

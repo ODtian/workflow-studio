@@ -45,7 +45,7 @@
 
 <div class="image-preview" bind:this={container}>
   {#if preview}<button class="preview-image" aria-label="放大生成图片" onclick={open}><img src={preview} alt="工作流图片" {onload}/></button><Button class="preview-expand" variant="secondary" size="icon" aria-label="全屏预览" onclick={open}><Maximize2 size={17}/></Button>
-  {:else}<div class="preview-empty"><div><Image size={28}/></div><h2>画面从这里开始</h2><p>填写提示词，点击生成图片。</p></div>{/if}
+  {:else}<div class="preview-empty"><p>暂无预览</p></div>{/if}
 </div>
 
 <style>
