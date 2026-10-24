@@ -62,7 +62,7 @@ async function ensure(request){
 async function snapshot(item){
   const {session,manager}=item,loader=session.resourceLoader;
   return {id:manager.getSessionId(),name:manager.getSessionName()||'新对话',file:manager.getSessionFile(),messages:session.messages,
-    entries:manager.getEntries().filter(e=>e.type==='message').map(e=>({id:e.id,parentId:e.parentId,role:e.message.role,label:typeof e.message.content==='string'?e.message.content.slice(0,75):e.message.content.filter(p=>p.type==='text').map(p=>p.text).join('').slice(0,75)})),
+    entries:manager.getEntries().filter(e=>e.type==='message').map(e=>({id:e.id,parentId:e.parentId,role:e.message.role,timestamp:e.message.timestamp,label:typeof e.message.content==='string'?e.message.content.slice(0,75):e.message.content.filter(p=>p.type==='text').map(p=>p.text).join('').slice(0,75)})),
     leaf:manager.getLeafId(),stats:session.getSessionStats(),sessions:await SessionManager.list(cwd,item.dir),tools:session.getAllTools(),activeTools:session.getActiveToolNames(),skills:loader.getSkills().skills,prompts:loader.getPrompts().prompts,
     extensions:loader.getExtensions().extensions.map(e=>({path:e.resolvedPath||e.path})),diagnostics:[...loader.getSkills().diagnostics,...loader.getPrompts().diagnostics,...loader.getExtensions().errors]};
 }

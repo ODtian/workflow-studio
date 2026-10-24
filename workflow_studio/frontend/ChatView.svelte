@@ -24,7 +24,7 @@ function submit(action='prompt'){
   if(action==='steer'||action==='follow_up')queue=[...queue,{action,text:input}];else queue=[];
   input='';attachments=[];following=true;
 }
-function entryFor(message){return (pi.entries||[]).find(e=>e.role===message.role&&e.label===plain(message.content).slice(0,75));}
+function entryFor(message){return (pi.entries||[]).find(e=>e.role===message.role&&e.timestamp===message.timestamp);}
 async function copy(text,key){await navigator.clipboard.writeText(text);copied=key;}
 </script>
 <article class="pi-workspace" aria-label="Pi 对话">
