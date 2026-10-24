@@ -16,7 +16,7 @@ function loaded(){if(receivedAt&&['publishing','complete'].includes(panel.phase)
   <section class="generation-controls">
     <div class="controls-scroll">
       <details class="models-panel" bind:open={modelsOpen}><summary><SlidersHorizontal size={15}/><span>模型配置</span><Badge variant="secondary">{fields.filter(f=>f.area==='models').length}</Badge><ChevronDown size={14}/></summary><div class="settings-fields">{#each fields.filter(f=>f.area==='models') as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}<Button variant="outline" size="sm" onclick={()=>act('refresh')}><RefreshCw size={13}/>刷新模型列表</Button><p class="hint path-text">{panel.spec.model_root}</p></div></details>
-      <div class="generation-prompts">{#each fields.filter(f=>f.area==='prompts') as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}</div>
+      <div class="generation-prompts">{#each fields.filter(f=>f.area==='prompts') as field}<Field {field} bind:value={values[field.key]} busy={panel.busy} paste/>{/each}</div>
       {#each groups as group}<details class="settings-group" open><summary>{group}<ChevronDown size={13}/></summary><div class="parameter-grid">
       {#if panel.spec.size_presets?.section===group}<div class="wide"><ResolutionControls presets={panel.spec.size_presets} bind:values busy={panel.busy}/></div>{/if}
       {#each parameterFields.filter(f=>(f.section||'参数')===group) as field}<div class:wide={['boolean','text','textarea','image','lora_stack'].includes(field.type)}><Field {field} bind:value={values[field.key]} busy={panel.busy}/></div>{/each}</div></details>{/each}

@@ -1,14 +1,30 @@
 <script>
 import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
 import Dropdown from './ui/Dropdown.svelte';import {Button} from '$lib/components/ui/button';import LoraStack from './LoraStack.svelte';import {readFile} from './bridge.js';
+import {ClipboardPaste} from '@lucide/svelte';
 let {field,value=$bindable(),busy=false,idPrefix='',paste=false,compact=false}=$props();
+const inputId=$props.id();
 let uploadInput;
+let pasteError=$state('');
 let options=$derived((field.options||[]).map(o=>typeof o==='string'?[o,o]:[o.label,o.value]));
+async function replaceFromClipboard(){
+  pasteError='';
+  try{value=await navigator.clipboard.readText();}
+  catch{pasteError='浏览器需要剪贴板读取权限';}
+}
 </script>
 {#if field.type==='lora_stack'}<LoraStack bind:value options={field.options} {busy} {idPrefix}/>
 {:else if field.type==='boolean'}
 <label class="field switch-field"><span>{field.label}</span><Switch bind:checked={value} disabled={busy}/></label>
 {:else if field.type==='select'}<Dropdown label={field.label} show_label={!compact} bind:value choices={value && !options.some(o=>o[1]===value)?[...options,[value,value]]:options} interactive={!busy} filterable={true} info={field.hint}/>
+{:else if paste && ['text','textarea'].includes(field.type)}
+<div class="field">
+  <div class="field-heading"><label for={inputId}>{field.label}</label><Button variant="ghost" size="icon-sm" disabled={busy} aria-label={'用剪贴板替换'+field.label} title={'用剪贴板替换'+field.label} onclick={replaceFromClipboard}><ClipboardPaste size={14}/></Button></div>
+  {#if field.type==='textarea'}<Textarea id={inputId} bind:value rows={field.rows||3} placeholder={field.placeholder||''} disabled={busy}/>
+  {:else}<Input id={inputId} bind:value placeholder={field.placeholder||''} disabled={busy}/>{/if}
+  {#if field.hint}<small>{field.hint}</small>{/if}
+  {#if pasteError}<small role="alert">{pasteError}</small>{/if}
+</div>
 {:else}
 <label class="field"><span>{field.label}</span>
 {#if field.type==='number'}<Input type="number" bind:value min={field.min} max={field.max} step={field.step||1} disabled={busy}/>
@@ -21,4 +37,4 @@ let options=$derived((field.options||[]).map(o=>typeof o==='string'?[o,o]:[o.lab
 {:else}<Input bind:value placeholder={field.placeholder||''} disabled={busy}/>{/if}
 {#if field.hint}<small>{field.hint}</small>{/if}</label>
 {/if}
-<style>.switch-field{display:flex;align-items:center;justify-content:space-between;gap:12px}.upload-preview{max-height:180px;width:100%;object-fit:contain;border-radius:8px}</style>
+<style>.field-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px}.field-heading label{font-size:12px}.switch-field{display:flex;align-items:center;justify-content:space-between;gap:12px}.upload-preview{max-height:180px;width:100%;object-fit:contain;border-radius:8px}</style>
