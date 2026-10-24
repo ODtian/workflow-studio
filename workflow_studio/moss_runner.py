@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+from importlib.metadata import version
 import os
 from pathlib import Path
 import secrets
@@ -38,6 +39,7 @@ def preferred(files, *words):
 
 
 def prepare_core(ctx):
+    from packaging.requirements import Requirement
     global _core_ready
     if _core_ready:
         return
@@ -46,12 +48,19 @@ def prepare_core(ctx):
         CORE.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(["git", "clone", "--depth", "1", "https://github.com/Comfy-Org/ComfyUI.git", str(CORE)], check=True)
     dependencies = {
-        "torchsde": "torchsde", "trampoline": "trampoline", "comfy_kitchen": "comfy-kitchen==0.2.38",
-        "comfy_aimdo": "comfy-aimdo==0.5.6", "einops": "einops", "scipy": "scipy",
+        "torchsde": "torchsde", "trampoline": "trampoline", "einops": "einops", "scipy": "scipy",
         "sentencepiece": "sentencepiece", "av": "av>=17", "simpleeval": "simpleeval>=1",
         "blake3": "blake3", "safetensors": "safetensors", "psutil": "psutil",
     }
-    missing = [package for module, package in dependencies.items() if importlib.util.find_spec(module) is None]
+    for line in (CORE / "requirements.txt").read_text(encoding="utf-8").splitlines():
+        if line.startswith(("comfy-kitchen", "comfy-aimdo")):
+            requirement = Requirement(line)
+            dependencies[requirement.name.replace("-", "_")] = str(requirement)
+    missing = []
+    for module, package in dependencies.items():
+        requirement = Requirement(package)
+        if importlib.util.find_spec(module) is None or version(requirement.name) not in requirement.specifier:
+            missing.append(package)
     if missing:
         ctx.status("准备模型加载依赖…")
         installer = ["uv", "pip", "install", "--python", sys.executable] if shutil.which("uv") else [sys.executable, "-m", "pip", "install"]

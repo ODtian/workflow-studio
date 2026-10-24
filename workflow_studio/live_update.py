@@ -20,7 +20,7 @@ def apply_update(widget):
             for key, value in cache.items():
                 setattr(module, key, value)
             if name == "moss_runner":
-                module._core_ready = "comfy.sd" in sys.modules
+                module._core_ready = False
             else:
                 module._library = sys.modules.get("llama_cpp")
         import size_presets
