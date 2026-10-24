@@ -30,14 +30,14 @@ class MTPModel:
         from vendor import llama_batch_engine as engine
 
         self.engine = engine
-        threads = max(1, (os.cpu_count() or 2) // 2)
+        threads = min(4, os.cpu_count() or 2)
         ctx.status("加载 GGUF 与 MTP · " + (draft.name if draft else "主模型内嵌"))
         self.model = engine.Model(
             model_path=str(path), n_ctx=int(params["n_ctx"]),
             n_gpu_layers=int(params["n_gpu_layers"]), n_batch=int(params["n_batch"]),
             n_seq_max=1, n_threads=threads, n_threads_batch=threads, flash_attn=True,
             draft_model="draft-mtp", draft_model_path=str(draft) if draft else None,
-            draft_model_num_pred_tokens=2,
+            draft_model_num_pred_tokens=int(params.get("speculative_tokens", 2)),
         )
         # The notebook owns the process-wide llama.cpp backend across model switches.
         self.model.backend_initialized = False

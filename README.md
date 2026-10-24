@@ -2,16 +2,9 @@
 
 在 marimo / Molab 中运行图像工作流、LLM 对话与 Google Drive 文件传输。
 
-LLM 使用 vLLM 0.32.0、FP8 和 MTP，默认模型为 [OrcaRouter Qwen3.8-27B Uncensored FP8](https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored-FP8)。支持图片输入、Thinking、多轮分支和流式输出。默认上下文为 32768 tokens，MTP 为 2 步。
+LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama。默认模型为 OrcaRouter Qwen3.8-27B Uncensored Q8_0，配套独立 MTP 草稿头和 BF16 图像投影器。支持图片输入、Thinking、多轮分支与流式输出。默认上下文 32768 tokens、MTP 2 步。
 
-在 RTX PRO 6000 Blackwell Server Edition、4 CPU 的 Molab 环境中，使用本地模型文件、关闭 Thinking、seed 42、128-token 中文请求测试：
-
-| vLLM 启动流程 | 全新运行库安装 | 服务准备至首字 | 阶段耗时合计 |
-| --- | ---: | ---: | ---: |
-| 初始配置 | 314.6 秒 | 312.0 秒 | 626.6 秒 |
-| 当前配置 | 92.8 秒 | 70.5 秒 | 163.3 秒 |
-
-各阶段分别实测后相加。当前配置仅安装当前 GPU 架构的 FlashInfer 预编译包，并从 Git 源码恢复 11.6 MB 的 SM120 内核缓存，解码使用 FULL_DECODE_ONLY CUDA Graph。持续输出实测 70.7 tokens/s，请求首字 0.109 秒。
+运行库使用官方预编译 CUDA wheel。MTP 使用本地函数、线程队列和 Python 迭代器；模型驻留时复用已加载实例。原 FP8 默认模型设置在启动时迁移为 Q8_0 及配套权重。
 
 ## 启动
 
@@ -24,7 +17,7 @@ LLM 使用 vLLM 0.32.0、FP8 和 MTP，默认模型为 [OrcaRouter Qwen3.8-27B U
 ## 文件
 
 - `studio_bootstrap.py`：从 Git 源码启动面板，读取 notebook 工作区设置。
-- `workflow_studio/vllm_runner.py`：GPU 服务、模型恢复、图片及流式对话。
+- `workflow_studio/llama_runner.py`：进程内 GGUF 加载、模型恢复、图片及流式对话。
 - `studio_workflows/`：工作区使用的默认工作流。
 - `workflow_studio/frontend/`：Svelte 前端；`workflow_studio/assets/` 包含已构建资源。
 - `transfer_core.py`：Google Drive 传输队列。

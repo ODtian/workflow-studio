@@ -1,4 +1,15 @@
 {
+  "Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-OrcaRouter-Q8_0.gguf": {
+    "source_repo": "orcarouter/Qwen3.8-27B-Uncensored-FP8",
+    "download_repo": "chimingw/Qwen3.8-27B-Uncensored-OrcaRouter-GGUF",
+    "revision": "58ebd123013160600229eda180b5b17f3fb7af9d",
+    "directory": "Qwen3.8-27B-Uncensored-GGUF",
+    "files": [
+      {"name": "Qwen3.8-27B-Uncensored-OrcaRouter-Q8_0.gguf", "size": 29047084416},
+      {"name": "MTP/Qwen3.8-27B-Uncensored-OrcaRouter-MTP-Q8_0.gguf", "size": 3164007168},
+      {"name": "AUX/mmproj-Qwen3.8-27B-Uncensored-OrcaRouter-BF16.gguf", "size": 931146368}
+    ]
+  },
   "Qwen3.8-27B-Uncensored-FP8": {
     "source_repo": "orcarouter/Qwen3.8-27B-Uncensored-FP8",
     "download_repo": "id-2/Qwen3.8-27B-Uncensored-FP8",

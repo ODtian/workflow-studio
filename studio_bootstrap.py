@@ -51,5 +51,15 @@ def get_studio(workspace=None):
         settings.write_text(json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
     def save_settings(value):
         workspace_store.edit(lambda state: state.update(studio_settings=value))
+    if settings.exists():
+        value = json.loads(settings.read_text(encoding="utf-8"))
+        for item in value.get("panels", []):
+            params = item.get("params", {})
+            if item["workflow"] == "llama_cpp.py" and params.get("model") == "Qwen3.8-27B-Uncensored-FP8":
+                from llama_runner import DEFAULT_MODEL, DEFAULT_MMPROJ, DEFAULT_MTP
+                params.update(model=DEFAULT_MODEL, mmproj=DEFAULT_MMPROJ, mtp=DEFAULT_MTP,
+                              n_gpu_layers=999, speculative_tokens=2, thinking="off")
+        settings.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+        save_settings(value)
     from panel import get_panel
     return get_panel(workflow_dir=workflows, output_dir=config["output_dir"], settings_backup=save_settings)

@@ -1,20 +1,26 @@
-"""Streaming local text and image chat with vLLM and MTP."""
-from vllm_runner import MODELS, model_files, prepare_vllm, run_vllm
+"""In-process llama.cpp text and image chat with GGUF and MTP."""
+from llama_runner import (MODELS, DEFAULT_MODEL, DEFAULT_MTP, DEFAULT_MMPROJ,
+                          model_files, companion_files, prepare_llama, run_llama)
 
 _models = model_files()
 SPEC = {
-    "name": "vLLM · 对话", "output": "text", "chat": True, "images": True,
+    "name": "llama.cpp · 对话", "output": "text", "chat": True, "images": True,
     "run_label": "发送", "refresh_label": "刷新模型列表", "model_root": str(MODELS / "LLM"),
-    "model_binding_fields": ["thinking", "reasoning_effort", "speculative_tokens"],
-    "prepare_fields": ["model", "n_ctx", "n_batch", "gpu_memory_utilization", "speculative_tokens"],
-    "ready": bool(_models), "description": "FP8 GPU 推理，支持视觉输入、流式对话和 MTP 加速。",
+    "model_binding_fields": ["thinking", "reasoning_effort", "mmproj", "mtp", "speculative_tokens"],
+    "prepare_fields": ["model", "mmproj", "mtp", "n_ctx", "n_gpu_layers", "n_batch", "chat_format", "speculative_tokens"],
+    "ready": bool(_models), "description": "进程内 GGUF 推理，支持图片输入、Thinking 和 MTP 加速。",
     "fields": [
         {"key": "model", "label": "LLM 模型", "type": "select", "area": "models", "options": _models,
-         "default": "Qwen3.8-27B-Uncensored-FP8"},
+         "default": DEFAULT_MODEL},
+        {"key": "mmproj", "label": "图像投影器 mmproj", "type": "select", "area": "models",
+         "default": DEFAULT_MMPROJ, "options": [{"label": "纯文本", "value": ""}] + companion_files("mmproj")},
+        {"key": "mtp", "label": "MTP 草稿头", "type": "select", "area": "models",
+         "default": DEFAULT_MTP, "options": [{"label": "关闭", "value": ""},
+                    {"label": "主模型内嵌 MTP", "value": "embedded"}] + companion_files("mtp")},
         {"key": "system_prompt", "label": "系统提示词", "type": "textarea", "area": "prompts", "persist": True,
          "rows": 2, "default": "You are a helpful assistant."},
         {"key": "thinking", "label": "Thinking · enable_thinking", "type": "select", "section": "生成",
-         "default": "auto", "options": [{"label": "模型默认", "value": "auto"},
+         "default": "off", "options": [{"label": "模型默认", "value": "auto"},
                     {"label": "开启", "value": "on"}, {"label": "关闭", "value": "off"}]},
         {"key": "reasoning_effort", "label": "推理强度 · reasoning_effort", "type": "text",
          "section": "生成", "default": "", "placeholder": "模型默认",
@@ -42,8 +48,10 @@ SPEC = {
          "default": 32768, "min": 512, "step": 1024},
         {"key": "n_batch", "label": "输入批处理 tokens", "type": "number", "area": "advanced",
          "default": 2048, "min": 512, "step": 512},
-        {"key": "gpu_memory_utilization", "label": "显存使用比例", "type": "number", "area": "advanced",
-         "default": 0.6, "min": 0.4, "max": 0.95, "step": 0.05},
+        {"key": "n_gpu_layers", "label": "GPU 层数", "type": "number", "area": "advanced",
+         "default": 999, "min": -1, "step": 1},
+        {"key": "chat_format", "label": "对话模板覆盖", "type": "text", "area": "advanced",
+         "default": "", "placeholder": "GGUF 内置模板"},
         {"key": "stop", "label": "停止词（每行一个）", "type": "textarea", "area": "advanced",
          "default": "", "rows": 2},
     ],
@@ -51,8 +59,8 @@ SPEC = {
 
 
 def run(params, ctx):
-    return run_vllm(params, ctx)
+    return run_llama(params, ctx)
 
 
 def prepare(params, ctx):
-    return prepare_vllm(params, ctx)
+    return prepare_llama(params, ctx)

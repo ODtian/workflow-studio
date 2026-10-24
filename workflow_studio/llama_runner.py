@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import gc
 import importlib.util
+import json
 import os
 from pathlib import Path
 import re
@@ -20,12 +21,39 @@ MODELS = Path(os.environ.get("WORKFLOW_MODELS_DIR", "/tmp/molab-comfy-runtime/mo
 _loaded = None
 _loaded_key = None
 _library = None
+MODEL_DIRECTORY = "Qwen3.8-27B-Uncensored-GGUF"
+DEFAULT_MODEL = MODEL_DIRECTORY + "/Qwen3.8-27B-Uncensored-OrcaRouter-Q8_0.gguf"
+DEFAULT_MTP = MODEL_DIRECTORY + "/MTP/Qwen3.8-27B-Uncensored-OrcaRouter-MTP-Q8_0.gguf"
+DEFAULT_MMPROJ = MODEL_DIRECTORY + "/AUX/mmproj-Qwen3.8-27B-Uncensored-OrcaRouter-BF16.gguf"
+
+
+def catalog():
+    import workspace_store
+    entries = json.loads((ROOT / "llm_models.json").read_text(encoding="utf-8"))
+    entries.update(workspace_store.read().get("llm_catalog", {}))
+    return entries
+
+
+def ensure_files(params, ctx):
+    entry = catalog().get(params["model"])
+    if entry:
+        directory = MODELS / "LLM" / entry["directory"]
+        selected = [params["model"], params.get("mmproj"), params.get("mtp")]
+        missing = [item["name"] for item in entry["files"]
+                   if entry["directory"] + "/" + item["name"] in selected
+                   and not (directory / item["name"]).exists()]
+        if missing:
+            from huggingface_hub import snapshot_download
+            ctx.status("下载 GGUF 主模型及配套权重…")
+            snapshot_download(repo_id=entry["download_repo"], revision=entry["revision"],
+                              local_dir=directory, allow_patterns=missing, max_workers=3)
 
 
 def model_files():
     directory = MODELS / "LLM"
     directory.mkdir(parents=True, exist_ok=True)
-    return sorted(name for name, info in gguf_files() if info["role"] == "model")
+    local = {name for name, info in gguf_files() if info["role"] == "model"}
+    return sorted(local | {name for name in catalog() if name.endswith(".gguf")})
 
 
 def gguf_files():
@@ -36,8 +64,9 @@ def gguf_files():
 
 
 def companion_files(role):
-    return sorted(name for name, info in gguf_files()
-                  if info["role"] == role or role == "mtp" and info["has_mtp"])
+    local = {name for name, info in gguf_files()
+             if info["role"] == role or role == "mtp" and info["has_mtp"]}
+    return sorted(local | {DEFAULT_MTP if role == "mtp" else DEFAULT_MMPROJ})
 
 
 def selected_file(params, key):
@@ -141,6 +170,7 @@ def configure_chat(llm, params, channels):
 def load_model(params, ctx):
     global _loaded, _loaded_key
     started = time.monotonic()
+    ensure_files(params, ctx)
     path = MODELS / "LLM" / params["model"]
     projector = selected_file(params, "mmproj")
     mtp = params.get("mtp", "")
@@ -149,14 +179,14 @@ def load_model(params, ctx):
     llama_cpp = prepare(ctx)
     ctx.metadata(运行库准备秒=round(time.monotonic() - started, 3))
     key = (str(path), path.stat().st_mtime_ns, int(params["n_ctx"]), int(params["n_gpu_layers"]),
-           int(params["n_batch"]), params["chat_format"], str(projector) if projector else "", "embedded" if mtp == "embedded" else str(draft) if draft else "")
+           int(params["n_batch"]), params["chat_format"], str(projector) if projector else "", "embedded" if mtp == "embedded" else str(draft) if draft else "", int(params.get("speculative_tokens", 2)))
     if key != _loaded_key:
         release()
         if "comfy.model_management" in sys.modules:
             sys.modules["comfy.model_management"].soft_empty_cache()
         ctx.status("加载 GGUF · " + path.name)
         started = time.monotonic()
-        if mtp:
+        if mtp and key[8]:
             from mtp_runner import MTPModel
             _loaded = MTPModel(path, projector, draft, params, ctx)
         else:
