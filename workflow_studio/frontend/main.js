@@ -33,7 +33,6 @@ export function render({model, el}) {
       host.style.cssText = '';
     }
     updateViewport();
-    window.parent.postMessage({type:'workflow-studio:expanded', expanded}, 'https://molab.marimo.io');
   };
   window.addEventListener('resize', updateViewport);
   viewport?.addEventListener('resize', updateViewport);
