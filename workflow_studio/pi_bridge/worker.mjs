@@ -1,6 +1,6 @@
 import {join} from 'node:path';
 import {mkdir} from 'node:fs/promises';
-import {createAssistantMessageEventStream} from '@earendil-works/pi-ai';
+import {createAssistantMessageEventStream, getCurrentSystemPrompt} from '@earendil-works/pi-ai';
 import {
   createAgentSession, createExtensionRuntime, ModelRuntime, SessionManager, SettingsManager
 } from '@earendil-works/pi-coding-agent';
@@ -30,14 +30,15 @@ function content(value) {
 }
 
 function nativeMessages(context) {
-  return context.messages.map(message => ({
+  const system = getCurrentSystemPrompt(context.messages);
+  return [...(system ? [{role:'system', content:system}] : []), ...context.messages.filter(message => message.role !== 'system').map(message => ({
     role:message.role,
     content:typeof message.content === 'string' ? message.content : message.content.flatMap(item => {
       if (item.type === 'text') return [{type:'text', text:item.text}];
       if (item.type === 'image') return [{type:'image_url', image_url:{url:`data:${item.mimeType};base64,${item.data}`}}];
       return [];
     })
-  }));
+  }))];
 }
 
 function nativeStream(model, context) {
