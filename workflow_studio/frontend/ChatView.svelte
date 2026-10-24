@@ -1,31 +1,32 @@
 <script>
-import {onMount,tick} from 'svelte';
+import {onMount} from 'svelte';
 import {Button} from '$lib/components/ui/button';import {Badge} from '$lib/components/ui/badge';import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
 import {Plus,ArrowUp,Square,Paperclip,Settings2,Wrench,Sparkles,History,GitBranch,Copy,Download,RefreshCw,X,MessageSquare,ChevronDown,Check,Terminal,FileText} from '@lucide/svelte';
-import {marked} from 'marked';import DOMPurify from 'dompurify';
-import Field from './Field.svelte';import {readFile} from './bridge.js';
+import Field from './Field.svelte';import Markdown from './Markdown.svelte';import {readFile,copyText} from './bridge.js';import {followTail} from './followTail.js';
 let {panel,active=true,values=$bindable(),pi={messages:[]},send,targets=[],onTransfer}=$props();
 let input=$state(''),drawer=$state(''),attachments=$state([]),name=$state(''),skillName=$state(''),skillSource=$state(''),copied=$state(''),queue=$state([]),following=$state(true);
+let skillEditorOpen=$state(false),skillSaving=$state(false),skillNotice=$state(''),skillSaveError=$state(false);
+let scrollRequest=$state(0);
 let imageInput,scrollPane;
 let messages=$derived(pi.messages||[]);
 let lastText=$derived(messages.filter(m=>m.role==='assistant').at(-1)?.content?.filter(p=>p.type==='text').map(p=>p.text).join('\n')||'');
 const act=(action,data={})=>send('pi',{id:panel.id,params:{...values},command:{action,...data}});
-const markdown=text=>DOMPurify.sanitize(marked.parse(text||'',{breaks:true}));
 const plain=content=>typeof content==='string'?content:(content||[]).filter(p=>p.type==='text').map(p=>p.text).join('\n');
 let stats=$derived(pi.stats||{});
 let context=$derived(stats.contextUsage);
 let skillVersion='';
-$effect(()=>{if(pi.editingSkill && pi.editingSkill.source!==skillVersion){skillVersion=pi.editingSkill.source;skillSource=pi.editingSkill.source;skillName=pi.editingSkill.path.split('/').at(-2);}});
-$effect(()=>{messages;if(active&&following)tick().then(()=>{if(scrollPane)scrollPane.scrollTop=scrollPane.scrollHeight;});});
+$effect(()=>{if(pi.editingSkill && pi.editingSkill.source!==skillVersion){skillVersion=pi.editingSkill.source;skillSource=pi.editingSkill.source;skillName=pi.editingSkill.path.split('/').at(-2);skillEditorOpen=true;skillNotice='';}});
+$effect(()=>{const result=pi.skillSave;if(result){skillSaving=false;skillSaveError=Boolean(result.error);skillNotice=result.error||'已保存';}});
 onMount(()=>act('inspect'));
 function submit(action='prompt'){
   if(!input.trim()&&!attachments.length)return;
   act(action,{text:input,images:attachments});
   if(action==='steer'||action==='follow_up')queue=[...queue,{action,text:input}];else queue=[];
-  input='';attachments=[];following=true;
+  input='';attachments=[];scrollRequest++;
 }
 function entryFor(message){return (pi.entries||[]).find(e=>e.role===message.role&&e.timestamp===message.timestamp);}
-async function copy(text,key){await navigator.clipboard.writeText(text);copied=key;}
+async function copy(text,key){try{await copyText(text);copied=key;}catch{copied='error:'+key;}}
+function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skillName,source:skillSource});}
 </script>
 <article class="pi-workspace" aria-label="Pi 对话">
   <div class="pi-heading"><div class="pi-avatar">π</div><div class="pi-heading-text"><h1>{pi.name||'Pi 对话'}</h1><p>本地模型 · 工具 · Skills</p></div>
@@ -37,30 +38,30 @@ async function copy(text,key){await navigator.clipboard.writeText(text);copied=k
   </div>
   <div class="pi-body">
     <div class="conversation-column">
-      <div class="conversation-scroll" bind:this={scrollPane} onscroll={()=>{following=scrollPane.scrollHeight-scrollPane.scrollTop-scrollPane.clientHeight<100;}}>
+      <div class="conversation-scroll" bind:this={scrollPane} use:followTail={{key:pi.id,active,reset:scrollRequest,onChange:value=>following=value}}>
         <div class="conversation-thread">
         {#if !messages.length}<div class="chat-welcome"><div class="welcome-symbol">π</div><h2>从一个想法开始</h2><p>对话、读写文件、运行工具，或使用你的 skills。</p><div class="welcome-actions"><Button variant="outline" onclick={()=>{input='请使用 ls 工具查看当前工作目录。';}}>浏览工作目录</Button><Button variant="outline" onclick={()=>drawer='skills'}>查看 Skills</Button></div></div>{/if}
-        {#each messages as message,index}
-          {#if message.role==='user'}<div class="message user-message"><div class="message-label">你</div><div class="user-bubble"><div class="markdown">{@html markdown(plain(message.content))}</div>{#if Array.isArray(message.content)}<div class="chat-images">{#each message.content.filter(p=>p.type==='image') as image}<img src={`data:${image.mimeType};base64,${image.data}`} alt="对话附件"/>{/each}</div>{/if}</div>
-            <div class="message-actions"><Button variant="ghost" size="xs" disabled={panel.busy||!entryFor(message)} onclick={()=>{act('navigate',{entry:entryFor(message).id});input=plain(message.content);}}>编辑并分支</Button></div></div>
+        {#each messages as message,index (`${message.timestamp}:${index}`)}
+          {#if message.role==='user'}<div class="message user-message"><div class="message-label">你</div><div class="user-bubble"><Markdown text={plain(message.content)}/>{#if Array.isArray(message.content)}<div class="chat-images">{#each message.content.filter(p=>p.type==='image') as image}<img src={`data:${image.mimeType};base64,${image.data}`} alt="对话附件"/>{/each}</div>{/if}</div>
+            <div class="message-actions"><Button variant="ghost" size="xs" onclick={()=>copy(plain(message.content),'user:'+index)}><Copy size={12}/>{copied==='user:'+index?'已复制':copied==='error:user:'+index?'复制失败':'复制'}</Button><Button variant="ghost" size="xs" disabled={panel.busy||!entryFor(message)} onclick={()=>{act('navigate',{entry:entryFor(message).id});input=plain(message.content);}}>编辑并分支</Button></div></div>
           {:else if message.role==='assistant'}<div class="message assistant-message"><div class="message-label"><span class="mini-pi">π</span> Pi</div>
             {#each message.content||[] as part}
-              {#if part.type==='thinking'}<details class="thinking"><summary>思考过程 <ChevronDown size={13}/></summary><div class="markdown">{@html markdown(part.thinking)}</div></details>
-              {:else if part.type==='text'}<div class="markdown assistant-text">{@html markdown(part.text)}</div>
+              {#if part.type==='thinking'}<details class="thinking"><summary>思考过程 <ChevronDown size={13}/></summary><Markdown text={part.thinking}/><div class="message-actions"><Button variant="ghost" size="xs" onclick={()=>copy(part.thinking,'thinking:'+index)}><Copy size={12}/>{copied==='thinking:'+index?'已复制':copied==='error:thinking:'+index?'复制失败':'复制思考过程'}</Button></div></details>
+              {:else if part.type==='text'}<Markdown text={part.text} class="assistant-text"/>
               {:else if part.type==='toolCall'}
                 {@const result=messages.find(m=>m.role==='toolResult'&&m.toolCallId===part.id)}
-                <details class="tool-call"><summary><Terminal size={14}/><strong>{part.name}</strong><span class="tool-summary">{Object.values(part.arguments||{})[0]?.toString().slice(0,85)}</span><Badge variant={result?.isError?'destructive':'secondary'}>{result?(result.isError?'出错':'完成'):'执行中'}</Badge><ChevronDown size={13}/></summary><div class="tool-body"><small>参数</small><pre>{JSON.stringify(part.arguments,null,2)}</pre>{#if result}<small>执行结果</small><pre>{plain(result.content)}</pre>{/if}</div></details>
+                <details class="tool-call"><summary><Terminal size={14}/><strong>{part.name}</strong><span class="tool-summary">{Object.values(part.arguments||{})[0]?.toString().slice(0,85)}</span><Badge variant={result?.isError?'destructive':'secondary'}>{result?(result.isError?'出错':'完成'):'执行中'}</Badge><ChevronDown size={13}/></summary><div class="tool-body"><div class="tool-section-heading"><small>参数</small><Button variant="ghost" size="xs" onclick={()=>copy(JSON.stringify(part.arguments,null,2),'args:'+part.id)}><Copy size={12}/>{copied==='args:'+part.id?'已复制':'复制参数'}</Button></div><pre>{JSON.stringify(part.arguments,null,2)}</pre>{#if result}<div class="tool-section-heading"><small>执行结果</small><Button variant="ghost" size="xs" onclick={()=>copy(plain(result.content),'result:'+part.id)}><Copy size={12}/>{copied==='result:'+part.id?'已复制':'复制结果'}</Button></div><pre>{plain(result.content)}</pre>{/if}</div></details>
               {/if}
             {/each}
             {#if message.errorMessage}<p class="error-text">{message.errorMessage}</p>{/if}
-            {#if plain(message.content)}<div class="message-actions"><Button variant="ghost" size="xs" onclick={()=>copy(plain(message.content),String(index))}>{#if copied===String(index)}<Check size={12}/>{:else}<Copy size={12}/>{/if}复制</Button>{#if entryFor(message)}<Button variant="ghost" size="xs" disabled={panel.busy} onclick={()=>act('navigate',{entry:entryFor(message).id})}><GitBranch size={12}/>从这里分支</Button>{/if}</div>{/if}</div>
+            {#if plain(message.content)}<div class="message-actions"><Button variant="ghost" size="xs" onclick={()=>copy(plain(message.content),String(index))}>{#if copied===String(index)}<Check size={12}/>{:else}<Copy size={12}/>{/if}{copied===String(index)?'已复制':copied==='error:'+index?'复制失败':'复制'}</Button>{#if entryFor(message)}<Button variant="ghost" size="xs" disabled={panel.busy} onclick={()=>act('navigate',{entry:entryFor(message).id})}><GitBranch size={12}/>从这里分支</Button>{/if}</div>{/if}</div>
           {/if}
         {/each}
         {#if panel.busy}<div class="agent-running"><i class="status-dot pulse"></i>{panel.message}</div>{/if}
         </div>
       </div>
       <div class="composer-area">
-        {#if !following}<Button variant="secondary" size="sm" class="follow-button" onclick={()=>{following=true;scrollPane.scrollTop=scrollPane.scrollHeight;}}>回到最新 <ChevronDown size={14}/></Button>{/if}
+        {#if !following}<Button variant="secondary" size="sm" class="follow-button" onclick={()=>scrollRequest++}>回到最新 <ChevronDown size={14}/></Button>{/if}
         {#if queue.length}<div class="queue-note">{#each queue as item}<span>{item.action==='steer'?'引导':'排队'} · {item.text}</span>{/each}</div>{/if}
         <div class="composer">
           {#if attachments.length}<div class="attachment-strip">{#each attachments as image,index}<div><img src={image.url} alt={image.name}/><button aria-label="移除附件" onclick={()=>attachments=attachments.filter((_,i)=>i!==index)}>×</button></div>{/each}</div>{/if}
@@ -76,11 +77,11 @@ async function copy(text,key){await navigator.clipboard.writeText(text);copied=k
     </div>
     {#if drawer}<aside class="pi-drawer"><div class="drawer-heading"><h2>{{settings:'对话设置',tools:'工具',skills:'Skills 与资源',sessions:'会话与分支'}[drawer]}</h2><Button variant="ghost" size="icon-sm" aria-label="关闭设置" onclick={()=>drawer=''}><X size={16}/></Button></div><div class="drawer-content">
       {#if drawer==='settings'}<p class="hint">{panel.initializing?panel.initialization:'模型参数随工作流保存。'}</p>{#each [...new Set(panel.spec.fields.map(f=>f.area||f.section||'参数'))] as group}<details class="settings-group" open={group==='models'||group==='生成'}><summary>{{models:'模型',prompts:'系统提示词',advanced:'高级设置'}[group]||group}</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>(f.area||f.section||'参数')===group) as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}</div></details>{/each}<p class="hint path-text">{panel.spec.model_root}</p>
-      {:else if drawer==='tools'}<p class="hint">选中的工具会交给 Pi 调用。</p>{#each pi.tools||[] as tool}<div class="resource-row"><div><strong>{tool.name}</strong><p>{tool.description}</p></div><Switch aria-label={'启用 '+tool.name} checked={pi.activeTools?.includes(tool.name)} disabled={panel.busy} onCheckedChange={checked=>act('tools',{tools:checked?[...(pi.activeTools||[]),tool.name]:(pi.activeTools||[]).filter(t=>t!==tool.name)})}/></div>{/each}
-      {:else if drawer==='skills'}<div class="row"><Button variant="outline" size="sm" disabled={panel.busy} onclick={()=>act('reload')}><RefreshCw size={13}/>重载资源</Button><Button variant="ghost" size="sm" onclick={()=>{skillName='';skillSource='---\nname: my-skill\ndescription: 描述这个 skill 的用途\n---\n\n在这里填写执行步骤。';}}>新建 Skill</Button></div><p class="hint">从项目 .pi/skills、.pi/prompts 与 .pi/extensions 加载。</p>
+      {:else if drawer==='tools'}<p class="hint">工具调整将在下一轮推理生效。</p>{#each pi.tools||[] as tool}<div class="resource-row"><div><strong>{tool.name}</strong><p>{tool.description}</p></div><Switch aria-label={'启用 '+tool.name} checked={pi.activeTools?.includes(tool.name)} onCheckedChange={checked=>act('tools',{tools:checked?[...(pi.activeTools||[]),tool.name]:(pi.activeTools||[]).filter(t=>t!==tool.name)})}/></div>{/each}
+      {:else if drawer==='skills'}<div class="row"><Button variant="outline" size="sm" disabled={panel.busy} onclick={()=>act('reload')}><RefreshCw size={13}/>重载资源</Button><Button variant="ghost" size="sm" onclick={()=>{skillName='';skillSource='---\nname: my-skill\ndescription: 描述这个 skill 的用途\n---\n\n在这里填写执行步骤。';skillEditorOpen=true;skillNotice='';}}>新建 Skill</Button></div><p class="hint">从项目 .pi/skills、.pi/prompts 与 .pi/extensions 加载。</p>
         {#each pi.skills||[] as skill}<div class="skill-card"><div class="row"><Sparkles size={15}/><strong>{skill.name}</strong></div><p>{skill.description}</p><div class="row"><Button variant="outline" size="sm" onclick={()=>{input='/skill:'+skill.name+' ';}}>使用</Button><Button variant="ghost" size="sm" onclick={()=>act('read_skill',{path:skill.filePath})}>编辑</Button></div></div>{/each}
         {#if !(pi.skills||[]).length}<div class="empty-resource">添加 SKILL.md 后，点击重载资源即可使用。</div>{/if}
-        {#if skillSource}<section class="skill-editor"><label class="field"><span>Skill 目录名称</span><Input bind:value={skillName}/></label><Textarea aria-label="Skill 源码" rows={14} bind:value={skillSource}/><Button disabled={!skillName||panel.busy} onclick={()=>{act('save_skill',{name:skillName,source:skillSource});skillSource='';}}>保存并重载</Button></section>{/if}
+        {#if skillEditorOpen}<section class="skill-editor"><label class="field"><span>Skill 目录名称</span><Input bind:value={skillName}/></label><Textarea aria-label="Skill 源码" rows={14} bind:value={skillSource}/><Button disabled={!skillName||panel.busy||skillSaving} onclick={saveSkill}>{skillSaving?'正在保存…':'保存并重载'}</Button>{#if skillNotice}<p class={skillSaveError?'error-text':'hint'} role="status">{skillNotice}</p>{/if}</section>{/if}
         <h3 class="resource-title">提示模板</h3>{#each pi.prompts||[] as prompt}<button class="resource-button" onclick={()=>input='/'+prompt.name+' '}>/{prompt.name}<small>{prompt.description}</small></button>{/each}
         <h3 class="resource-title">扩展</h3>{#each pi.extensions||[] as extension}<p class="hint path-text">{extension.path}</p>{/each}
         {#each pi.diagnostics||[] as diagnostic}<p class="error-text">{diagnostic.message||String(diagnostic)}</p>{/each}

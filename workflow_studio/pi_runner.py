@@ -88,6 +88,8 @@ def control(panel, command, params=None):
             record = events.get()
             apply_record(panel, record)
             if record["type"] == "result":
+                if command["action"] == "save_skill":
+                    panel.owner.send({"type":"pi_skill_saved", "id":panel.id, "error":record.get("error", "")})
                 if record.get("error"):
                     panel.update(message=record["error"])
                 return

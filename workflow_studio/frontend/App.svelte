@@ -2,7 +2,7 @@
   import {onMount, untrack} from 'svelte';
   import {Button} from '$lib/components/ui/button';
   import {Badge} from '$lib/components/ui/badge';
-  import {MessageSquare, Image, FolderOpen, Layers, Settings2, ArrowUpRight, Plus, RefreshCw, Upload, PanelLeftClose, PanelLeftOpen} from '@lucide/svelte';
+  import {MessageSquare, Image, FolderOpen, Settings2, ArrowUpRight, Plus, RefreshCw, Upload, PanelLeftClose, PanelLeftOpen} from '@lucide/svelte';
   import Dropdown from './ui/Dropdown.svelte';
   import WorkflowView from './WorkflowView.svelte';
   import ChatView from './ChatView.svelte';
@@ -236,6 +236,7 @@
       }
       if (msg.type === 'pi_export') download(msg.name,msg.source,'application/jsonl');
       if (msg.type === 'pi_skill') pi[msg.id]={...pi[msg.id],editingSkill:{path:msg.path,source:msg.source}};
+      if (msg.type === 'pi_skill_saved') pi[msg.id]={...pi[msg.id],skillSave:msg};
       if (msg.type === 'chat_delta') {
         chatResponses.set(msg.id, msg.node);
         if (msg.id === activeId && pageVisible) applyChatResponse(msg.id,msg.node);
@@ -287,7 +288,7 @@
 
 <main class="studio" class:expanded class:nav-closed={!sidebarOpen}>
   <aside class="app-sidebar">
-    <div class="brand"><div class="brand-mark"><Layers size={19}/></div><span>Workflow<span class="brand-light"> Studio</span></span></div>
+    <div class="workspace-title">工作台</div>
     <div class="nav-label">工作空间</div>
     <nav aria-label="工作空间导航">
       {#each state.panels as panel (panel.id)}

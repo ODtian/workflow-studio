@@ -17,6 +17,23 @@ const labels = {
 };
 export const i18n = key => labels[key] || key;
 
+export async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const field = document.createElement('textarea');
+    field.value = text;
+    field.style.cssText = 'position:fixed;inset:0;opacity:0;pointer-events:none';
+    const focused = document.activeElement;
+    document.body.append(field);
+    field.select();
+    const copied = document.execCommand('copy');
+    field.remove();
+    focused?.focus({preventScroll:true});
+    if (!copied) throw new Error('复制失败');
+  }
+}
+
 export function downloadBuffer(name, buffer, type) {
   const data = ArrayBuffer.isView(buffer) ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) : buffer;
   const url = URL.createObjectURL(new Blob([data], {type}));
