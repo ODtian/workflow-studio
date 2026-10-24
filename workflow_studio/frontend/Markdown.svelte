@@ -5,6 +5,8 @@ import {copyText} from './bridge.js';
 let {text='',class:className=''}=$props();
 const renderer=new Renderer();
 const renderCode=renderer.code.bind(renderer);
+const renderTable=renderer.table.bind(renderer);
+renderer.table=(...args)=>`<div class="markdown-table">${renderTable(...args)}</div>`;
 renderer.code=(code,language,escaped)=>`<div class="code-block"><button type="button" class="code-copy" aria-label="复制代码" data-copy-code>复制代码</button>${renderCode(code,language,escaped)}</div>`;
 let blocks=$derived(marked.lexer(text||'',{breaks:true}).map(token=>DOMPurify.sanitize(marked.parser([token],{breaks:true,renderer}))));
 async function copyCode(event){

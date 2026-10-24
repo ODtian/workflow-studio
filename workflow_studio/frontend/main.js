@@ -1,6 +1,7 @@
 import {mount, unmount} from 'svelte';
 import App from './App.svelte';
 import './theme.css';
+import './mobile.css';
 
 export function render({model, el}) {
   const host = document.createElement('div');
@@ -12,6 +13,17 @@ export function render({model, el}) {
     ':host{display:block;width:100%}';
   shadow.append(style);
   let expanded = true;
+  const viewport = window.visualViewport;
+  const compact = window.matchMedia('(max-width:760px), (max-width:1000px) and (max-height:500px)');
+  const updateViewport = () => {
+    const height = compact.matches ? viewport?.height || window.innerHeight : window.innerHeight;
+    host.style.setProperty('--studio-viewport-height', height+'px');
+    if (expanded) {
+      host.style.top = (compact.matches ? viewport?.offsetTop || 0 : 0)+'px';
+      host.style.height = height+'px';
+    }
+    host.dataset.keyboardOpen = String(compact.matches && window.innerHeight-height>120);
+  };
   const place = () => {
     if (expanded) {
       document.body.append(host);
@@ -20,14 +32,23 @@ export function render({model, el}) {
       el.append(host);
       host.style.cssText = '';
     }
+    updateViewport();
   };
+  window.addEventListener('resize', updateViewport);
+  viewport?.addEventListener('resize', updateViewport);
+  viewport?.addEventListener('scroll', updateViewport);
   place();
   const app = mount(App, {target: shadow, props: {model, initialExpanded: expanded, expand: () => {
     expanded = !expanded;
     place();
     return expanded;
   }}});
-  return () => {unmount(app); host.remove();};
+  return () => {
+    window.removeEventListener('resize', updateViewport);
+    viewport?.removeEventListener('resize', updateViewport);
+    viewport?.removeEventListener('scroll', updateViewport);
+    unmount(app); host.remove();
+  };
 }
 
 export default {render};

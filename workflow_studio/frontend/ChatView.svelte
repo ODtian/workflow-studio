@@ -3,7 +3,7 @@ import {onMount} from 'svelte';
 import {Button} from '$lib/components/ui/button';import {Badge} from '$lib/components/ui/badge';import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
 import {Plus,ArrowUp,Square,Paperclip,Settings2,Wrench,Sparkles,History,GitBranch,Copy,Download,RefreshCw,X,MessageSquare,ChevronDown,Check,Terminal,FileText} from '@lucide/svelte';
 import Field from './Field.svelte';import Markdown from './Markdown.svelte';import {readFile,copyText} from './bridge.js';import {followTail} from './followTail.js';
-let {panel,active=true,values=$bindable(),pi={messages:[]},send,targets=[],onTransfer}=$props();
+let {panel,active=true,mobile=false,values=$bindable(),pi={messages:[]},send,targets=[],onTransfer}=$props();
 let input=$state(''),drawer=$state(''),attachments=$state([]),name=$state(''),skillName=$state(''),skillSource=$state(''),copied=$state(''),queue=$state([]),following=$state(true);
 let skillEditorOpen=$state(false),skillSaving=$state(false),skillNotice=$state(''),skillSaveError=$state(false);
 let scrollRequest=$state(0);
@@ -30,7 +30,7 @@ function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skil
 </script>
 <article class="pi-workspace" aria-label="Pi 对话">
   <div class="pi-heading"><div class="pi-avatar">π</div><div class="pi-heading-text"><h1>{pi.name||'Pi 对话'}</h1><p>本地模型 · 工具 · Skills</p></div>
-    <div class="row"><Button variant="outline" size="sm" disabled={panel.busy} onclick={()=>{act('new');queue=[];}}><Plus size={14}/>新对话</Button>
+    <div class="row"><Button variant="outline" size="sm" aria-label="新对话" disabled={panel.busy} onclick={()=>{act('new');queue=[];}}><Plus size={14}/><span>新对话</span></Button>
     <Button variant={drawer==='sessions'?'secondary':'ghost'} size="icon" aria-label="会话历史" onclick={()=>drawer=drawer==='sessions'?'':'sessions'}><History size={17}/></Button>
     <Button variant={drawer==='skills'?'secondary':'ghost'} size="icon" aria-label="Skills 与资源" onclick={()=>drawer=drawer==='skills'?'':'skills'}><Sparkles size={17}/></Button>
     <Button variant={drawer==='tools'?'secondary':'ghost'} size="icon" aria-label="工具管理" onclick={()=>drawer=drawer==='tools'?'':'tools'}><Wrench size={17}/></Button>
@@ -66,12 +66,12 @@ function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skil
         <div class="composer">
           {#if attachments.length}<div class="attachment-strip">{#each attachments as image,index}<div><img src={image.url} alt={image.name}/><button aria-label="移除附件" onclick={()=>attachments=attachments.filter((_,i)=>i!==index)}>×</button></div>{/each}</div>{/if}
           {#if input.startsWith('/')}<div class="slash-menu">{#each (pi.skills||[]).filter(s=>('/skill:'+s.name).includes(input.split(' ')[0])) as skill}<button onclick={()=>input='/skill:'+skill.name+' '}><Sparkles size={13}/>/skill:{skill.name}<small>{skill.description}</small></button>{/each}{#each pi.prompts||[] as prompt}<button onclick={()=>input='/'+prompt.name+' '}><FileText size={13}/>/{prompt.name}</button>{/each}</div>{/if}
-          <Textarea aria-label="消息输入" placeholder="发送消息，输入 / 使用 skill 或提示模板…" rows={3} bind:value={input} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();submit(panel.busy?'follow_up':'prompt');}}}/>
-          <div class="composer-toolbar"><div class="row"><Button variant="ghost" size="icon-sm" aria-label="添加图片" onclick={()=>imageInput.click()}><Paperclip size={17}/></Button><button class="model-caption" onclick={()=>drawer='settings'}>{(values.model||'').split('/').at(-1)?.replace('.gguf','')}<ChevronDown size={12}/></button></div>
+          <Textarea aria-label="消息输入" placeholder="发送消息，输入 / 使用 skill 或提示模板…" enterkeyhint={mobile?'enter':'send'} rows={mobile?2:3} bind:value={input} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&(!mobile||e.ctrlKey||e.metaKey)){e.preventDefault();submit(panel.busy?'follow_up':'prompt');}}}/>
+          <div class="composer-toolbar"><div class="row"><Button variant="ghost" size="icon-sm" aria-label="添加图片" onclick={()=>imageInput.click()}><Paperclip size={17}/></Button><button class="model-caption" aria-label="选择对话模型" onclick={()=>drawer='settings'}><span>{(values.model||'').split('/').at(-1)?.replace('.gguf','')}</span><ChevronDown size={12}/></button></div>
             <div class="row">{#if panel.busy}<Button variant="ghost" size="sm" disabled={!input.trim()} onclick={()=>submit('steer')}>引导</Button><Button variant="outline" size="sm" disabled={!input.trim()} onclick={()=>submit('follow_up')}>排队</Button><Button variant="destructive" size="icon" aria-label="停止生成" onclick={()=>send('cancel',{id:panel.id})}><Square size={13}/></Button>{:else}<Button size="icon" aria-label="发送消息" disabled={!input.trim()&&!attachments.length} onclick={()=>submit()}><ArrowUp size={18}/></Button>{/if}</div>
           </div>
         </div>
-        <div class="composer-footer"><span>{pi.activeTools?.length||0} 个工具 · {pi.skills?.length||0} 个 skills</span><span>{context?.percent?`${context.percent.toFixed(0)}% 上下文 · `:''}{panel.metadata?.每秒tokens?panel.metadata.每秒tokens+' tok/s · ':''}Enter 发送 · Shift Enter 换行</span></div>
+        <div class="composer-footer"><span>{pi.activeTools?.length||0} 个工具 · {pi.skills?.length||0} 个 skills</span><span>{context?.percent?`${context.percent.toFixed(0)}% 上下文 `:''}{panel.metadata?.每秒tokens?panel.metadata.每秒tokens+' tok/s ':''}<span class="keyboard-hint">{mobile?'点箭头发送 · 回车换行':'Enter 发送 · Shift Enter 换行'}</span></span></div>
         {#if panel.phase==='error'}<p class="error-text">{panel.message}</p>{/if}
       </div>
     </div>

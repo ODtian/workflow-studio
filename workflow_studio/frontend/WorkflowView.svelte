@@ -4,13 +4,15 @@ import {Play,Square,Download,Image,History,SlidersHorizontal,ChevronDown,Refresh
 import Field from './Field.svelte';import ResolutionControls from './ResolutionControls.svelte';import ZoomPreview from './ZoomPreview.svelte';import ImageHistory from './ImageHistory.svelte';
 let {panel,values=$bindable(),preview='',text='',results=[],send,history=[],loadThumbnail,loadPreview,targets=[],onTransfer,loadOriginal,mode='full'}=$props();
 let tab=$state('preview'),imageIndex=$state(0),modelsOpen=$state(false),displayMs=$state(0);
+let mobileView=$state('settings');
 let fields=$derived(panel.spec.fields||[]),parameterFields=$derived(fields.filter(f=>!f.area)),groups=$derived([...new Set(parameterFields.map(f=>f.section||'参数'))]);
 let isText=$derived(panel.spec.output==='text'),activeResult=$derived(results[imageIndex]);
 const act=(action,data={})=>send(action,{id:panel.id,...data});let receivedAt=0;
 $effect(()=>{if(preview)receivedAt=performance.now();});$effect(()=>{results;imageIndex=0;});
 function loaded(){if(receivedAt&&['publishing','complete'].includes(panel.phase)){displayMs=Math.round(performance.now()-receivedAt);act('displayed',{ms:displayMs});}}
 </script>
-<article class="generation-workspace" aria-label={panel.spec.name}>
+<article class="generation-workspace" data-mobile-view={mobileView} aria-label={panel.spec.name}>
+  <nav class="mobile-generation-tabs" aria-label="生成视图"><Button variant={mobileView==='settings'?'secondary':'ghost'} aria-pressed={mobileView==='settings'} onclick={()=>mobileView='settings'}><SlidersHorizontal size={16}/>参数</Button><Button variant={mobileView==='preview'?'secondary':'ghost'} aria-pressed={mobileView==='preview'} onclick={()=>mobileView='preview'}><Image size={16}/>预览与历史{#if panel.busy}<i class="status-dot pulse"></i>{/if}</Button></nav>
   <section class="generation-controls">
     <div class="generation-title"><div class="eyebrow">IMAGE WORKFLOW</div><h1>{panel.spec.tab_name||panel.spec.name.split(' · ')[0]}</h1><p>配置画面，生成与比较。</p></div>
     <div class="controls-scroll">
@@ -21,7 +23,6 @@ function loaded(){if(receivedAt&&['publishing','complete'].includes(panel.phase)
       {#each parameterFields.filter(f=>(f.section||'参数')===group) as field}<div class:wide={['boolean','text','textarea','image','lora_stack'].includes(field.type)}><Field {field} bind:value={values[field.key]} busy={panel.busy}/></div>{/each}</div></details>{/each}
       {#if fields.some(f=>f.area==='advanced')}<details class="settings-group"><summary>高级设置<ChevronDown size={13}/></summary><div class="settings-fields">{#each fields.filter(f=>f.area==='advanced') as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}</div></details>{/if}
     </div>
-    <div class="generation-runbar">{#if panel.initializing}<p class="hint">{panel.initialization}</p>{/if}<div class="row"><Button class="generate-button" size="lg" disabled={panel.busy||panel.spec.ready===false} onclick={()=>{tab='preview';act('run',{params:{...values}});}}><Play size={15}/>{panel.busy?'正在生成…':panel.spec.run_label||'生成图片'}</Button><Button size="lg" variant="outline" disabled={!panel.busy} onclick={()=>act('cancel')}><Square size={13}/>停止</Button></div></div>
   </section>
   <section class="generation-output">
     <div class="output-toolbar"><div class="segmented"><Button variant={tab==='preview'?'secondary':'ghost'} size="sm" onclick={()=>tab='preview'}><Image size={14}/>预览</Button><Button variant={tab==='history'?'secondary':'ghost'} size="sm" onclick={()=>tab='history'}><History size={14}/>历史 <span class="count">{history.length}</span></Button></div><div class="row">{#if activeResult}<Badge variant="outline">{activeResult.width} × {activeResult.height}</Badge>{/if}<Button variant="outline" size="sm" disabled={!activeResult} onclick={()=>act('download',{name:activeResult.name})}><Download size={14}/>下载原图</Button></div></div>
@@ -33,4 +34,5 @@ function loaded(){if(receivedAt&&['publishing','complete'].includes(panel.phase)
     {#if results.length>1}<div class="row">{#each results as result,index}<Button size="sm" variant={imageIndex===index?'secondary':'ghost'} onclick={()=>{imageIndex=index;act('show_result',{name:result.name});}}>图片 {index+1}</Button>{/each}</div>{/if}
     <details class="run-info"><summary>运行信息<ChevronDown size={12}/></summary><dl>{#each Object.entries(panel.metadata||{}) as [key,value]}<div><dt>{key}</dt><dd>{String(value)}</dd></div>{/each}</dl></details></div>{/if}
   </section>
+  <div class="generation-runbar">{#if panel.initializing}<p class="hint">{panel.initialization}</p>{/if}<div class="row"><Button class="generate-button" size="lg" disabled={panel.busy||panel.spec.ready===false} onclick={()=>{tab='preview';mobileView='preview';act('run',{params:{...values}});}}><Play size={15}/>{panel.busy?'正在生成…':panel.spec.run_label||'生成图片'}</Button><Button size="lg" variant="outline" disabled={!panel.busy} onclick={()=>act('cancel')}><Square size={13}/>停止</Button></div></div>
 </article>

@@ -40,6 +40,7 @@
   let settingsNotice = $state('设置已保存');
   let toolsOpen = $state(false);
   let sidebarOpen = $state(true);
+  let mobile = $state(false);
   let pi = $state({});
   const piVersions = new Map();
   let activePanel = $derived(state.panels.find(p=>p.id===activeId));
@@ -206,6 +207,10 @@
   }
 
   onMount(() => {
+    const compact = window.matchMedia('(max-width:760px), (max-width:1000px) and (max-height:500px)');
+    const updateCompact = () => mobile = compact.matches;
+    updateCompact();
+    compact.addEventListener('change', updateCompact);
     const scanModels = () => {if (!document.hidden) send('scan_models');};
     const visibility = () => {pageVisible = !document.hidden;scanModels();};
     const modelTimer = setInterval(scanModels, 5000);
@@ -268,6 +273,7 @@
     model.on('msg:custom', custom);
     settingsReady = true;
     return () => {
+      compact.removeEventListener('change', updateCompact);
       clearInterval(modelTimer);
       document.removeEventListener('visibilitychange', visibility);
       model.off('change:state', updateState);
@@ -304,8 +310,8 @@
   </aside>
   <div class="app-main">
     <header class="app-topbar">
-      <Button variant="ghost" size="icon" aria-label="切换侧栏" onclick={()=>sidebarOpen=!sidebarOpen}>{#if sidebarOpen}<PanelLeftClose size={17}/>{:else}<PanelLeftOpen size={17}/>{/if}</Button>
-      <div class="breadcrumb">工作空间 <span>/</span> <strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
+      <Button class="sidebar-toggle" variant="ghost" size="icon" aria-label="切换侧栏" onclick={()=>sidebarOpen=!sidebarOpen}>{#if sidebarOpen}<PanelLeftClose size={17}/>{:else}<PanelLeftOpen size={17}/>{/if}</Button>
+      <div class="breadcrumb"><span class="breadcrumb-root">工作空间</span><span class="breadcrumb-separator">/</span><strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
       <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" onclick={()=>expanded=expand()}>{expanded?'返回 notebook':'展开工作台'}<ArrowUpRight size={13}/></Button></div>
     </header>
     {#if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
@@ -321,7 +327,7 @@
       {#each state.panels as panel (panel.id)}
         <section class="panel-page" hidden={toolsOpen || activeId!==panel.id}>
           {#if panel.spec.chat}
-            <ChatView {panel} active={activeId===panel.id && pageVisible} bind:values={drafts[panel.id]} pi={pi[panel.id] || {messages:[]}} {send} targets={targetsFor(panel)} onTransfer={transfer}/>
+            <ChatView {panel} {mobile} active={activeId===panel.id && pageVisible} bind:values={drafts[panel.id]} pi={pi[panel.id] || {messages:[]}} {send} targets={targetsFor(panel)} onTransfer={transfer}/>
           {:else}
             <WorkflowView {panel} bind:values={drafts[panel.id]} preview={previews[panel.id]||''} text={texts[panel.id]||''} results={results[panel.id]||[]} {send} history={histories[panel.selected]||[]} loadThumbnail={r=>loadThumbnail(panel.id,r)} loadPreview={r=>loadPreview(panel.id,r)} targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={r=>loadOriginal(panel.id,r)}/>
           {/if}
@@ -329,6 +335,16 @@
       {/each}
       <section class="panel-page" hidden={toolsOpen || activeId!=='__files__'}><FilesView {files} {send}/></section>
     </div>
+    <nav class="mobile-navigation" aria-label="手机工作空间导航">
+      {#each state.panels as panel (panel.id)}
+        <button class:active={!toolsOpen&&activeId===panel.id} aria-current={!toolsOpen&&activeId===panel.id?'page':undefined} onclick={()=>{activeId=panel.id;toolsOpen=false;}}>
+          <span class="mobile-nav-icon">{#if panel.spec.chat}<MessageSquare size={20}/>{:else}<Image size={20}/>{/if}{#if panel.busy}<i class="status-dot pulse"></i>{/if}</span>
+          <span>{panel.spec.chat?'对话':panel.spec.tab_name || panel.spec.name.split(' · ')[0]}</span>
+        </button>
+      {/each}
+      <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}><FolderOpen size={20}/><span>文件</span></button>
+      <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}><Settings2 size={20}/><span>管理</span></button>
+    </nav>
   </div>
   <input type="file" accept=".py" hidden bind:this={codeInput} onchange={async()=>{const file=codeInput.files[0];if(file)send('import',{name:file.name,source:await file.text()});codeInput.value='';}}/>
 </main>
