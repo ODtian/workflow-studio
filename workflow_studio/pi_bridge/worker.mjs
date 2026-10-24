@@ -12,6 +12,7 @@ const runtime = await ModelRuntime.create({
   authPath:join(agentDir, 'auth.json'), modelsPath:null, refreshOnCreate:false
 });
 const pending = new Map();
+const sessions = new Map();
 let sequence = 0;
 let activeSession;
 const usage = () => ({input:0, output:0, cacheRead:0, cacheWrite:0, totalTokens:0,
@@ -93,14 +94,12 @@ async function prompt(request) {
       cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]
   });
   const model = runtime.getModel('notebook', config.model);
-  const manager = SessionManager.inMemory(process.cwd());
   const messages = request.messages;
-  for (const message of messages.slice(0, -1)) {
-    const entry = {role:message.role, content:content(message.content), timestamp:Date.now()};
-    if (entry.role === 'assistant') Object.assign(entry, {
-      api:model.api, provider:model.provider, model:model.id, usage:usage(), stopReason:'stop'
-    });
-    manager.appendMessage(entry);
+  const signature = JSON.stringify([config.model,config.n_ctx,config.max_tokens,config.system_prompt,config.thinking]);
+  let cached = sessions.get(request.conversationId);
+  if (cached && (cached.signature !== signature || JSON.stringify(cached.nodes) !== JSON.stringify(request.nodes.slice(0,-2)))) {
+    cached.session.dispose();
+    cached = undefined;
   }
   const loader = {
     getExtensions:() => ({extensions:[], errors:[], runtime:createExtensionRuntime()}),
@@ -110,12 +109,25 @@ async function prompt(request) {
     getAppendSystemPrompt:() => [], getAppendSystemPromptSources:() => [],
     extendResources:() => {}, reload:async () => {}
   };
-  const {session} = await createAgentSession({
-    cwd:process.cwd(), agentDir, model, modelRuntime:runtime,
-    thinkingLevel:config.thinking === 'on' ? 'medium' : 'off', tools:[],
-    sessionManager:manager, resourceLoader:loader,
-    settingsManager:SettingsManager.inMemory({retry:{enabled:false}})
-  });
+  if (!cached) {
+    const manager = SessionManager.inMemory(process.cwd());
+    for (const message of messages.slice(0, -1)) {
+      const entry = {role:message.role, content:content(message.content), timestamp:Date.now()};
+      if (entry.role === 'assistant') Object.assign(entry, {
+        api:model.api, provider:model.provider, model:model.id, usage:usage(), stopReason:'stop'
+      });
+      manager.appendMessage(entry);
+    }
+    const {session} = await createAgentSession({
+      cwd:process.cwd(), agentDir, model, modelRuntime:runtime,
+      thinkingLevel:config.thinking === 'on' ? 'medium' : 'off', tools:[],
+      sessionManager:manager, resourceLoader:loader,
+      settingsManager:SettingsManager.inMemory({retry:{enabled:false}})
+    });
+    cached = {session, manager, signature, nodes:[]};
+    sessions.set(request.conversationId, cached);
+  }
+  const {session, manager} = cached;
   activeSession = session;
   send({type:'session', id:manager.getSessionId()});
   const unsubscribe = session.subscribe(event => send({type:'event', event}));
@@ -126,10 +138,10 @@ async function prompt(request) {
     });
     const last = session.messages.at(-1);
     if (last?.stopReason === 'error') throw new Error(last.errorMessage);
+    cached.nodes = request.nodes;
     send({type:'result', content:session.getLastAssistantText() || ''});
   } finally {
     unsubscribe();
-    session.dispose();
     activeSession = undefined;
   }
 }

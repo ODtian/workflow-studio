@@ -79,7 +79,9 @@ def run_pi(params, ctx):
     started = time.monotonic()
     client = prepare_pi(ctx)
     messages = params.get("messages") or [{"role":"user", "content":params["prompt"]}]
-    client.send({"type":"prompt", "config":params, "messages":messages})
+    nodes = list(ctx.panel.chat.snapshot()["nodes"])
+    client.send({"type":"prompt", "config":{key:value for key,value in params.items() if key != "messages"},
+                 "messages":messages, "nodes":nodes, "conversationId":nodes[0]})
     ctx.metadata(对话层="Pi 1.4.0", 通信="JSONL 进程管道", Pi状态="准备")
     reasoning = ""
     first = None
