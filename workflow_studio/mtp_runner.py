@@ -107,6 +107,7 @@ class MTPModel:
         return self._stream(stream, cancel)
 
     def create_chat_completion(self, messages, **sampling):
+        tools = sampling.pop("tools", None)
         if self.chat_format and not self.model.mtmd_processor:
             from llama_cpp.llama_chat_format import get_chat_format
             formatted = get_chat_format(self.chat_format)(messages=messages)
@@ -116,8 +117,9 @@ class MTPModel:
             stops = [formatted.stop] if isinstance(formatted.stop, str) else formatted.stop or []
         else:
             messages = [self.engine.ChatCompletionRequestMessage(**message) for message in messages]
-            prompt, generation_prompt, plan, stops = self.model.build_chat_prompt(messages)
+            prompt, generation_prompt, plan, stops = self.model.build_chat_prompt(messages, tools=tools)
         match = re.search(r"(<think>|<analysis>|<\|channel>(?:thought|analysis))\s*$", generation_prompt)
+        self.prompt_tokens = len(self.model.tokenize(prompt, add_bos=False, special=True))
         self.channels.prefix = match[0] if match else ""
         sampling = {**sampling, "stop": list(dict.fromkeys([*sampling["stop"], *stops]))}
         payload = self._payload(prompt, sampling)

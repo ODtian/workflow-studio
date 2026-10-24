@@ -3703,6 +3703,10 @@ class Jinja2ChatFormatter:
         converted: List[Dict[str, Any]] = []
         for message in messages:
             data = message.model_dump(exclude_none=True)
+            for call in data.get("tool_calls", []):
+                arguments = call["function"].get("arguments")
+                if isinstance(arguments, str):
+                    call["function"]["arguments"] = json.loads(arguments)
             content = data.get("content")
             if isinstance(content, list):
                 data["content"] = "".join(

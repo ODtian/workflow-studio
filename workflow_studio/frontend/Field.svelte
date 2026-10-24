@@ -1,93 +1,24 @@
 <script>
-  import {tick} from 'svelte';
-  import {Block, UploadText} from '@gradio/atoms';
-  import {BaseTextbox} from '@gradio/textbox';
-  import {BaseDropdown} from '@gradio/dropdown';
-  import NumberInput from '@gradio/number';
-  import {BaseImageUploader} from '@gradio/image';
-  import {readFile, i18n} from './bridge.js';
-  import LoraStack from './LoraStack.svelte';
-
-  let {field, value = $bindable(), busy = false, idPrefix = '', paste = false, compact = false} = $props();
-  let pasteError = $state('');
-  let getNumber;
-  let uploaded = $state(null);
-  let serverPath = $state(String(value || '').startsWith('data:') ? '' : value || '');
-  const choices = (options) => {
-    const items = options.map(o => typeof o === 'string' ? [o, o] : [o.label, o.value]);
-    return value && !items.some(item => item[1] === value) ? [...items,[String(value) + ' · 已保存',value]] : items;
-  };
-
-  async function upload(files) {
-    return Promise.all(files.map(async file => ({...file, path: file.orig_name, url: await readFile(file.blob)})));
-  }
+import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
+import Dropdown from './ui/Dropdown.svelte';import {Button} from '$lib/components/ui/button';import LoraStack from './LoraStack.svelte';import {readFile} from './bridge.js';
+let {field,value=$bindable(),busy=false,idPrefix='',paste=false,compact=false}=$props();
+let uploadInput;
+let options=$derived((field.options||[]).map(o=>typeof o==='string'?[o,o]:[o.label,o.value]));
 </script>
-
-{#if field.type === 'number'}
-  <NumberInput
-    shared_props={{id: idPrefix + field.key, label: field.label, show_label: true, container: true,
-      visible: true, interactive: !busy, min_width: 0,
-      register_component: (_id, _set, get) => {getNumber = get;},
-      dispatcher: async (_id, event) => {
-        if (event === 'input') {await tick(); value = (await getNumber()).value;}
-      }}}
-    props={{value, minimum: field.min, maximum: field.max, step: field.step || 1,
-      info: field.hint, buttons: []}}
-  />
-{:else if field.type === 'boolean'}
-  <Block>
-    <label class="toggle-field">
-      <input type="checkbox" role="switch" bind:checked={value} disabled={busy} />
-      <span>{field.label}</span>
-    </label>
-    {#if field.hint}<p class="toggle-hint">{field.hint}</p>{/if}
-  </Block>
-{:else if field.type === 'select'}
-  <Block allow_overflow={true}>
-    <BaseDropdown label={field.label} show_label={!compact} bind:value choices={choices(field.options)}
-      interactive={!busy} info={field.hint} filterable={field.options.length > 12} />
-  </Block>
-{:else if field.type === 'lora_stack'}
-  <LoraStack bind:value options={field.options} {busy} {idPrefix} />
-{:else if field.type === 'image'}
-  <div class="image-field">
-    <Block height={240} padding={false}>
-      <BaseImageUploader label={field.label} show_label={true} bind:value={uploaded}
-        sources={['upload']} active_source="upload" root="" {i18n} {upload}
-        show_fullscreen_button={false} webcam_options={{mirror: false}}
-        onupload={() => {value = uploaded.url; serverPath = '';}}
-        onclear={() => {value = ''; serverPath = '';}}>
-        <UploadText type="image" {i18n} />
-      </BaseImageUploader>
-    </Block>
-    <Block>
-      <BaseTextbox label={field.label + ' · 服务端路径'} bind:value={serverPath}
-        disabled={busy} placeholder="容器 / Drive 中的图片路径" max_lines={1}
-        onchange={path => {value = path; uploaded = null;}} />
-    </Block>
-  </div>
+{#if field.type==='lora_stack'}<LoraStack bind:value options={field.options} {busy} {idPrefix}/>
+{:else if field.type==='boolean'}
+<label class="field switch-field"><span>{field.label}</span><Switch bind:checked={value} disabled={busy}/></label>
+{:else if field.type==='select'}<Dropdown label={field.label} show_label={!compact} bind:value choices={value && !options.some(o=>o[1]===value)?[...options,[value,value]]:options} interactive={!busy} filterable={true} info={field.hint}/>
 {:else}
-  <Block>
-    <BaseTextbox label={field.label} bind:value disabled={busy}
-      lines={field.type === 'textarea' ? field.rows || 3 : 1}
-      max_lines={field.type === 'textarea' ? field.rows || 3 : 1}
-      placeholder={field.placeholder || ''} info={field.hint}
-      buttons={paste ? [{id:1,value:'粘贴',icon:null}] : []}
-      oncustombuttonclick={async () => {
-        try {value = await navigator.clipboard.readText(); pasteError = '';}
-        catch (error) {pasteError = '请允许浏览器读取剪贴板，然后点击粘贴。';}
-      }} />
-  </Block>
-  {#if pasteError}<p class="paste-error" role="status">{pasteError}</p>{/if}
+<label class="field"><span>{field.label}</span>
+{#if field.type==='number'}<Input type="number" bind:value min={field.min} max={field.max} step={field.step||1} disabled={busy}/>
+{:else if field.type==='image'}
+<input hidden type="file" accept="image/*" bind:this={uploadInput} onchange={async()=>{if(uploadInput.files[0])value=await readFile(uploadInput.files[0]);}}/>
+{#if String(value||'').startsWith('data:')}<img class="upload-preview" src={value} alt="参考图"/>{/if}
+<div class="row"><Button variant="outline" disabled={busy} onclick={()=>uploadInput.click()}>上传参考图</Button><Button variant="ghost" disabled={busy||!value} onclick={()=>value=''}>清除</Button></div>
+<Input value={String(value||'').startsWith('data:')?'':value} oninput={e=>value=e.currentTarget.value} placeholder="容器中的图片路径" disabled={busy}/>
+{:else if field.type==='textarea'}<Textarea bind:value rows={field.rows||3} placeholder={field.placeholder||''} disabled={busy}/>
+{:else}<Input bind:value placeholder={field.placeholder||''} disabled={busy}/>{/if}
+{#if field.hint}<small>{field.hint}</small>{/if}</label>
 {/if}
-
-<style>
-  .toggle-field{display:flex;align-items:center;gap:8px;min-height:38px;font-size:12px;cursor:pointer;}
-  .toggle-field input{appearance:none;position:relative;width:34px;height:20px;flex:0 0 auto;border:0;border-radius:999px;background:#c9ced6;cursor:pointer;}
-  .toggle-field input::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:white;}
-  .toggle-field input:checked{background:#e58c47;}
-  .toggle-field input:checked::after{transform:translateX(14px);}
-  .toggle-hint{font-size:11px;color:#748090;margin:4px 0;}
-  .image-field {display: grid; gap: var(--layout-gap);}
-  .paste-error{font-size:12px;color:#a35b16;}
-</style>
+<style>.switch-field{display:flex;align-items:center;justify-content:space-between;gap:12px}.upload-preview{max-height:180px;width:100%;object-fit:contain;border-radius:8px}</style>

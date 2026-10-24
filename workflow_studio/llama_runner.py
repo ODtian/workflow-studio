@@ -14,6 +14,7 @@ import time
 from functools import lru_cache
 from template_parameters import reasoning_field, template_options
 from gguf_roles import profile as gguf_profile, validate_files
+from tool_protocol import visible_text, parse_calls
 
 ROOT = Path(__file__).parent
 MODELS = Path(os.environ.get("WORKFLOW_MODELS_DIR", "/tmp/molab-comfy-runtime/models"
@@ -265,7 +266,10 @@ def run_llama(params, ctx):
         if image_count:
             ctx.metadata(上下文图片=image_count)
         ctx.metadata(上下文消息=len(messages))
-        stream = llm.create_chat_completion(messages=messages, **sampling)
+        stream = llm.create_chat_completion(messages=messages, **sampling,
+                                            **({"tools":params["tools"]} if params.get("tools") else {}))
+        if getattr(llm, "_studio_mtp", False):
+            ctx.metadata(输入tokens=llm.prompt_tokens)
     try:
         for chunk in stream:
             ctx.check_cancelled()
@@ -280,10 +284,15 @@ def run_llama(params, ctx):
                 text += piece
                 reasoning_delta += thought
                 answer, reasoning = channels.split(text)
-                ctx.response(answer, reasoning_delta + reasoning)
+                ctx.response(visible_text(answer) if params.get("tools") else answer, reasoning_delta + reasoning)
         if getattr(llm, "_studio_mtp", False):
             stats = llm.scheduler.speculative_stats
             ctx.metadata(MTP预测tokens=stats["draft_tokens_proposed"], MTP接受tokens=stats["draft_tokens_accepted"])
+        if params.get("tools"):
+            calls = parse_calls(answer, params["tools"])
+            if calls:
+                ctx.tool_calls(calls)
+            answer = visible_text(answer)
         ctx.response(answer, reasoning_delta + reasoning, final=True)
         count = len(llm.tokenize((text + reasoning_delta).encode(), add_bos=False))
         ctx.metadata(输出tokens=count, 每秒tokens=round(count / max(time.monotonic() - (first_token or started), 0.001), 1))

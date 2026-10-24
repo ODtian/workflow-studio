@@ -1,288 +1,96 @@
 <script>
-  import {Block} from '@gradio/atoms';
-  import {BaseButton} from '@gradio/button';
-  import {BaseDropdown} from '@gradio/dropdown';
-  import {BaseTextbox} from '@gradio/textbox';
-  import {BaseChatBot} from '@gradio/chatbot';
-  import ChatImages from './ChatImages.svelte';
-  import PiStatus from './PiStatus.svelte';
-  import Field from './Field.svelte';
-  import {i18n} from './bridge.js';
-  import {followTail} from './followTail.js';
-
-  let {panel, active = true, values = $bindable(), chat = {nodes:{}, active:null, selected:{}}, send,
-       targets = [], onTransfer} = $props();
-  let input = $state('');
-  let settingsOpen = $state(false);
-  let selectedMessage = $state('');
-  let target = $state('');
-  let following = $state(true);
-  let attachments = $state([]);
-  let readingImages = $state(false);
-  let dragging = $state(false);
-  let imageInput;
-  let scrollPane;
-  const act = (action, data = {}) => send(action, {id:panel.id, ...data});
-  const nodeIndex = index => Array.isArray(index) ? index[0] : index;
-  let path = $derived.by(() => {
-    const nodes = [];
-    let id = chat.active;
-    while (id) {const node = chat.nodes[id]; nodes.unshift(node); id = node.parent;}
-    return nodes;
-  });
-  let roots = $derived(chat.roots || Object.values(chat.nodes).filter(node => !node.parent));
-  let root = $derived(path[0]?.id || '');
-  let branches = $derived(path.map((node, index) => ({node, index,
-    siblings:chat.siblings?.[node.parent || ''] || Object.values(chat.nodes).filter(item => item.parent === node.parent).map(item => item.id)})).filter(item => item.siblings.length > 1 && item.node.parent));
-  let messages = $derived(active ? path.flatMap((node, index) => {
-    const message = {type:'text', role:node.role, content:node.content, index, metadata:{title:null}};
-    const images = node.attachments?.length ? [{type:'component',role:node.role,index:[index,-2],metadata:{title:null},
-      content:{component:'gallery',constructor_args:{},props:{},alt_text:'提问图片',
-        value:node.attachments.map(image => ({url:image.preview,orig_name:image.name}))}}] : [];
-    const thought = {type:'text', role:'assistant', content:node.reasoning, index:[index,-1],
-      metadata:{title:'Thinking', status:node.status === 'pending' && !node.content ? 'pending' : 'done'}};
-    return [...images,...(node.reasoning ? [thought, message] : node.content || !images.length ? [message] : [])];
-  }) : []);
-  let lastAnswer = $derived(path.filter(node => node.role === 'assistant').at(-1));
-  let selected = $derived(path.find(node => node.id === selectedMessage) || lastAnswer);
-  let fields = $derived(panel.spec.fields);
-  let groups = $derived([...new Set(fields.filter(field => !field.area).map(field => field.section || '参数'))]);
-  $effect(() => {if (!targets.some(t => t.value === target)) target = targets[0]?.value || '';});
-
-  function submit() {
-    if ((!input.trim() && !attachments.length) || readingImages || panel.busy || panel.spec.ready === false) return;
-    act('chat_send', {text:input, images:attachments.map(({name,url}) => ({name,url})), params:{...values}});
-    input = '';
-    attachments = [];
-  }
-  async function addImages(files) {
-    readingImages = true;
-    try {
-      const images = await Promise.all([...files].filter(file => file.type.startsWith('image/')).map(file => new Promise((resolve,reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({id:crypto.randomUUID(),name:file.name,url:reader.result});
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      })));
-      attachments = [...attachments,...images];
-    } finally {readingImages = false;}
-  }
-  function retry(node = selected) {act('chat_retry', {node:node.id, params:{...values}});}
-  function exportChat() {
-    act('chat_export');
-  }
-  function copyConversation() {
-    navigator.clipboard.writeText(path.map(node => `${node.role}: ${node.content}`).join('\n\n'));
-  }
+import {onMount,tick} from 'svelte';
+import {Button} from '$lib/components/ui/button';import {Badge} from '$lib/components/ui/badge';import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
+import {Plus,ArrowUp,Square,Paperclip,Settings2,Wrench,Sparkles,History,GitBranch,Copy,Download,RefreshCw,X,MessageSquare,ChevronDown,Check,Terminal,FileText} from '@lucide/svelte';
+import {marked} from 'marked';import DOMPurify from 'dompurify';
+import Field from './Field.svelte';import {readFile} from './bridge.js';
+let {panel,active=true,values=$bindable(),pi={messages:[]},send,targets=[],onTransfer}=$props();
+let input=$state(''),drawer=$state(''),attachments=$state([]),name=$state(''),skillName=$state(''),skillSource=$state(''),copied=$state(''),queue=$state([]),following=$state(true);
+let imageInput,scrollPane;
+let messages=$derived(pi.messages||[]);
+let lastText=$derived(messages.filter(m=>m.role==='assistant').at(-1)?.content?.filter(p=>p.type==='text').map(p=>p.text).join('\n')||'');
+const act=(action,data={})=>send('pi',{id:panel.id,params:{...values},command:{action,...data}});
+const markdown=text=>DOMPurify.sanitize(marked.parse(text||'',{breaks:true}));
+const plain=content=>typeof content==='string'?content:(content||[]).filter(p=>p.type==='text').map(p=>p.text).join('\n');
+let stats=$derived(pi.stats||{});
+let context=$derived(stats.contextUsage);
+let skillVersion='';
+$effect(()=>{if(pi.editingSkill && pi.editingSkill.source!==skillVersion){skillVersion=pi.editingSkill.source;skillSource=pi.editingSkill.source;skillName=pi.editingSkill.path.split('/').at(-2);}});
+$effect(()=>{messages;if(active&&following)tick().then(()=>{if(scrollPane)scrollPane.scrollTop=scrollPane.scrollHeight;});});
+onMount(()=>act('inspect'));
+function submit(action='prompt'){
+  if(!input.trim()&&!attachments.length)return;
+  act(action,{text:input,images:attachments});
+  if(action==='steer'||action==='follow_up')queue=[...queue,{action,text:input}];else queue=[];
+  input='';attachments=[];following=true;
+}
+function entryFor(message){return (pi.entries||[]).find(e=>e.role===message.role&&e.label===plain(message.content).slice(0,75));}
+async function copy(text,key){await navigator.clipboard.writeText(text);copied=key;}
 </script>
-
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<article class="chat-card" class:dragging aria-label={panel.spec.name}
-  ondragover={event => {if (panel.spec.images && event.dataTransfer.types.includes('Files')) {event.preventDefault();dragging = true;}}}
-  ondragleave={event => {if (!event.currentTarget.contains(event.relatedTarget)) dragging = false;}}
-  ondrop={event => {if (panel.spec.images) {event.preventDefault();dragging = false;addImages(event.dataTransfer.files);}}}>
-  {#if dragging}<div class="drop-hint">松开添加图片</div>{/if}
-  <div class="chat-toolbar">
-    <div class="model-choice">
-      {#each fields.filter(field => field.area === 'models') as field}
-        <Field {field} idPrefix={panel.id} bind:value={values[field.key]} busy={panel.busy} compact={true} />
-      {/each}
-      {#if panel.initializing}<span class="preparation" role="status">{panel.initialization}</span>{/if}
-    </div>
-    <BaseButton size="sm" onclick={() => act('refresh')}>刷新模型</BaseButton>
-    <BaseButton size="sm" variant={settingsOpen ? 'primary' : 'secondary'} onclick={() => settingsOpen = !settingsOpen}>对话设置</BaseButton>
-    <BaseButton size="sm" disabled={panel.busy} onclick={() => act('chat_new')}>新对话</BaseButton>
-    <details class="more"><summary>更多</summary><div>
-      <BaseButton size="sm" disabled={panel.busy} onclick={exportChat}>导出聊天分支</BaseButton>
-      <BaseButton size="sm" onclick={copyConversation}>复制对话正文</BaseButton>
-      <BaseButton size="sm" onclick={() => act('export')}>导出工作流</BaseButton>
-      <BaseButton size="sm" disabled={panel.busy} onclick={() => act('remove')}>移除标签页</BaseButton>
-    </div></details>
+<article class="pi-workspace" aria-label="Pi 对话">
+  <div class="pi-heading"><div class="pi-avatar">π</div><div class="pi-heading-text"><h1>{pi.name||'Pi 对话'}</h1><p>本地模型 · 工具 · Skills</p></div>
+    <div class="row"><Button variant="outline" size="sm" disabled={panel.busy} onclick={()=>{act('new');queue=[];}}><Plus size={14}/>新对话</Button>
+    <Button variant={drawer==='sessions'?'secondary':'ghost'} size="icon" aria-label="会话历史" onclick={()=>drawer=drawer==='sessions'?'':'sessions'}><History size={17}/></Button>
+    <Button variant={drawer==='skills'?'secondary':'ghost'} size="icon" aria-label="Skills 与资源" onclick={()=>drawer=drawer==='skills'?'':'skills'}><Sparkles size={17}/></Button>
+    <Button variant={drawer==='tools'?'secondary':'ghost'} size="icon" aria-label="工具管理" onclick={()=>drawer=drawer==='tools'?'':'tools'}><Wrench size={17}/></Button>
+    <Button variant={drawer==='settings'?'secondary':'ghost'} size="icon" aria-label="对话设置" onclick={()=>drawer=drawer==='settings'?'':'settings'}><Settings2 size={17}/></Button></div>
   </div>
-
-  {#if settingsOpen}
-    <section class="settings" aria-label="对话设置">
-      <div class="system-fields">
-        {#each fields.filter(field => field.area === 'prompts') as field}
-          <Field {field} idPrefix={panel.id} bind:value={values[field.key]} busy={panel.busy} />
+  <div class="pi-body">
+    <div class="conversation-column">
+      <div class="conversation-scroll" bind:this={scrollPane} onscroll={()=>{following=scrollPane.scrollHeight-scrollPane.scrollTop-scrollPane.clientHeight<100;}}>
+        <div class="conversation-thread">
+        {#if !messages.length}<div class="chat-welcome"><div class="welcome-symbol">π</div><h2>从一个想法开始</h2><p>对话、读写文件、运行工具，或使用你的 skills。</p><div class="welcome-actions"><Button variant="outline" onclick={()=>{input='请使用 ls 工具查看当前工作目录。';}}>浏览工作目录</Button><Button variant="outline" onclick={()=>drawer='skills'}>查看 Skills</Button></div></div>{/if}
+        {#each messages as message,index}
+          {#if message.role==='user'}<div class="message user-message"><div class="message-label">你</div><div class="user-bubble"><div class="markdown">{@html markdown(plain(message.content))}</div>{#if Array.isArray(message.content)}<div class="chat-images">{#each message.content.filter(p=>p.type==='image') as image}<img src={`data:${image.mimeType};base64,${image.data}`} alt="对话附件"/>{/each}</div>{/if}</div>
+            <div class="message-actions"><Button variant="ghost" size="xs" disabled={panel.busy||!entryFor(message)} onclick={()=>{act('navigate',{entry:entryFor(message).id});input=plain(message.content);}}>编辑并分支</Button></div></div>
+          {:else if message.role==='assistant'}<div class="message assistant-message"><div class="message-label"><span class="mini-pi">π</span> Pi</div>
+            {#each message.content||[] as part}
+              {#if part.type==='thinking'}<details class="thinking"><summary>思考过程 <ChevronDown size={13}/></summary><div class="markdown">{@html markdown(part.thinking)}</div></details>
+              {:else if part.type==='text'}<div class="markdown assistant-text">{@html markdown(part.text)}</div>
+              {:else if part.type==='toolCall'}
+                {@const result=messages.find(m=>m.role==='toolResult'&&m.toolCallId===part.id)}
+                <details class="tool-call"><summary><Terminal size={14}/><strong>{part.name}</strong><span class="tool-summary">{Object.values(part.arguments||{})[0]?.toString().slice(0,85)}</span><Badge variant={result?.isError?'destructive':'secondary'}>{result?(result.isError?'出错':'完成'):'执行中'}</Badge><ChevronDown size={13}/></summary><div class="tool-body"><small>参数</small><pre>{JSON.stringify(part.arguments,null,2)}</pre>{#if result}<small>执行结果</small><pre>{plain(result.content)}</pre>{/if}</div></details>
+              {/if}
+            {/each}
+            {#if message.errorMessage}<p class="error-text">{message.errorMessage}</p>{/if}
+            {#if plain(message.content)}<div class="message-actions"><Button variant="ghost" size="xs" onclick={()=>copy(plain(message.content),String(index))}>{#if copied===String(index)}<Check size={12}/>{:else}<Copy size={12}/>{/if}复制</Button>{#if entryFor(message)}<Button variant="ghost" size="xs" disabled={panel.busy} onclick={()=>act('navigate',{entry:entryFor(message).id})}><GitBranch size={12}/>从这里分支</Button>{/if}</div>{/if}</div>
+          {/if}
         {/each}
+        {#if panel.busy}<div class="agent-running"><i class="status-dot pulse"></i>{panel.message}</div>{/if}
+        </div>
       </div>
-      <div class="setting-groups">
-        {#each groups as group}<section><h3>{group}</h3><div class="settings-fields">
-          {#each fields.filter(field => !field.area && (field.section || '参数') === group) as field}
-            <Field {field} idPrefix={panel.id} bind:value={values[field.key]} busy={panel.busy} />
-          {/each}
-        </div></section>{/each}
-        <section><h3>高级设置</h3><div class="settings-fields">
-          {#each fields.filter(field => field.area === 'advanced') as field}
-            <Field {field} idPrefix={panel.id} bind:value={values[field.key]} busy={panel.busy} />
-          {/each}
-        </div></section>
+      <div class="composer-area">
+        {#if !following}<Button variant="secondary" size="sm" class="follow-button" onclick={()=>{following=true;scrollPane.scrollTop=scrollPane.scrollHeight;}}>回到最新 <ChevronDown size={14}/></Button>{/if}
+        {#if queue.length}<div class="queue-note">{#each queue as item}<span>{item.action==='steer'?'引导':'排队'} · {item.text}</span>{/each}</div>{/if}
+        <div class="composer">
+          {#if attachments.length}<div class="attachment-strip">{#each attachments as image,index}<div><img src={image.url} alt={image.name}/><button aria-label="移除附件" onclick={()=>attachments=attachments.filter((_,i)=>i!==index)}>×</button></div>{/each}</div>{/if}
+          {#if input.startsWith('/')}<div class="slash-menu">{#each (pi.skills||[]).filter(s=>('/skill:'+s.name).includes(input.split(' ')[0])) as skill}<button onclick={()=>input='/skill:'+skill.name+' '}><Sparkles size={13}/>/skill:{skill.name}<small>{skill.description}</small></button>{/each}{#each pi.prompts||[] as prompt}<button onclick={()=>input='/'+prompt.name+' '}><FileText size={13}/>/{prompt.name}</button>{/each}</div>{/if}
+          <Textarea aria-label="消息输入" placeholder="发送消息，输入 / 使用 skill 或提示模板…" rows={3} bind:value={input} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();submit(panel.busy?'follow_up':'prompt');}}}/>
+          <div class="composer-toolbar"><div class="row"><Button variant="ghost" size="icon-sm" aria-label="添加图片" onclick={()=>imageInput.click()}><Paperclip size={17}/></Button><button class="model-caption" onclick={()=>drawer='settings'}>{(values.model||'').split('/').at(-1)?.replace('.gguf','')}<ChevronDown size={12}/></button></div>
+            <div class="row">{#if panel.busy}<Button variant="ghost" size="sm" disabled={!input.trim()} onclick={()=>submit('steer')}>引导</Button><Button variant="outline" size="sm" disabled={!input.trim()} onclick={()=>submit('follow_up')}>排队</Button><Button variant="destructive" size="icon" aria-label="停止生成" onclick={()=>send('cancel',{id:panel.id})}><Square size={13}/></Button>{:else}<Button size="icon" aria-label="发送消息" disabled={!input.trim()&&!attachments.length} onclick={()=>submit()}><ArrowUp size={18}/></Button>{/if}</div>
+          </div>
+        </div>
+        <div class="composer-footer"><span>{pi.activeTools?.length||0} 个工具 · {pi.skills?.length||0} 个 skills</span><span>{context?.percent?`${context.percent.toFixed(0)}% 上下文 · `:''}{panel.metadata?.每秒tokens?panel.metadata.每秒tokens+' tok/s · ':''}Enter 发送 · Shift Enter 换行</span></div>
+        {#if panel.phase==='error'}<p class="error-text">{panel.message}</p>{/if}
       </div>
-    </section>
-  {/if}
-
-  {#if panel.spec.chat_engine === 'pi'}<PiStatus {panel} />{/if}
-  <div class="conversation-bar">
-    <div class="conversation-picker"><Block allow_overflow={true}><BaseDropdown label="本次启动的对话" show_label={false}
-      value={root} choices={roots.map((node, index) => [`${index + 1}. ${node.label ?? node.content.slice(0,45)}`, node.id])}
-      interactive={!panel.busy} filterable={false} placeholder="新对话"
-      on_change={id => {if (id && id !== root) act('chat_select', {node:id});}} /></Block></div>
-    <span>{path.filter(node => node.role === 'user').length} 轮对话 · {panel.metadata.输入模态 || '流式输出'}</span>
-    {#if selected}<BaseButton size="sm" disabled={panel.busy} onclick={() => retry()}>重新生成{selected.id !== lastAnswer?.id ? `第 ${Math.floor(path.indexOf(selected) / 2) + 1} 轮` : ''}</BaseButton>{/if}
-  </div>
-  {#if branches.length}<div class="branch-bar" aria-label="聊天分支">
-    {#each branches as branch}
-      {@const current = branch.siblings.indexOf(branch.node.id)}
-      <div class="branch-control"><span>第 {Math.floor(branch.index / 2) + 1} 轮{branch.node.role === 'user' ? '提问' : '回答'}</span>
-        <BaseButton size="sm" disabled={panel.busy || current === 0}
-          onclick={() => act('chat_select', {node:branch.siblings[current - 1]})}>‹</BaseButton>
-        <span>{current + 1} / {branch.siblings.length}</span>
-        <BaseButton size="sm" disabled={panel.busy || current === branch.siblings.length - 1}
-          onclick={() => act('chat_select', {node:branch.siblings[current + 1]})}>›</BaseButton>
-      </div>
-    {/each}
-  </div>{/if}
-
-  <div class="transcript" role="region" aria-label="聊天记录" tabindex="0" bind:this={scrollPane} use:followTail={{key:chat.active,active,onChange:value => following = value}}>
-   <div class="conversation-content">
-    {#if active}
-    <BaseChatBot value={messages} {i18n} _fetch={fetch} load_component={() => ({component:Promise.resolve({default:ChatImages})})} theme_mode="light" render_markdown={true}
-      sanitize_html={true} line_breaks={true} latex_delimiters={[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}]}
-      display_consecutive_in_same_bubble={false} layout="bubble" autoscroll={false} show_copy_button={true}
-      generating={panel.busy} pending_message={panel.busy && panel.phase === 'queued'}
-      editable={panel.busy ? null : 'user'} _retryable={!panel.busy} selectable={true}
-      feedback_options={[]} allow_file_downloads={true} show_copy_all_button={false}
-      placeholder={'### 开始对话\n输入消息，上传、粘贴或拖入图片。历史提问可编辑并创建分支。'}
-      onselect={data => selectedMessage = path[nodeIndex(data.index)].id}
-      onedit={data => act('chat_edit', {node:path[nodeIndex(data.index)].id, text:data.value, params:{...values}})}
-      onretry={data => retry(path[nodeIndex(data.index)])} onclear={() => {if (!panel.busy) act('chat_new');}} />
-    {/if}
-   </div>
-  </div>
-
-  <div class="chat-bottom">
-    {#if !following}<div class="jump"><BaseButton size="sm" onclick={() => scrollPane.scrollTo({top:scrollPane.scrollHeight,behavior:'smooth'})}>回到最新</BaseButton></div>{/if}
-    {#if panel.busy || panel.phase === 'error'}<div class="chat-status"><p role="status">{panel.message}</p><span>
-      {panel.metadata.每秒tokens ? `${panel.metadata.每秒tokens} tokens/s · ` : ''}{panel.metadata.输出tokens ? `${panel.metadata.输出tokens} tokens` : ''}
-    </span></div>{/if}
-    {#if attachments.length}<div class="attachments" aria-label="待发送图片">
-      {#each attachments as image (image.id)}<figure><img src={image.url} alt={image.name} /><figcaption>{image.name}</figcaption>
-        <button class="remove-image" aria-label={'移除图片 '+image.name} onclick={() => attachments = attachments.filter(item => item.id !== image.id)}>×</button>
-      </figure>{/each}
-    </div>{/if}
-    <div class="composer" onpastecapture={event => {
-      if (panel.spec.images && [...event.clipboardData.files].some(file => file.type.startsWith('image/'))) {
-        event.preventDefault();addImages(event.clipboardData.files);
-      }
-    }} onkeypresscapture={event => {
-      if (event.key === 'Enter' && !event.isComposing) {
-        event.stopPropagation();
-        if (!event.shiftKey) {event.preventDefault(); submit();}
-      }
-    }}>
-      {#if panel.spec.images}<button class="attach-button" aria-label="上传图片" title="上传图片，也可粘贴或拖入多张图片" onclick={() => imageInput.click()}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m8 12 6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l9-9a7 7 0 0 1 10 10L12 22" /></svg>
-      </button>{/if}
-      <Block><BaseTextbox label="消息" show_label={false} bind:value={input} lines={3} max_lines={3}
-        placeholder={panel.spec.images ? '发送消息，粘贴或拖入图片…' : '发送消息…'} disabled={panel.busy} onsubmit={submit} /></Block>
-      {#if panel.busy}<BaseButton variant="stop" onclick={() => act('cancel')}>停止</BaseButton>
-      {:else}<BaseButton variant="primary" disabled={(!input.trim() && !attachments.length) || readingImages || panel.spec.ready === false} onclick={submit}>发送</BaseButton>{/if}
     </div>
-    <input type="file" accept="image/*" multiple hidden aria-label="选择聊天图片" bind:this={imageInput}
-      onchange={async () => {await addImages(imageInput.files);imageInput.value = '';}} />
-    {#if readingImages}<p class="image-loading" role="status">正在读取图片…</p>{/if}
-    <div class="chat-footnote"><span>Enter 发送 · Shift + Enter 换行 · 编辑历史提问可创建分支</span>
-      <details class="runtime"><summary>运行信息</summary><p>{Object.entries(panel.metadata).map(([key,value]) => `${key} ${value}`).join(' · ')}</p></details>
-    </div>
-    {#if lastAnswer?.content && targets.length}
-      <details class="transfer"><summary>将回答填入其他工作流</summary><div>
-        <Block allow_overflow={true}><BaseDropdown label="发送到" show_label={false} bind:value={target}
-          choices={targets.map(item => [item.label,item.value])} interactive={true} filterable={false} /></Block>
-        <BaseButton size="sm" onclick={() => onTransfer(target, lastAnswer.content)}>填入参数</BaseButton>
-      </div></details>
-    {/if}
+    {#if drawer}<aside class="pi-drawer"><div class="drawer-heading"><h2>{{settings:'对话设置',tools:'工具',skills:'Skills 与资源',sessions:'会话与分支'}[drawer]}</h2><Button variant="ghost" size="icon-sm" aria-label="关闭设置" onclick={()=>drawer=''}><X size={16}/></Button></div><div class="drawer-content">
+      {#if drawer==='settings'}<p class="hint">{panel.initializing?panel.initialization:'模型参数随工作流保存。'}</p>{#each [...new Set(panel.spec.fields.map(f=>f.area||f.section||'参数'))] as group}<details class="settings-group" open={group==='models'||group==='生成'}><summary>{{models:'模型',prompts:'系统提示词',advanced:'高级设置'}[group]||group}</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>(f.area||f.section||'参数')===group) as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}</div></details>{/each}<p class="hint path-text">{panel.spec.model_root}</p>
+      {:else if drawer==='tools'}<p class="hint">选中的工具会交给 Pi 调用。</p>{#each pi.tools||[] as tool}<div class="resource-row"><div><strong>{tool.name}</strong><p>{tool.description}</p></div><Switch aria-label={'启用 '+tool.name} checked={pi.activeTools?.includes(tool.name)} disabled={panel.busy} onCheckedChange={checked=>act('tools',{tools:checked?[...(pi.activeTools||[]),tool.name]:(pi.activeTools||[]).filter(t=>t!==tool.name)})}/></div>{/each}
+      {:else if drawer==='skills'}<div class="row"><Button variant="outline" size="sm" disabled={panel.busy} onclick={()=>act('reload')}><RefreshCw size={13}/>重载资源</Button><Button variant="ghost" size="sm" onclick={()=>{skillName='';skillSource='---\nname: my-skill\ndescription: 描述这个 skill 的用途\n---\n\n在这里填写执行步骤。';}}>新建 Skill</Button></div><p class="hint">从项目 .pi/skills、.pi/prompts 与 .pi/extensions 加载。</p>
+        {#each pi.skills||[] as skill}<div class="skill-card"><div class="row"><Sparkles size={15}/><strong>{skill.name}</strong></div><p>{skill.description}</p><div class="row"><Button variant="outline" size="sm" onclick={()=>{input='/skill:'+skill.name+' ';}}>使用</Button><Button variant="ghost" size="sm" onclick={()=>act('read_skill',{path:skill.filePath})}>编辑</Button></div></div>{/each}
+        {#if !(pi.skills||[]).length}<div class="empty-resource">添加 SKILL.md 后，点击重载资源即可使用。</div>{/if}
+        {#if skillSource}<section class="skill-editor"><label class="field"><span>Skill 目录名称</span><Input bind:value={skillName}/></label><Textarea aria-label="Skill 源码" rows={14} bind:value={skillSource}/><Button disabled={!skillName||panel.busy} onclick={()=>{act('save_skill',{name:skillName,source:skillSource});skillSource='';}}>保存并重载</Button></section>{/if}
+        <h3 class="resource-title">提示模板</h3>{#each pi.prompts||[] as prompt}<button class="resource-button" onclick={()=>input='/'+prompt.name+' '}>/{prompt.name}<small>{prompt.description}</small></button>{/each}
+        <h3 class="resource-title">扩展</h3>{#each pi.extensions||[] as extension}<p class="hint path-text">{extension.path}</p>{/each}
+        {#each pi.diagnostics||[] as diagnostic}<p class="error-text">{diagnostic.message||String(diagnostic)}</p>{/each}
+      {:else if drawer==='sessions'}<label class="field"><span>会话名称</span><Input placeholder={pi.name} bind:value={name}/></label><div class="row"><Button variant="outline" size="sm" disabled={panel.busy||!name} onclick={()=>act('rename',{name})}>重命名</Button><Button variant="outline" size="sm" disabled={panel.busy||!pi.file} onclick={()=>act('fork')}><GitBranch size={13}/>复制分支</Button><Button variant="ghost" size="sm" disabled={!pi.file} onclick={()=>act('export')}><Download size={13}/></Button></div>
+        <Button class="compact-button" variant="outline" disabled={panel.busy||!messages.length} onclick={()=>act('compact',{text:''})}>压缩上下文</Button>
+        <h3 class="resource-title">会话历史</h3>{#each pi.sessions||[] as session}<button class="session-row" class:selected={session.id===pi.id} disabled={panel.busy} onclick={()=>act('switch',{file:session.path})}><MessageSquare size={14}/><div><strong>{session.name||session.firstMessage||'新对话'}</strong><small>{new Date(session.modified).toLocaleString('zh-CN')} · {session.messageCount} 条消息</small></div></button>{/each}
+        <h3 class="resource-title">当前会话分支</h3>{#each pi.entries||[] as entry}<button class="tree-entry" class:selected={entry.id===pi.leaf} disabled={panel.busy} onclick={()=>act('navigate',{entry:entry.id})}><GitBranch size={12}/><span><small>{entry.role}</small>{entry.label||'工具调用'}</span></button>{/each}
+        {#if targets.length&&lastText}<h3 class="resource-title">填入其他工作流</h3>{#each targets as target}<Button variant="outline" size="sm" onclick={()=>onTransfer(target.value,lastText)}>{target.label}</Button>{/each}{/if}
+      {/if}
+    </div></aside>{/if}
   </div>
+  <input hidden type="file" accept="image/*" multiple bind:this={imageInput} onchange={async()=>{attachments=[...attachments,...await Promise.all([...imageInput.files].map(async file=>({name:file.name,url:await readFile(file)})))];imageInput.value='';}}/>
 </article>
-
-<style>
-  .chat-card{background:white;border:1px solid #dde2e8;border-radius:10px;overflow:visible;min-width:0;display:flex;flex-direction:column;height:calc(100dvh - 124px);min-height:400px;}
-  .chat-card.dragging{outline:2px dashed #d9925c;outline-offset:-4px;}
-  .drop-hint{position:absolute;left:50%;top:35%;transform:translateX(-50%);z-index:80;background:#26364ce8;color:#fff;padding:14px 22px;border-radius:8px;pointer-events:none;}
-  .chat-toolbar,.conversation-bar,.branch-bar,.chat-bottom{flex-shrink:0;}
-  .chat-card:has(.settings){height:auto;}
-  .chat-card:has(.settings) .transcript{height:380px;flex:none;}
-  .chat-toolbar,.conversation-bar,.branch-bar,.branch-control,.chat-status,.composer,.chat-footnote{display:flex;align-items:center;gap:10px;}
-  .chat-toolbar{padding:12px 18px;border-bottom:1px solid #e9ebef;}
-  .model-choice{flex:1;min-width:200px;}
-  .model-choice :global(.block){padding:3px 10px;}
-  .preparation{display:block;font-size:11px;color:#8b6a48;margin-top:4px;}
-  .more{position:relative;font-size:12px;color:#747e8c;}
-  summary{cursor:pointer;white-space:nowrap;}
-  .more>div{position:absolute;right:0;top:25px;z-index:50;display:grid;gap:6px;width:150px;padding:10px;background:white;border:1px solid #e0e4e9;border-radius:8px;box-shadow:0 8px 25px #182b4914;}
-  .settings{padding:16px 18px;background:#f8f9fb;border-bottom:1px solid #e9ebef;}
-  .setting-groups{display:grid;grid-template-columns:1fr 1.5fr 1fr 1.5fr;gap:16px;margin-top:12px;}
-  h3{font-size:11px;font-weight:650;color:#687383;margin-bottom:8px;}
-  .settings-fields{display:grid;gap:8px;}
-  .conversation-bar{padding:10px 18px;font-size:11px;color:#89929f;}
-  .conversation-picker{width:370px;max-width:50%;}
-  .conversation-picker :global(.block){border:0;padding:0;background:transparent;}
-  .conversation-bar>span{margin-left:auto;}
-  .branch-bar{padding:0 18px 8px;flex-wrap:wrap;border-bottom:1px solid #eff1f4;}
-  .branch-control{gap:6px;font-size:11px;color:#6b7788;}
-  .branch-control :global(button){padding:2px 8px;min-width:0;}
-  .transcript{height:0;min-height:160px;flex:1;position:relative;overflow:auto;overflow-anchor:none;overscroll-behavior:contain;padding:0 28px;max-width:1250px;margin:0 auto;width:100%;box-sizing:border-box;}
-  .transcript :global(.bubble-wrap){background:white;height:auto;overflow:visible;}
-  .jump{display:flex;justify-content:center;padding-bottom:5px;}
-  .transcript :global(.message-wrap){padding:8px 0;}
-  .transcript :global(.prose.chatbot.md){opacity:1;line-height:1.75;font-size:14px;}
-  .chat-bottom{padding:0 22px 13px;max-width:1250px;margin:auto;width:100%;box-sizing:border-box;}
-  .chat-status{justify-content:space-between;color:#7d8796;font-size:11px;line-height:1.6;min-height:32px;}
-  .chat-status p{overflow-wrap:anywhere;max-height:80px;overflow:auto;}
-  .chat-status>span{white-space:nowrap;}
-  .composer{align-items:stretch;}
-  .composer :global(.block){flex:1;min-width:0;background:#fafbfc;border-radius:9px;padding:8px 12px;}
-  .composer :global(textarea){font-size:14px;line-height:1.6;}
-  .composer :global(button){width:75px;}
-  .composer button.attach-button{flex:none;align-self:flex-end;width:34px;height:38px;min-width:0;padding:7px;color:#7d8999;background:transparent;border:0;border-radius:6px;cursor:pointer;}
-  .attach-button:hover{background:#eef1f5;}
-  .attach-button svg{width:20px;height:20px;}
-  .attachments{display:flex;gap:7px;overflow-x:auto;padding:7px 0;}
-  .attachments figure{position:relative;flex:none;margin:0;width:78px;height:70px;border:1px solid #e1e6ed;border-radius:6px;overflow:hidden;background:#f4f6f8;}
-  .attachments img{width:100%;height:100%;object-fit:cover;}
-  .attachments figcaption{position:absolute;bottom:0;left:0;right:0;background:#243249a6;color:#fff;font-size:9px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;padding:2px 4px;}
-  .remove-image{position:absolute;right:2px;top:2px;width:20px;height:20px;min-width:0;padding:0;border:0;border-radius:50%;background:#243249c9;color:#fff;cursor:pointer;font-size:16px;}
-  .image-loading{font-size:11px;color:#7d8999;margin:5px 0;}
-  .transcript :global(.component-wrap){width:min(620px,92%);max-width:92%;}
-  .chat-footnote{justify-content:space-between;margin-top:8px;font-size:10px;color:#9aa2ad;}
-  .runtime{position:relative;}
-  .runtime p{position:absolute;bottom:25px;right:0;width:340px;padding:12px;background:#f8f9fb;border:1px solid #e1e5eb;border-radius:8px;font-size:11px;line-height:1.8;color:#667383;z-index:10;}
-  .transfer{font-size:11px;color:#778494;margin-top:10px;}
-  .transfer>div{display:flex;gap:8px;margin-top:7px;}
-  .transfer :global(.block){flex:1;}
-  @media(max-width:1000px){.setting-groups{grid-template-columns:1fr 1fr}.chat-toolbar{flex-wrap:wrap}.transcript{padding:0 14px}.conversation-bar>span{display:none}}
-  @media(max-width:650px){
-    .chat-card{height:calc(100dvh - 112px);min-height:400px;border-radius:7px;}
-    .model-choice{width:100%;flex:auto;min-width:0;}
-    .chat-toolbar{padding:6px 9px;gap:6px;}
-    .chat-toolbar :global(button){font-size:12px;min-height:32px;}
-    .model-choice :global(.block){padding:2px 7px;}
-    .conversation-bar{padding:4px 9px;gap:6px;}
-    .conversation-picker{flex:1;max-width:100%;width:auto;}
-    .conversation-bar>button{font-size:11px;}
-    .transcript{padding:0 8px;min-height:140px;}
-    .transcript :global(.message-buttons){margin:0;}
-    .transcript :global(.prose.chatbot.md){font-size:15px;line-height:1.65;}
-    .chat-bottom{padding:4px 9px max(7px,env(safe-area-inset-bottom));}
-    .composer :global(.block){padding:5px 8px;}
-    .composer :global(textarea){font-size:16px;}
-    .composer :global(button){width:56px;font-size:14px;}
-    .chat-footnote{margin-top:3px;}
-    .chat-footnote>span{display:none;}
-    .chat-footnote .runtime{margin-left:auto;}
-    .branch-bar{padding:0 9px 4px;}
-    .settings{padding:10px;}
-    .setting-groups{gap:10px;}
-    .transfer{margin-top:3px;}
-  }
-</style>

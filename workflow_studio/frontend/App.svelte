@@ -1,10 +1,9 @@
 <script>
   import {onMount, untrack} from 'svelte';
-  import {Block} from '@gradio/atoms';
-  import {BaseButton} from '@gradio/button';
-  import {BaseDropdown} from '@gradio/dropdown';
-  import {BaseTabs} from '@gradio/tabs';
-  import {BaseTabItem} from '@gradio/tabitem';
+  import {Button} from '$lib/components/ui/button';
+  import {Badge} from '$lib/components/ui/badge';
+  import {MessageSquare, Image, FolderOpen, Layers, Settings2, ArrowUpRight, Plus, RefreshCw, Upload, PanelLeftClose, PanelLeftOpen} from '@lucide/svelte';
+  import Dropdown from './ui/Dropdown.svelte';
   import WorkflowView from './WorkflowView.svelte';
   import ChatView from './ChatView.svelte';
   import FilesView from './FilesView.svelte';
@@ -40,6 +39,10 @@
   let settingsReady = $state(false);
   let settingsNotice = $state('设置已保存');
   let toolsOpen = $state(false);
+  let sidebarOpen = $state(true);
+  let pi = $state({});
+  const piVersions = new Map();
+  let activePanel = $derived(state.panels.find(p=>p.id===activeId));
   let codeInput;
   const send = (action, data = {}) => model.send({action, ...data});
   function loadOriginal(id, result) {
@@ -149,6 +152,10 @@
   function updateState() {
     const next = model.get('state');
     for (const panel of next.panels) {
+      if (panel.pi && piVersions.get(panel.id)!==JSON.stringify(panel.pi)) {
+        piVersions.set(panel.id,JSON.stringify(panel.pi));
+        pi[panel.id] = panel.pi;
+      }
       const version = JSON.stringify(panel.spec);
       if (specs[panel.id] !== version) {
         const saved = drafts[panel.id] || panel.params;
@@ -218,6 +225,17 @@
     };
     const updateFiles = () => files = model.get('files');
     const custom = (msg, buffers) => {
+      if (msg.type === 'pi_event') {
+        const current=pi[msg.id] || {messages:[]};
+        let messages=[...(current.messages || [])];
+        const event=msg.event;
+        if(event.type==='message_start') messages.push(event.message);
+        if(event.type==='message_update') messages[messages.length-1]=event.message;
+        if(event.type==='message_end') messages[messages.length-1]=event.message;
+        pi[msg.id]={...current,messages,event};
+      }
+      if (msg.type === 'pi_export') download(msg.name,msg.source,'application/jsonl');
+      if (msg.type === 'pi_skill') pi[msg.id]={...pi[msg.id],editingSkill:{path:msg.path,source:msg.source}};
       if (msg.type === 'chat_delta') {
         chatResponses.set(msg.id, msg.node);
         if (msg.id === activeId && pageVisible) applyChatResponse(msg.id,msg.node);
@@ -267,76 +285,49 @@
   });
 </script>
 
-<main class="gradio-container gradio-style" class:expanded>
-  <header>
-    <BaseButton size="sm" onclick={() => toolsOpen = !toolsOpen}>工作流管理</BaseButton>
-    {#if settingsNotice !== '设置已保存'}<span class="settings-notice" role="status">{settingsNotice}</span>{/if}
-    <BaseButton size="sm" onclick={() => {expanded = expand();}}>{expanded ? '返回 notebook' : '展开工作台'}</BaseButton>
-  </header>
-  {#if toolsOpen}
-  <div class="composition-toolbar">
-    <div class="workflow-picker"><Block allow_overflow={true}><BaseDropdown label="添加工作流" show_label={false}
-      bind:value={addWorkflow} interactive={true} filterable={false} choices={state.workflows.map(w => [w.name,w.id])} /></Block></div>
-    <BaseButton size="sm" variant="primary" disabled={!addWorkflow} onclick={() => send('add', {workflow:addWorkflow})}>添加工作流</BaseButton>
-    <BaseButton size="sm" onclick={() => send('refresh')}>刷新工作流</BaseButton>
-    <div class="toolbar-end"><BaseButton size="sm" onclick={() => codeInput.click()}>导入工作流</BaseButton></div>
-  </div>
-  {/if}
-  {#if state.message}<p class="notice" role="status">{state.message}</p>{/if}
-  {#if transferNotice}<p class="notice" role="status">{transferNotice}</p>{/if}
-  <div class="workflow-tabs">
-    <BaseTabs bind:selected={activeId} initial_tabs={tabs} overflow_behavior="menu">
-      {#each state.panels as panel, index (panel.id)}
-        <BaseTabItem label={tabLabel(panel)} id={panel.id} order={index+1} component_id={index+1} visible={true} interactive={true} scale={0}>
-          {#if panel.spec.chat}
-          <ChatView {panel} active={activeId === panel.id && pageVisible} bind:values={drafts[panel.id]} chat={chats[panel.id]} {send}
-            targets={targetsFor(panel)} onTransfer={transfer} />
-          {:else}
-          <WorkflowView {panel} bind:values={drafts[panel.id]} preview={previews[panel.id] || ''}
-            text={texts[panel.id] || ''} results={results[panel.id] || []} {send}
-            history={histories[panel.selected] || []} loadThumbnail={result => loadThumbnail(panel.id, result)}
-            loadPreview={result => loadPreview(panel.id, result)}
-            targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={result => loadOriginal(panel.id, result)} />
-          {/if}
-        </BaseTabItem>
+<main class="studio" class:expanded class:nav-closed={!sidebarOpen}>
+  <aside class="app-sidebar">
+    <div class="brand"><div class="brand-mark"><Layers size={19}/></div><span>Workflow<span class="brand-light"> Studio</span></span></div>
+    <div class="nav-label">工作空间</div>
+    <nav aria-label="工作空间导航">
+      {#each state.panels as panel (panel.id)}
+        <button class:active={activeId===panel.id} onclick={()=>{activeId=panel.id;toolsOpen=false;}}>
+          {#if panel.spec.chat}<MessageSquare size={17}/>{:else}<Image size={17}/>{/if}
+          <span>{panel.spec.chat?'Pi 对话':panel.spec.tab_name || panel.spec.name.split(' · ')[0]}</span>
+          {#if panel.busy}<i class="status-dot pulse"></i>{/if}
+        </button>
       {/each}
-      <BaseTabItem label="文件" id="__files__" order={0} component_id={0} visible={true} interactive={true} scale={0}>
-        <FilesView {files} {send} />
-      </BaseTabItem>
-    </BaseTabs>
+      <button class:active={activeId==='__files__'} onclick={()=>{activeId='__files__';toolsOpen=false;}}><FolderOpen size={17}/><span>文件与传输</span></button>
+    </nav>
+    <div class="sidebar-bottom"><button class:active={toolsOpen} onclick={()=>toolsOpen=!toolsOpen}><Settings2 size={17}/>工作流管理</button><div class="runtime-label"><i class="status-dot"></i>Notebook 运行时</div><small>llama.cpp · Comfy · Pi</small></div>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <Button variant="ghost" size="icon" aria-label="切换侧栏" onclick={()=>sidebarOpen=!sidebarOpen}>{#if sidebarOpen}<PanelLeftClose size={17}/>{:else}<PanelLeftOpen size={17}/>{/if}</Button>
+      <div class="breadcrumb">工作空间 <span>/</span> <strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
+      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" onclick={()=>expanded=expand()}>{expanded?'返回 notebook':'展开工作台'}<ArrowUpRight size={13}/></Button></div>
+    </header>
+    {#if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
+    {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
+    <div class="app-content">
+      {#if toolsOpen}
+        <section class="management page-padding">
+          <div class="page-title"><div><p class="eyebrow">WORKSPACE</p><h1>工作流管理</h1><p>组合工作空间，管理 Python 工作流。</p></div><Badge variant="outline">{state.panels.length} 个面板</Badge></div>
+          <div class="surface management-add"><Dropdown label="可用工作流" bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加工作流</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button></div>
+          <div class="workflow-list">{#each state.panels as panel}<div class="surface workflow-row"><div class="workflow-icon">{#if panel.spec.chat}<MessageSquare size={20}/>{:else}<Image size={20}/>{/if}</div><div><h3>{panel.spec.name}</h3><p>{panel.selected}</p></div><Badge variant="secondary">{panel.busy?'运行中':'已就绪'}</Badge><Button variant="outline" onclick={()=>send('export',{id:panel.id})}>导出代码</Button><Button variant="ghost" disabled={panel.busy} onclick={()=>send('remove',{id:panel.id})}>移除</Button></div>{/each}</div>
+        </section>
+      {/if}
+      {#each state.panels as panel (panel.id)}
+        <section class="panel-page" hidden={toolsOpen || activeId!==panel.id}>
+          {#if panel.spec.chat}
+            <ChatView {panel} active={activeId===panel.id && pageVisible} bind:values={drafts[panel.id]} pi={pi[panel.id] || {messages:[]}} {send} targets={targetsFor(panel)} onTransfer={transfer}/>
+          {:else}
+            <WorkflowView {panel} bind:values={drafts[panel.id]} preview={previews[panel.id]||''} text={texts[panel.id]||''} results={results[panel.id]||[]} {send} history={histories[panel.selected]||[]} loadThumbnail={r=>loadThumbnail(panel.id,r)} loadPreview={r=>loadPreview(panel.id,r)} targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={r=>loadOriginal(panel.id,r)}/>
+          {/if}
+        </section>
+      {/each}
+      <section class="panel-page" hidden={toolsOpen || activeId!=='__files__'}><FilesView {files} {send}/></section>
+    </div>
   </div>
-  <input type="file" accept=".py" hidden bind:this={codeInput} onchange={async () => {
-    const file = codeInput.files[0];
-    if (file) send('import', {name:file.name, source:await file.text()});
-    codeInput.value = '';
-  }} />
+  <input type="file" accept=".py" hidden bind:this={codeInput} onchange={async()=>{const file=codeInput.files[0];if(file)send('import',{name:file.name,source:await file.text()});codeInput.value='';}}/>
 </main>
-
-<style>
-  main {--block-label-background-fill:transparent;--block-label-text-color:#646d79;--block-label-margin:0;--block-label-padding:0;
-    --block-padding:6px 10px;--block-radius:7px;--input-radius:5px;--layout-gap:10px;--input-padding:6px 8px;--input-border-width:0px;
-    --input-background-fill:transparent;--input-text-size:13px;--block-label-text-size:12px;--block-label-text-weight:500;
-    padding:0 26px;color:#252a32;background:#f6f7f9;font-size:13px;min-height:100%;}
-  header,.composition-toolbar,.toolbar-end {display:flex;align-items:center;gap:10px;}
-  header {min-height:44px;border-bottom:1px solid #e0e3e8;}
-  header :global(button:last-child){margin-left:auto;}
-  .settings-notice{font-size:11px;color:#788391;}
-  .composition-toolbar {padding:14px 0;}
-  .workflow-picker {width:280px;min-width:150px;}
-  .workflow-picker :global(.block) {padding:3px 10px;}
-  .toolbar-end {margin-left:auto;color:#8a929d;font-size:11px;}
-  .notice {color:#727b87;font-size:12px;padding:0 0 12px;}
-  .workflow-tabs :global(.tab-nav) {margin-bottom:14px;}
-  .workflow-tabs :global(.tab-nav button) {font-size:13px;padding:12px 18px;}
-  @media(min-width:1800px){main{padding:0 36px}}
-  @media(max-width:650px){
-    main{padding:0 7px;--input-text-size:16px;--block-label-text-size:12px;--input-padding:6px;}
-    header{min-height:40px;gap:6px;}
-    header :global(button){font-size:11px;padding:4px 7px;min-height:30px;}
-    .composition-toolbar{flex-wrap:wrap;padding:8px 0;gap:6px;}
-    .workflow-picker{flex:1;min-width:180px;}
-    .toolbar-end{margin-left:0;}
-    .workflow-tabs :global(.tab-nav){margin-bottom:7px;}
-    .workflow-tabs :global(.tab-nav button){font-size:12px;padding:9px 10px;min-height:38px;}
-  }
-</style>

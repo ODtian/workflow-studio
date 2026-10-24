@@ -121,7 +121,7 @@ class WorkflowSession:
                       "initializing": False, "initialization": ""}
         self.chat = None
         self.chat_visible = False
-        if spec.get("chat"):
+        if spec.get("chat") and spec.get("chat_engine") != "pi":
             key = (str(owner.workflow_dir), self.id)
             if key not in CHATS:
                 CHATS[key] = ChatTree()
@@ -220,7 +220,7 @@ class WorkflowSession:
             context.check_cancelled()
             if module.SPEC.get("output") == "text":
                 context.text(result, final=True)
-                if not self.chat:
+                if not module.SPEC.get("chat"):
                     filename = time.strftime("%Y%m%d-%H%M%S") + f"-{self.id}.txt"
                     path = self.owner.output_dir / filename
                     path.write_text(result, encoding="utf-8")
@@ -416,7 +416,7 @@ class WorkflowPanel(anywidget.AnyWidget):
                 for item in content["panels"]:
                     session = self.sessions[item["id"]]
                     session.chat_visible = item["visible"]
-                    if item["visible"]:
+                    if item["visible"] and session.chat:
                         session.publish_chat()
                         self.send({"type": "chat_snapshot", "id": session.id, "chat": self.chats[session.id]})
                 return
@@ -438,7 +438,16 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.add(path.name)
                 return
             session = self.sessions[content["id"]]
-            if action == "prepare":
+            if action == "pi":
+                command = content["command"]
+                if command["action"] in ("prompt", "compact"):
+                    if not session.state["busy"]:
+                        session.start({**content["params"], "pi_request":command})
+                else:
+                    import marimo as mo
+                    import pi_runner
+                    mo.Thread(target=pi_runner.control, args=(session, command, content.get("params")), daemon=True).start()
+            elif action == "prepare":
                 session.prepare(content["params"])
             elif action == "cancel":
                 session.cancel.set()
@@ -459,8 +468,9 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.send({"type": "download", "id": session.id, "name": "conversation.json", "mime": "application/json"},
                           buffers=[memoryview(session.chat.export())])
             elif action == "chat_sync":
-                session.publish_chat()
-                self.send({"type": "chat_snapshot", "id": session.id, "chat": self.chats[session.id]})
+                if session.chat:
+                    session.publish_chat()
+                    self.send({"type": "chat_snapshot", "id": session.id, "chat": self.chats[session.id]})
             elif action.startswith("chat_") and not session.state["busy"]:
                 session.chat_action(action, content)
             elif action == "displayed":

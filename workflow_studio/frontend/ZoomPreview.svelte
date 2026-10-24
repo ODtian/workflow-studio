@@ -1,7 +1,7 @@
 <script>
   import {onDestroy} from 'svelte';
-  import {Block} from '@gradio/atoms';
-  import {BaseStaticImage} from '@gradio/image';
+  import {Button} from '$lib/components/ui/button';
+  import {Maximize2, Image} from '@lucide/svelte';
   import PhotoSwipe from 'photoswipe';
   import 'photoswipe/style.css';
   import {i18n} from './bridge.js';
@@ -44,15 +44,18 @@
 </script>
 
 <div class="image-preview" bind:this={container}>
-  <Block padding={false} elem_classes={['result-image']}>
-    <BaseStaticImage show_label={false} alt_text="工作流图片"
-      value={preview ? {url:preview,path:'display.jpg',orig_name:'display.jpg'} : null}
-      buttons={['fullscreen']} bind:fullscreen onfullscreen={open} onselect={open} {i18n} {onload} />
-  </Block>
+  {#if preview}<button class="preview-image" aria-label="放大生成图片" onclick={open}><img src={preview} alt="工作流图片" {onload}/></button><Button class="preview-expand" variant="secondary" size="icon" aria-label="全屏预览" onclick={open}><Maximize2 size={17}/></Button>
+  {:else}<div class="preview-empty"><div><Image size={28}/></div><h2>画面从这里开始</h2><p>填写提示词，点击生成图片。</p></div>{/if}
 </div>
 
 <style>
-  .image-preview,.image-preview :global(>.block){height:100%;width:100%;border:0;background:transparent;margin:0;}
+  .image-preview{position:relative;height:100%;width:100%;}
+  .preview-image{display:block;border:0;background:transparent;padding:20px;width:100%;height:100%;cursor:zoom-in;}
+  .preview-image img{width:100%;height:100%;object-fit:contain;}
+  .image-preview :global(.preview-expand){position:absolute;right:16px;top:16px;}
+  .preview-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted-foreground);gap:12px;}
+  .preview-empty>div{border:1px solid var(--border);background:var(--background);padding:22px;border-radius:18px;margin-bottom:4px;}
+  .preview-empty h2{font-weight:500;font-size:17px;color:var(--foreground);}.preview-empty p{font-size:13px;}
   .image-preview :global(.image-container){height:100%;}
   .image-preview :global(.image-frame){background:transparent;}
   .image-preview :global(img){object-fit:contain;}
