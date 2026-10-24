@@ -1633,7 +1633,7 @@ class MTPDraftProvider(DraftProvider):
         h_tgt_rows = np.ctypeslib.as_array(
             h_tgt,
             shape=(n_tokens, self.n_embd),
-        )
+        ).copy()
 
         previous_row_by_seq: Dict[int, int] = {}
         first_pos_by_seq: Dict[int, int] = {}
@@ -2394,7 +2394,8 @@ class MTPDraftProvider(DraftProvider):
         )
         if n_target_rows <= 0:
             return results
-        h_tgt_rows = np.ctypeslib.as_array(h_tgt, shape=(n_target_rows, self.n_embd))
+        # Draft decoding and rollback reuse llama.cpp's output buffers.
+        h_tgt_rows = np.ctypeslib.as_array(h_tgt, shape=(n_target_rows, self.n_embd)).copy()
 
         plan = self._build_sampled_batch_plan(updates)
         if not plan.context_rows and not plan.pending_rows:
