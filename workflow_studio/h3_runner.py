@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import base64
 import io
+import json
+import os
 from pathlib import Path
 import secrets
 import time
@@ -15,20 +17,27 @@ _conditioning = {}
 FPS = 24
 
 
-def h3_files():
+def model_sources():
     import workspace_store
 
+    records = workspace_store.read().get("h3_models", [])
+    if not records:
+        config = Path(os.environ.get("WORKFLOW_WORKSPACE", ".")) / "studio_config.json"
+        if config.exists():
+            records = json.loads(config.read_text(encoding="utf-8")).get("h3_models", [])
+    return records
+
+
+def h3_files():
     files = model_files()
-    for item in workspace_store.read().get("h3_models", []):
+    for item in model_sources():
         files[item["folder"]].append(item["name"])
     return {folder: sorted({name for name in names if folder == "loras" or "h3" in name.lower() or "minimax" in name.lower()})
             for folder, names in files.items()}
 
 
 def ensure_weights(params, ctx):
-    import workspace_store
-
-    records = {(item["folder"], item["name"]): item for item in workspace_store.read().get("h3_models", [])}
+    records = {(item["folder"], item["name"]): item for item in model_sources()}
     selected = [("diffusion_models", params["model"]), ("text_encoders", params["text_encoder"]),
                 ("vae", params["vae"]), ("vae", params["audio_vae"])]
     selected.extend(("loras", item["name"]) for item in params.get("loras", []) if item["strength"])
