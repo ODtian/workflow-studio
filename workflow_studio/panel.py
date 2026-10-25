@@ -87,11 +87,15 @@ class RunContext:
 
     def progress(self, step, total, preview=None, message=None):
         self.check_cancelled()
-        self.panel.update(step=int(step), total=int(total), message=message or f"执行 {step} / {total}")
+        progress = {"step": int(step), "total": int(total), "message": message or f"执行 {step} / {total}"}
+        self.panel.state = {**self.panel.state, **progress}
+        self.panel.owner.send({"type": "image_progress", "id": self.panel.id,
+                               "run_id": self.panel.state["run_id"], **progress})
         now = time.monotonic()
         if preview is not None and (step == total or now - self.last_preview >= 0.5):
             self.last_preview = now
-            self.panel.owner.set_payload("previews", self.panel.id, image_bytes(preview, preview=True))
+            self.panel.owner.set_payload("previews", self.panel.id, {
+                "data": image_bytes(preview, preview=True), "run_id": self.panel.state["run_id"], "final": False})
 
 
 class PrepareContext(RunContext):
@@ -191,7 +195,8 @@ class WorkflowSession:
                 self.update(initializing=False, initialization=f"{type(exc).__name__}: {exc}")
                 return
 
-    def start(self, values):
+    def start(self, values, *, run_id=None):
+        self.started_at = time.monotonic()
         module = self.owner.load(self.state["selected"])
         params = {**self.params, **values}
         self.params = {key: value for key, value in params.items() if key != "messages"}
@@ -201,13 +206,14 @@ class WorkflowSession:
         self.owner.set_payload("results", self.id, [])
         self.owner.set_payload("texts", self.id, "")
         self.update(busy=True, phase="queued", message="等待推理资源…", step=0,
-                    total=0, elapsed=0, display_ms=0, delivery_ms=0, metadata={})
+                    total=0, elapsed=0, display_ms=0, delivery_ms=0, end_to_end_ms=0,
+                    run_id=run_id or secrets.token_hex(8), metadata={})
         import marimo as mo
         self.worker = mo.Thread(target=self.execute, args=(module, params, self.cancel), daemon=True)
         self.worker.start()
 
     def execute(self, module, params, cancel):
-        started = time.monotonic()
+        started = self.started_at
         context = RunContext(self, cancel)
         acquired = False
         try:
@@ -215,7 +221,8 @@ class WorkflowSession:
                 context.check_cancelled()
                 acquired = INFERENCE_LOCK.acquire(timeout=0.2)
             context.check_cancelled()
-            self.update(phase="running", message="准备工作流…")
+            self.update(phase="running", message="准备工作流…",
+                        metadata={**self.state["metadata"], "排队秒": round(time.monotonic() - started, 3)})
             result = module.run(params, context)
             context.check_cancelled()
             if module.SPEC.get("output") == "text":
@@ -249,9 +256,6 @@ class WorkflowSession:
             images = [images]
         images = [Image.open(image) if isinstance(image, (str, Path)) else image for image in images]
         self.update(phase="publishing", message="显示结果…")
-        self.published_at = time.monotonic()
-        if images:
-            self.owner.set_payload("previews", self.id, image_bytes(images[0]))
         image_fields = {field["key"] for field in spec["fields"] if field["type"] == "image"}
         metadata = {"workflow": self.state["selected"], "params": {
             key: value for key, value in params.items() if key not in image_fields}}
@@ -272,6 +276,12 @@ class WorkflowSession:
         self.owner.histories = self.owner.history_store.snapshot()
         self.owner.set_payload("results", self.id, results)
         self.update(phase="complete", message=f"完成 · {len(results)} 张图片", step=self.state["total"])
+        if images:
+            preview = image_bytes(images[0])
+            self.published_at = time.monotonic()
+            self.owner.set_payload("previews", self.id, {
+                "data": preview, "run_id": self.state["run_id"], "final": True,
+                "server_ms": round((self.published_at - self.started_at) * 1000)})
 
 
 class WorkflowPanel(anywidget.AnyWidget):
@@ -464,7 +474,7 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.publish()
                 self.save_settings()
             elif action == "run" and not session.state["busy"]:
-                session.start(content["params"])
+                session.start(content["params"], run_id=content.get("run_id"))
             elif action == "chat_export" and not session.state["busy"]:
                 self.send({"type": "download", "id": session.id, "name": "conversation.json", "mime": "application/json"},
                           buffers=[memoryview(session.chat.export())])
@@ -475,8 +485,9 @@ class WorkflowPanel(anywidget.AnyWidget):
             elif action.startswith("chat_") and not session.state["busy"]:
                 session.chat_action(action, content)
             elif action == "displayed":
-                if session.state["phase"] in ("publishing", "complete"):
-                    session.update(display_ms=content["ms"], delivery_ms=round((time.monotonic() - session.published_at) * 1000))
+                if content.get("run_id") and content["run_id"] == session.state.get("run_id"):
+                    session.update(display_ms=content["ms"], end_to_end_ms=content["end_to_end_ms"],
+                                   delivery_ms=max(0, content["end_to_end_ms"] - content["server_ms"]))
             elif action == "download":
                 path = self.image_path(content["name"])
                 mime = "text/plain;charset=utf-8" if path.suffix == ".txt" else "image/png"

@@ -13,6 +13,7 @@
   let {model, expand, initialExpanded = true} = $props();
   let state = $state(model.get('state'));
   let previews = $state({});
+  let previewInfo = $state({});
   const previewData = new Map();
   const previewURLs = new Map();
   const originalImages = new Map();
@@ -191,12 +192,15 @@
       if (previewData.get(id) === source) continue;
       if (previewURLs.get(id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(id));
       previewData.set(id,source);
-      previewURLs.set(id,typeof source === 'string' ? source : URL.createObjectURL(new Blob([source],{type:'image/jpeg'})));
+      const frame = source?.data ? source : {data:source};
+      previewURLs.set(id,typeof frame.data === 'string' ? frame.data : URL.createObjectURL(new Blob([frame.data],{type:'image/jpeg'})));
+      previewInfo[id] = {run_id:frame.run_id, final:frame.final, server_ms:frame.server_ms};
     }
     for (const id of previewData.keys()) {
       if (!(id in current)) {
         if (previewURLs.get(id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(id));
         previewData.delete(id);previewURLs.delete(id);
+        delete previewInfo[id];
       }
     }
     previews = Object.fromEntries(previewURLs);
@@ -239,6 +243,10 @@
     };
     const updateFiles = () => files = model.get('files');
     const custom = (msg, buffers) => {
+      if (msg.type === 'image_progress') {
+        state = {...state,panels:state.panels.map(panel => panel.id === msg.id && panel.run_id === msg.run_id
+          ? {...panel,step:msg.step,total:msg.total,message:msg.message} : panel)};
+      }
       if (msg.type === 'pi_event') {
         const current=pi[msg.id] || {messages:[]};
         let messages=[...(current.messages || [])];
@@ -344,7 +352,7 @@
           {#if panel.spec.chat}
             <ChatView {panel} {mobile} active={activeId===panel.id && pageVisible} bind:values={drafts[panel.id]} pi={pi[panel.id] || {messages:[]}} {send} targets={targetsFor(panel)} onTransfer={transfer}/>
           {:else}
-            <WorkflowView {panel} bind:values={drafts[panel.id]} preview={previews[panel.id]||''} text={texts[panel.id]||''} results={results[panel.id]||[]} {send} history={histories[panel.selected]||[]} loadThumbnail={r=>loadThumbnail(panel.id,r)} loadPreview={r=>loadPreview(panel.id,r)} targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={r=>loadOriginal(panel.id,r)}/>
+            <WorkflowView {panel} bind:values={drafts[panel.id]} preview={previews[panel.id]||''} previewInfo={previewInfo[panel.id]||{}} text={texts[panel.id]||''} results={results[panel.id]||[]} {send} history={histories[panel.selected]||[]} loadThumbnail={r=>loadThumbnail(panel.id,r)} loadPreview={r=>loadPreview(panel.id,r)} targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={r=>loadOriginal(panel.id,r)}/>
           {/if}
         </section>
       {/each}
