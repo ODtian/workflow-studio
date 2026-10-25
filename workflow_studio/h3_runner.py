@@ -83,6 +83,8 @@ def load_models(params, ctx):
             started = time.monotonic()
             if name == "model":
                 value = comfy.sd.load_diffusion_model(str(path))
+                import comfy.model_management
+                comfy.model_management.load_models_gpu([value])
             elif name == "text_encoder":
                 value = comfy.sd.load_clip([str(path)], clip_type=comfy.sd.CLIPType.MINIMAX,
                                            embedding_directory=[str(MODELS / "embeddings")])
@@ -204,23 +206,26 @@ def plan_segments(params):
     chunk = max(1, round(float(params.get("segment_seconds", 5)) * FPS))
     if technique == "single":
         chunk = 362
-    carry = int(params.get("context_frames", 22)) if technique in ("motion", "overlap") else 1
-    if technique == "shots":
-        carry = 0
+    carry = int(params.get("context_frames", 22)) if technique in ("motion", "overlap", "shots") else 1
+    boundaries = [round(index * total / len(prompts)) for index in range(len(prompts)+1)] if technique == "shots" and prompts else [0, total]
     segments, start = [], 0
     while start < total:
+        shot_index = next(index for index, end in enumerate(boundaries[1:]) if start < end)
+        shot_start, shot_end = boundaries[shot_index:shot_index+2]
+        continuation = "motion" if technique in ("motion", "overlap", "shots") else "tail"
         overlap = min(carry, start) if segments else 0
-        sample_frames = max(5, min(total - start + overlap, chunk + overlap, 362))
+        if technique == "shots" and start == shot_start:
+            overlap = 0
+        sample_frames = max(5, min(shot_end - start + overlap, chunk + overlap, 362))
         sample_frames += (5 - sample_frames) % 17
         if sample_frames > 362:
             sample_frames -= 17
-        delivered = min(total - start, sample_frames - overlap)
-        index = len(segments)
+        delivered = min(shot_end - start, sample_frames - overlap)
         prompt = params["prompt"]
         if technique == "shots" and prompts:
-            prompt = "\n".join(part for part in (prompt, prompts[min(index, len(prompts)-1)]) if part)
+            prompt = "\n".join(part for part in (prompt, prompts[shot_index]) if part)
         segments.append({"start": start, "frames": delivered, "sample_frames": sample_frames,
-                         "carry": overlap, "prompt": prompt})
+                         "carry": overlap, "prompt": prompt, "continuation": continuation})
         start += delivered
     return segments
 
@@ -322,14 +327,14 @@ def run_h3(params, ctx):
             ctx.check_cancelled()
             ctx.status(f"第 {number+1}/{len(segments)} 段 · 编码条件…")
             segment_first = first if number == 0 else (
-                previous_tail if technique in ("tail_frame", "single") else None)
+                previous_tail if segment["continuation"] == "tail" else None)
             segment_last = last if number == len(segments)-1 else None
             positive, latent = _condition(clip, vae, audio_vae, params, segment, refs,
                                           segment_first, segment_last)
             positive = _guides(positive, latent, params.get("guides", []), segment,
                                vae, audio_vae, width, height)
             trim = 0
-            if previous_latent is not None and technique in ("motion", "overlap"):
+            if previous_latent is not None and segment["carry"] and segment["continuation"] == "motion":
                 positive, trim = MiniMaxH3MotionContext().apply(
                     positive, vae, latent, str(segment["carry"]),
                     audio_context_length=int(params.get("audio_context_frames", 18)),
