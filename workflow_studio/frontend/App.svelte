@@ -38,6 +38,8 @@
   let activeId = $state('');
   let settingsReady = $state(false);
   let settingsNotice = $state('设置已保存');
+  let submittedSettingsSnapshot = '';
+  let settingsRequest = '';
   let toolsOpen = $state(false);
   let sidebarOpen = $state(true);
   let mobile = $state(false);
@@ -144,14 +146,21 @@
 
   $effect(() => {
     const snapshot = settingsSnapshot;
-    if (!settingsReady) return;
+    if (!settingsReady || snapshot === submittedSettingsSnapshot) return;
     settingsNotice = '正在保存设置…';
-    const timer = setTimeout(() => send('settings', JSON.parse(snapshot)), 400);
+    const timer = setTimeout(() => {
+      submittedSettingsSnapshot = snapshot;
+      settingsRequest = crypto.randomUUID();
+      send('settings', {...JSON.parse(snapshot), request:settingsRequest});
+    }, 400);
     return () => clearTimeout(timer);
   });
 
   function updateState() {
     const next = model.get('state');
+    if (next.settings_result?.request === settingsRequest) {
+      settingsNotice = next.settings_result.error ? '设置保存失败' : '设置已保存';
+    }
     for (const panel of next.panels) {
       if (panel.pi && piVersions.get(panel.id)!==JSON.stringify(panel.pi)) {
         piVersions.set(panel.id,JSON.stringify(panel.pi));
@@ -261,7 +270,6 @@
         imageRequests.get(msg.request)(image);
         imageRequests.delete(msg.request);
       }
-      if (msg.type === 'settings_saved') settingsNotice = '设置已保存';
     };
     model.on('change:state', updateState);
     model.on('change:previews', updatePreviews);
@@ -271,6 +279,7 @@
     model.on('change:chats', updateChats);
     model.on('change:files', updateFiles);
     model.on('msg:custom', custom);
+    submittedSettingsSnapshot = settingsSnapshot;
     settingsReady = true;
     return () => {
       compact.removeEventListener('change', updateCompact);

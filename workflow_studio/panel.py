@@ -410,7 +410,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                 return
             if action == "settings":
                 self.save_settings(content["panels"], content["active"], content.get("model_bindings"))
-                self.send({"type": "settings_saved"})
+                self.state = {**self.state, "settings_result": {"request": content.get("request"), "error": ""}}
+                self.send({"type": "settings_saved", "request": content.get("request")})
                 return
             if action == "chat_visibility":
                 for item in content["panels"]:
@@ -500,6 +501,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.send({"type": "workflow", "name": path.name, "source": path.read_text(encoding="utf-8")})
         except Exception as exc:
             self.state = {**self.state, "message": str(exc)}
+            if content.get("action") == "settings":
+                self.state = {**self.state, "settings_result": {"request": content.get("request"), "error": str(exc)}}
 
     def close(self):
         if getattr(self, "files_bridge", None):

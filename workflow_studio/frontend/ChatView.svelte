@@ -31,6 +31,14 @@ function submit(action='prompt'){
 function entryFor(message){return (pi.entries||[]).find(e=>e.role===message.role&&e.timestamp===message.timestamp);}
 async function copy(text,key){try{await copyText(text);copied=key;}catch{copied='error:'+key;}}
 function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skillName,source:skillSource});}
+async function addImages(files){
+  const images=await Promise.all([...files].filter(file=>file.type.startsWith('image/')).map(async file=>({name:file.name,url:await readFile(file)})));
+  attachments=[...attachments,...images];
+}
+function pasteImages(event){
+  const images=[...(event.clipboardData?.files||[])].filter(file=>file.type.startsWith('image/'));
+  if(images.length){event.preventDefault();addImages(images);}
+}
 </script>
 <article class="pi-workspace" aria-label="Pi 对话">
   <div class="pi-heading"><div class="pi-heading-text"><h1 title={pi.name||'Pi 对话'}>{pi.name||'Pi 对话'}</h1></div>
@@ -70,7 +78,7 @@ function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skil
         <div class="composer">
           {#if attachments.length}<div class="attachment-strip">{#each attachments as image,index}<div><img src={image.url} alt={image.name}/><button aria-label="移除附件" onclick={()=>attachments=attachments.filter((_,i)=>i!==index)}>×</button></div>{/each}</div>{/if}
           {#if input.startsWith('/')}<div class="slash-menu">{#each (pi.skills||[]).filter(s=>('/skill:'+s.name).includes(input.split(' ')[0])) as skill}<button title={skill.description} onclick={()=>input='/skill:'+skill.name+' '}><Sparkles size={13}/>/skill:{skill.name}</button>{/each}{#each pi.prompts||[] as prompt}<button title={prompt.description} onclick={()=>input='/'+prompt.name+' '}><FileText size={13}/>/{prompt.name}</button>{/each}</div>{/if}
-          <Textarea aria-label="消息输入" placeholder="消息 · / 调用 Skill" enterkeyhint={mobile?'enter':'send'} rows={2} bind:value={input} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&(!mobile||e.ctrlKey||e.metaKey)){e.preventDefault();submit(panel.busy?'follow_up':'prompt');}}}/>
+          <Textarea aria-label="消息输入" placeholder="消息 · / 调用 Skill" enterkeyhint={mobile?'enter':'send'} rows={2} bind:value={input} onpaste={pasteImages} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&(!mobile||e.ctrlKey||e.metaKey)){e.preventDefault();submit(panel.busy?'follow_up':'prompt');}}}/>
           <div class="composer-toolbar"><div class="row"><Button variant="ghost" size="icon-sm" aria-label="添加图片" onclick={()=>imageInput.click()}><Paperclip size={17}/></Button><button class="model-caption" aria-label="选择对话模型" onclick={()=>drawer='settings'}><span>{(values.model||'').split('/').at(-1)?.replace('.gguf','')}</span><ChevronDown size={12}/></button></div>
             <div class="row">{#if panel.busy}<Button variant="ghost" size="sm" disabled={!input.trim()} onclick={()=>submit('steer')}>引导</Button><Button variant="outline" size="sm" disabled={!input.trim()} onclick={()=>submit('follow_up')}>排队</Button><Button variant="destructive" size="icon" aria-label="停止生成" onclick={()=>send('cancel',{id:panel.id})}><Square size={13}/></Button>{:else}<Button size="icon" aria-label="发送消息" disabled={!input.trim()&&!attachments.length} onclick={()=>submit()}><ArrowUp size={18}/></Button>{/if}</div>
           </div>
@@ -97,5 +105,5 @@ function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skil
       {/if}
     </div></aside>{/if}
   </div>
-  <input hidden type="file" accept="image/*" multiple bind:this={imageInput} onchange={async()=>{attachments=[...attachments,...await Promise.all([...imageInput.files].map(async file=>({name:file.name,url:await readFile(file)})))];imageInput.value='';}}/>
+  <input hidden type="file" accept="image/*" multiple bind:this={imageInput} onchange={async()=>{await addImages(imageInput.files);imageInput.value='';}}/>
 </article>
