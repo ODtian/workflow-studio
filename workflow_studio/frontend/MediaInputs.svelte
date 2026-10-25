@@ -1,13 +1,20 @@
 <script>
   import {Button} from '$lib/components/ui/button';
   import {Input} from '$lib/components/ui/input';
+  import {Switch} from '$lib/components/ui/switch';
   import {Plus, X, Image, Film, Music, ClipboardPaste} from '@lucide/svelte';
   import {readFile} from './bridge.js';
   let {value=$bindable([]), timeline=false, busy=false, label='参考素材'}=$props();
   let picker, path=$state(''), time=$state(0), error=$state('');
   const kindOf = file => file.type?.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(file.name) ? 'video'
     : file.type?.startsWith('audio/') || /\.(wav|mp3|flac|ogg|m4a)$/i.test(file.name) ? 'audio' : 'image';
-  const tag = (item,index) => timeline ? `${item.time||0} s` : `<${{image:'Picture',video:'Video',audio:'Audio'}[item.kind]} ${value.slice(0,index+1).filter(v=>v.kind===item.kind).length}>`;
+  function tag(item,index) {
+    if(timeline)return `${item.time||0} s`;
+    const ordinal=value.slice(0,index+1).filter(v=>v.kind===item.kind).length;
+    const videoAudio=value.filter(v=>v.kind==='video'&&v.include_audio).length;
+    const label=`<${{image:'Picture',video:'Video',audio:'Audio'}[item.kind]} ${ordinal+(item.kind==='audio'?videoAudio:0)}>`;
+    return item.kind==='video'&&item.include_audio ? label+` · <Audio ${value.slice(0,index+1).filter(v=>v.kind==='video'&&v.include_audio).length}>` : label;
+  }
   async function addFiles(files) {
     error='';
     try {
@@ -43,6 +50,7 @@
     <div class="media-item">
       <div class="media-thumb">{#if item.kind==='image'&&item.data}<img src={item.data} alt={item.name}/>{:else if item.kind==='video'}<Film size={20}/>{:else if item.kind==='audio'}<Music size={20}/>{:else}<Image size={20}/>{/if}</div>
       <div class="media-name"><span title={item.path||item.name}>{item.name}</span><code>{tag(item,index)}</code></div>
+      {#if item.kind==='video'&&!timeline}<Switch aria-label={'引用视频声音 '+item.name} title="引用视频声音" checked={item.include_audio||false} disabled={busy} onCheckedChange={checked=>value=value.map((v,i)=>i===index?{...v,include_audio:checked}:v)}/>{/if}
       {#if timeline}<Input type="number" aria-label={'关键帧时间 '+(index+1)} min={0} step={0.1} value={item.time||0} disabled={busy} oninput={event=>value=value.map((v,i)=>i===index?{...v,time:Number(event.currentTarget.value)}:v)}/>{/if}
       <Button size="icon-sm" variant="ghost" aria-label={'移除 '+item.name} disabled={busy} onclick={()=>value=value.filter((_,i)=>i!==index)}><X size={13}/></Button>
     </div>

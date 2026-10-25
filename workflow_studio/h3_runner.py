@@ -21,7 +21,7 @@ def h3_files():
     files = model_files()
     for item in workspace_store.read().get("h3_models", []):
         files[item["folder"]].append(item["name"])
-    return {folder: sorted({name for name in names if "h3" in name.lower() or "minimax" in name.lower()})
+    return {folder: sorted({name for name in names if folder == "loras" or "h3" in name.lower() or "minimax" in name.lower()})
             for folder, names in files.items()}
 
 
@@ -176,7 +176,7 @@ def _references(items, width, height):
         elif kind == "video":
             index = len(videos) + 1
             videos[f"ref_video_{index}"] = read_video(item, width, height)
-            audio = read_audio(item)
+            audio = read_audio(item) if item.get("include_audio") else None
             if audio is not None:
                 video_audios[f"ref_video_audio_{index}"] = audio
         elif kind == "audio":

@@ -4,6 +4,9 @@ from runtime_options import sampling_options
 from size_presets import common_size_presets
 
 _files = model_files()
+_files["diffusion_models"] = [name for name in _files["diffusion_models"] if "moss" in name.lower()]
+_files["text_encoders"] = [name for name in _files["text_encoders"] if "qwen3.5" in name.lower()]
+_files["vae"] = [name for name in _files["vae"] if "flux2" in name.lower()]
 _samplers, _schedulers = sampling_options()
 _ready = all(_files[folder] for folder in ("diffusion_models", "text_encoders", "vae"))
 
