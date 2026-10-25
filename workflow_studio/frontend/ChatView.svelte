@@ -3,12 +3,14 @@ import {onMount} from 'svelte';
 import {Button} from '$lib/components/ui/button';import {Badge} from '$lib/components/ui/badge';import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
 import {Plus,ArrowUp,Square,Paperclip,Settings2,Wrench,Sparkles,History,GitBranch,Copy,Download,RefreshCw,X,MessageSquare,ChevronDown,Check,Terminal,FileText} from '@lucide/svelte';
 import Field from './Field.svelte';import Markdown from './Markdown.svelte';import {readFile,copyText} from './bridge.js';import {followTail} from './followTail.js';
+import {parameterFields} from './modelBindings.js';
 let {panel,active=true,mobile=false,values=$bindable(),pi={messages:[]},send,targets=[],onTransfer}=$props();
 let input=$state(''),drawer=$state(''),attachments=$state([]),name=$state(''),skillName=$state(''),skillSource=$state(''),copied=$state(''),queue=$state([]),following=$state(true);
 let skillEditorOpen=$state(false),skillSaving=$state(false),skillNotice=$state(''),skillSaveError=$state(false);
 let scrollRequest=$state(0);
 let imageInput,scrollPane;
 let messages=$derived(pi.messages||[]);
+let fields=$derived(parameterFields(panel.spec,values.model).filter(field=>!field.hidden));
 let lastText=$derived(messages.filter(m=>m.role==='assistant').at(-1)?.content?.filter(p=>p.type==='text').map(p=>p.text).join('\n')||'');
 const act=(action,data={})=>send('pi',{id:panel.id,params:{...values},command:{action,...data}});
 const plain=content=>typeof content==='string'?content:(content||[]).filter(p=>p.type==='text').map(p=>p.text).join('\n');
@@ -78,7 +80,7 @@ function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skil
       </div>
     </div>
     {#if drawer}<aside class="pi-drawer"><div class="drawer-heading"><h2 title={drawer==='tools'&&panel.busy?'工具调整将在下一轮推理生效。':undefined}>{{settings:'对话设置',tools:'工具',skills:'Skills 与资源',sessions:'会话与分支'}[drawer]}</h2><Button variant="ghost" size="icon-sm" aria-label="关闭设置" onclick={()=>drawer=''}><X size={16}/></Button></div><div class="drawer-content">
-      {#if drawer==='settings'}{#if panel.initializing}<p class="hint">{panel.initialization}</p>{/if}{#each [...new Set(panel.spec.fields.map(f=>f.area||f.section||'参数'))] as group}<details class="settings-group" open={group==='models'||group==='生成'}><summary>{{models:'模型',prompts:'系统提示词',advanced:'高级设置'}[group]||group}</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>(f.area||f.section||'参数')===group) as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}</div></details>{/each}
+      {#if drawer==='settings'}{#if panel.initializing}<p class="hint">{panel.initialization}</p>{/if}{#each [...new Set(fields.map(f=>f.area||f.section||'参数'))] as group}<details class="settings-group" open={group==='models'||group==='生成'}><summary>{{models:'模型',prompts:'系统提示词',advanced:'高级设置'}[group]||group}</summary><div class="settings-fields">{#each fields.filter(f=>(f.area||f.section||'参数')===group) as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}</div></details>{/each}
       {:else if drawer==='tools'}{#each pi.tools||[] as tool}<div class="resource-row"><div><strong title={tool.description}>{tool.name}</strong></div><Switch aria-label={'启用 '+tool.name} checked={pi.activeTools?.includes(tool.name)} onCheckedChange={checked=>act('tools',{tools:checked?[...(pi.activeTools||[]),tool.name]:(pi.activeTools||[]).filter(t=>t!==tool.name)})}/></div>{/each}
       {:else if drawer==='skills'}<div class="row"><Button variant="outline" size="sm" disabled={panel.busy} onclick={()=>act('reload')}><RefreshCw size={13}/>重载资源</Button><Button variant="ghost" size="sm" onclick={()=>{skillName='';skillSource='---\nname: my-skill\ndescription: 描述这个 skill 的用途\n---\n\n在这里填写执行步骤。';skillEditorOpen=true;skillNotice='';}}>新建 Skill</Button></div>
         {#each pi.skills||[] as skill}<div class="skill-card"><strong title={skill.description}>{skill.name}</strong><div class="row"><Button variant="outline" size="sm" onclick={()=>{input='/skill:'+skill.name+' ';}}>使用</Button><Button variant="ghost" size="sm" onclick={()=>act('read_skill',{path:skill.filePath})}>编辑</Button></div></div>{/each}

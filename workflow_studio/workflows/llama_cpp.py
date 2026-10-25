@@ -1,24 +1,34 @@
 """In-process llama.cpp text and image chat with GGUF and MTP."""
+import importlib
+import gguf_roles
+import template_parameters
+import llama_runner
+
+for module in (gguf_roles, template_parameters, llama_runner):
+    importlib.reload(module)
+
 from llama_runner import (MODELS, DEFAULT_MODEL, DEFAULT_MTP, DEFAULT_MMPROJ,
-                          model_files, companion_files, prepare_llama, run_llama, reasoning_control)
+                          model_files, companion_files, prepare_llama, run_llama, thinking_control, reasoning_control)
 from pi_runner import prepare_pi, run_pi
 
 _models = model_files()
+_model = DEFAULT_MODEL if DEFAULT_MODEL in _models else next(iter(_models), '')
+_projectors = companion_files('mmproj')
+_drafts = companion_files('mtp')
 SPEC = {
     "name": "pi · 对话", "tab_name": "pi", "chat_engine": "pi", "output": "text", "chat": True, "images": True,
     "run_label": "发送", "refresh_label": "刷新模型列表", "model_root": str(MODELS / "LLM"),
     "model_binding_fields": ["thinking", "reasoning_effort", "mmproj", "mtp", "speculative_tokens"],
+    "model_controls": {model: [thinking_control(model), reasoning_control(model)] for model in _models},
     "prepare_fields": ["model", "mmproj", "mtp", "n_ctx", "n_gpu_layers", "n_batch", "chat_format", "speculative_tokens"],
     "ready": bool(_models), "description": "进程内 GGUF 推理，支持图片输入、Thinking 和 MTP 加速。",
     "fields": [
         {"key": "model", "label": "GGUF 模型", "type": "select", "area": "models", "options": _models,
-         "default": DEFAULT_MODEL},
+         "default": _model},
         {"key": "system_prompt", "label": "系统提示词", "type": "textarea", "area": "prompts", "persist": True,
          "rows": 2, "default": "You are a helpful assistant."},
-        {"key": "thinking", "label": "Thinking · enable_thinking", "type": "select", "section": "生成",
-         "default": "off", "options": [{"label": "模型默认", "value": "auto"},
-                    {"label": "开启", "value": "on"}, {"label": "关闭", "value": "off"}]},
-        reasoning_control(),
+        thinking_control(_model),
+        reasoning_control(_model),
         {"key": "max_tokens", "label": "最大输出 tokens", "type": "number", "section": "生成",
          "default": 2048, "min": 1, "step": 64},
         {"key": "temperature", "label": "Temperature", "type": "number", "section": "生成",
@@ -37,12 +47,14 @@ SPEC = {
          "options": [{"label": "保留模型，加快下轮对话", "value": "keep"},
                      {"label": "生成后释放显存", "value": "release"}]},
         {"key": "mmproj", "label": "图像投影器 mmproj", "type": "select", "section": "加载",
-         "default": DEFAULT_MMPROJ, "hint": "按 GGUF 元数据筛选图像投影器；手动选择后随主模型保存。",
-         "options": [{"label": "关闭", "value": ""}] + companion_files("mmproj")},
+         "default": DEFAULT_MMPROJ if _model == DEFAULT_MODEL and DEFAULT_MMPROJ in _projectors else '',
+         "hint": "按 GGUF 元数据筛选图像投影器；手动选择后随主模型保存。",
+         "options": [{"label": "关闭", "value": ""}] + _projectors},
         {"key": "mtp", "label": "MTP 草稿头", "type": "select", "section": "加载",
-         "default": DEFAULT_MTP, "hint": "按 GGUF 元数据筛选含 MTP 权重的文件；主模型自带 MTP 时选择内嵌。",
+         "default": DEFAULT_MTP if _model == DEFAULT_MODEL and DEFAULT_MTP in _drafts else '',
+         "hint": "按 GGUF 元数据筛选含 MTP 权重的文件；主模型自带 MTP 时选择内嵌。",
          "options": [{"label": "关闭", "value": ""},
-                     {"label": "使用主模型内嵌 MTP", "value": "embedded"}] + companion_files("mtp")},
+                     {"label": "使用主模型内嵌 MTP", "value": "embedded"}] + _drafts},
         {"key": "speculative_tokens", "label": "MTP 预测步数", "type": "number", "section": "加载",
          "default": 2, "min": 0, "max": 4, "step": 1, "hint": "0 关闭；当前模型推荐 2。"},
         {"key": "n_ctx", "label": "上下文长度", "type": "number", "area": "advanced",

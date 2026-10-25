@@ -16,7 +16,7 @@ async function replaceFromClipboard(){
 {#if field.type==='lora_stack'}<LoraStack bind:value options={field.options} {busy} {idPrefix}/>
 {:else if field.type==='boolean'}
 <label class="field switch-field"><span title={field.hint}>{field.label}</span><Switch bind:checked={value} disabled={busy}/></label>
-{:else if field.type==='select'}<Dropdown label={field.label} show_label={!compact} bind:value choices={value && !options.some(o=>o[1]===value)?[...options,[value,value]]:options} interactive={!busy} filterable={true} info={field.hint}/>
+{:else if field.type==='select'}<Dropdown label={field.label} show_label={!compact} bind:value choices={options} interactive={!busy} filterable={true} info={field.hint}/>
 {:else if paste && ['text','textarea'].includes(field.type)}
 <div class="field">
   <div class="field-heading"><label for={inputId} title={field.hint}>{field.label}</label><Button variant="ghost" size="icon-sm" disabled={busy} aria-label={'用剪贴板替换'+field.label} title={'用剪贴板替换'+field.label} onclick={replaceFromClipboard}><ClipboardPaste size={14}/></Button></div>

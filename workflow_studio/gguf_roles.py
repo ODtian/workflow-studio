@@ -43,14 +43,14 @@ def _profile(path, modified, size):
         metadata = {}
         for _ in range(fields):
             key = _text(stream)
-            keep = key in {'general.architecture', 'general.type'} or key.endswith(
+            keep = key in {'general.architecture', 'general.type', 'tokenizer.chat_template'} or key.endswith(
                 ('.block_count', '.nextn_predict_layers'))
             result = _value(stream, _number(stream, 'I'), keep)
             if keep:
                 metadata[key] = result
         architecture = metadata.get('general.architecture', '')
         if metadata.get('general.type') == 'mmproj' or architecture == 'clip':
-            return {'role': 'mmproj', 'has_mtp': False}
+            return {'role': 'mmproj', 'has_mtp': False, 'chat_template': ''}
         nextn = metadata.get(architecture + '.nextn_predict_layers', 0)
         role = 'model'
         if nextn:
@@ -63,7 +63,8 @@ def _profile(path, modified, size):
                     has_main_blocks = True
                 stream.seek(8 * _number(stream, 'I') + 12, 1)
             role = 'model' if has_main_blocks else 'mtp'
-        return {'role': role, 'has_mtp': nextn > 0}
+        return {'role': role, 'has_mtp': nextn > 0,
+                'chat_template': metadata.get('tokenizer.chat_template', '')}
 
 
 def profile(path):

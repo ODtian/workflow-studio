@@ -12,49 +12,27 @@ import subprocess
 import sys
 import time
 from functools import lru_cache
-from template_parameters import reasoning_field, template_options
+from template_parameters import thinking_field, reasoning_field, template_options
 from gguf_roles import profile as gguf_profile, validate_files
 from tool_protocol import visible_text, parse_calls
 
 ROOT = Path(__file__).parent
 MODELS = Path(os.environ.get("WORKFLOW_MODELS_DIR", "/tmp/molab-comfy-runtime/models"
                           if Path("/marimo").exists() else ROOT / "models"))
-_loaded = None
-_loaded_key = None
-_library = None
+_loaded = globals().get('_loaded')
+_loaded_key = globals().get('_loaded_key')
+_library = globals().get('_library')
 MODEL_DIRECTORY = "Qwen3.8-27B-Uncensored-GGUF"
 DEFAULT_MODEL = MODEL_DIRECTORY + "/Qwen3.8-27B-Uncensored-OrcaRouter-Q8_0.gguf"
 DEFAULT_MTP = MODEL_DIRECTORY + "/MTP/Qwen3.8-27B-Uncensored-OrcaRouter-MTP-Q8_0.gguf"
 DEFAULT_MMPROJ = MODEL_DIRECTORY + "/AUX/mmproj-Qwen3.8-27B-Uncensored-OrcaRouter-BF16.gguf"
 
 
-def catalog():
-    import workspace_store
-    entries = json.loads((ROOT / "llm_models.json").read_text(encoding="utf-8"))
-    entries.update(workspace_store.read().get("llm_catalog", {}))
-    return entries
-
-
-def ensure_files(params, ctx):
-    entry = catalog().get(params["model"])
-    if entry:
-        directory = MODELS / "LLM" / entry["directory"]
-        selected = [params["model"], params.get("mmproj"), params.get("mtp")]
-        missing = [item["name"] for item in entry["files"]
-                   if entry["directory"] + "/" + item["name"] in selected
-                   and not (directory / item["name"]).exists()]
-        if missing:
-            from huggingface_hub import snapshot_download
-            ctx.status("下载 GGUF 主模型及配套权重…")
-            snapshot_download(repo_id=entry["download_repo"], revision=entry["revision"],
-                              local_dir=directory, allow_patterns=missing, max_workers=3)
-
-
 def model_files():
     directory = MODELS / "LLM"
     directory.mkdir(parents=True, exist_ok=True)
     local = {name for name, info in gguf_files() if info["role"] == "model"}
-    return sorted(local | {name for name in catalog() if name.endswith(".gguf")})
+    return sorted(local)
 
 
 def gguf_files():
@@ -67,7 +45,7 @@ def gguf_files():
 def companion_files(role):
     local = {name for name, info in gguf_files()
              if info["role"] == role or role == "mtp" and info["has_mtp"]}
-    return sorted(local | {DEFAULT_MTP if role == "mtp" else DEFAULT_MMPROJ})
+    return sorted(local)
 
 
 def selected_file(params, key):
@@ -171,7 +149,6 @@ def configure_chat(llm, params, channels):
 def load_model(params, ctx):
     global _loaded, _loaded_key
     started = time.monotonic()
-    ensure_files(params, ctx)
     path = MODELS / "LLM" / params["model"]
     projector = selected_file(params, "mmproj")
     mtp = params.get("mtp", "")
@@ -210,29 +187,24 @@ def load_model(params, ctx):
     return _loaded, llama_cpp
 
 
-def reasoning_control():
-    return reasoning_field(_loaded)
+def thinking_control(model=''):
+    template = gguf_profile(MODELS / 'LLM' / model)['chat_template'] if model else ''
+    return thinking_field(template)
 
 
-def publish_template_controls(llm, ctx):
-    session = ctx.panel
-    spec = session.state["spec"]
-    field = reasoning_field(llm)
-    fields = [field if item["key"] == "reasoning_effort" else item for item in spec["fields"]]
-    if fields != spec["fields"]:
-        session.update(spec={**spec, "fields": fields})
+def reasoning_control(model=''):
+    template = gguf_profile(MODELS / 'LLM' / model)['chat_template'] if model else ''
+    return reasoning_field(template)
 
 
 def prepare_llama(params, ctx):
     started = time.monotonic()
     llm, _ = load_model(params, ctx)
-    publish_template_controls(llm, ctx)
     ctx.metadata(预载秒=round(time.monotonic() - started, 3))
 
 
 def run_llama(params, ctx):
     llm, llama_cpp = load_model(params, ctx)
-    publish_template_controls(llm, ctx)
     channels = ResponseChannels()
     supports_thinking = configure_chat(llm, params, channels)
     ctx.metadata(引擎="llama.cpp · notebook 进程内", 模型=params["model"],

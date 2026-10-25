@@ -8,7 +8,7 @@
   import ChatView from './ChatView.svelte';
   import FilesView from './FilesView.svelte';
   import {download, downloadBuffer} from './bridge.js';
-  import {filesForModel, bindingFromValues} from './modelBindings.js';
+  import {filesForModel, bindingFromValues, parameterFields, fieldValue} from './modelBindings.js';
 
   let {model, expand, initialExpanded = true} = $props();
   let state = $state(model.get('state'));
@@ -96,7 +96,7 @@
           if (previous === undefined && !modelBindings[modelName]) {
             modelBindings = {...modelBindings, [modelName]:selected};
           } else {
-            drafts[panel.id] = {...values, ...filesForModel(modelBindings, modelName, fields)};
+            drafts[panel.id] = {...values, ...filesForModel(modelBindings, modelName, fields, parameterFields(panel.spec, modelName))};
           }
         } else if (JSON.stringify(modelBindings[modelName]) !== JSON.stringify(selected)) {
           modelBindings = {...modelBindings, [modelName]:selected};
@@ -160,10 +160,10 @@
       const version = JSON.stringify(panel.spec);
       if (specs[panel.id] !== version) {
         const saved = drafts[panel.id] || panel.params;
-        drafts[panel.id] = Object.fromEntries(panel.spec.fields.map(field => {
-          let value = saved[field.key] ?? field.default ?? '';
-          if (field.area === 'models' && field.type === 'select' && !value) value = field.default ?? '';
-          return [field.key, value];
+        const modelField = panel.spec.fields.find(field => field.key === 'model');
+        const selectedModel = modelField ? fieldValue(modelField, saved.model ?? modelField.default) : '';
+        drafts[panel.id] = Object.fromEntries(parameterFields(panel.spec, selectedModel).map(field => {
+          return [field.key, fieldValue(field, saved[field.key] ?? field.default ?? '')];
         }));
         specs[panel.id] = version;
       }
