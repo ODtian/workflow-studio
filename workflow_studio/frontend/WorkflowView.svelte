@@ -7,8 +7,10 @@ let tab=$state('preview'),imageIndex=$state(0),modelsOpen=$state(false),displayM
 let mobileView=$state('settings');
 let requestedRun=$state(''),totalMs=$state(0),elapsedMs=$state(0);
 let requestStartedAt=0;
-let fields=$derived(panel.spec.fields||[]),parameterFields=$derived(fields.filter(f=>!f.area)),groups=$derived([...new Set(parameterFields.map(f=>f.section||'参数'))]);
+const visible=field=>Object.entries(field.when||{}).every(([key,expected])=>Array.isArray(expected)?expected.includes(values[key]):values[key]===expected);
+let fields=$derived((panel.spec.fields||[]).filter(visible)),parameterFields=$derived(fields.filter(f=>!f.area)),groups=$derived([...new Set(parameterFields.map(f=>f.section||'参数'))]);
 let isText=$derived(panel.spec.output==='text'),activeResult=$derived(results[imageIndex]);
+let isVideo=$derived(previewInfo.mime?.startsWith('video/'));
 const act=(action,data={})=>send(action,{id:panel.id,...data});let receivedAt=0;
 $effect(()=>{if(preview)receivedAt=performance.now();});$effect(()=>{results;imageIndex=0;});
 function generate(){
@@ -23,7 +25,7 @@ $effect(()=>{
 async function loaded(event){
   const frame=previewInfo,source=preview,image=event.currentTarget;
   if(!frame.final||frame.run_id!==requestedRun||!requestStartedAt||totalMs)return;
-  await image.decode();
+  if(image.decode)await image.decode();
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   if(image.currentSrc!==source||frame.run_id!==requestedRun)return;
   displayMs=Math.round(performance.now()-receivedAt);totalMs=Math.round(performance.now()-requestStartedAt);
@@ -42,15 +44,15 @@ let timingLabel=$derived(requestedRun&&!totalMs&&!['error','cancelled'].includes
       <div class="generation-prompts">{#each fields.filter(f=>f.area==='prompts') as field}<div class:secondary-prompt={field.key==='negative_prompt'}><Field field={{...field,rows:field.key==='negative_prompt'?1:Math.min(field.rows||3,3)}} bind:value={values[field.key]} busy={panel.busy} paste/></div>{/each}</div>
       {#each groups as group}<details class="settings-group" open><summary>{group}<ChevronDown size={13}/></summary><div class="parameter-grid">
       {#if panel.spec.size_presets?.section===group}<div class="wide"><ResolutionControls presets={panel.spec.size_presets} bind:values busy={panel.busy}/></div>{/if}
-      {#each parameterFields.filter(f=>(f.section||'参数')===group) as field}<div class:wide={['boolean','text','textarea','image','lora_stack'].includes(field.type)}><Field {field} bind:value={values[field.key]} busy={panel.busy}/></div>{/each}</div></details>{/each}
+      {#each parameterFields.filter(f=>(f.section||'参数')===group) as field}<div class:wide={['boolean','text','textarea','image','lora_stack','media_list','keyframe_list'].includes(field.type)}><Field {field} bind:value={values[field.key]} busy={panel.busy}/></div>{/each}</div></details>{/each}
       {#if fields.some(f=>f.area==='advanced')}<details class="settings-group"><summary>高级设置<ChevronDown size={13}/></summary><div class="settings-fields">{#each fields.filter(f=>f.area==='advanced') as field}<Field {field} bind:value={values[field.key]} busy={panel.busy}/>{/each}</div></details>{/if}
     </div>
   </section>
   <section class="generation-output">
-    <div class="output-toolbar"><div class="segmented"><Button variant={tab==='preview'?'secondary':'ghost'} size="sm" onclick={()=>tab='preview'}><Image size={14}/>预览</Button><Button variant={tab==='history'?'secondary':'ghost'} size="sm" onclick={()=>tab='history'}><History size={14}/>历史 <span class="count">{history.length}</span></Button></div><div class="row">{#if activeResult}<Badge variant="outline">{activeResult.width} × {activeResult.height}</Badge>{/if}<Button variant="outline" size="sm" disabled={!activeResult} onclick={()=>act('download',{name:activeResult.name})}><Download size={14}/>下载原图</Button></div></div>
-    {#if tab==='history'}<div class="history-content"><ImageHistory {history} {loadThumbnail} {loadPreview} download={r=>act('download',{name:r.name})}/></div>
+    <div class="output-toolbar"><div class="segmented"><Button variant={tab==='preview'?'secondary':'ghost'} size="sm" onclick={()=>tab='preview'}><Image size={14}/>预览</Button><Button variant={tab==='history'?'secondary':'ghost'} size="sm" onclick={()=>tab='history'}><History size={14}/>历史 <span class="count">{history.length}</span></Button></div><div class="row">{#if activeResult}<Badge variant="outline">{activeResult.width} × {activeResult.height}{activeResult.kind==='video'?` · ${activeResult.duration.toFixed(1)} s`:''}</Badge>{/if}<Button variant="outline" size="sm" disabled={!activeResult} onclick={()=>act('download',{name:activeResult.name})}><Download size={14}/>{activeResult?.kind==='video'?'下载视频':'下载原图'}</Button></div></div>
+    {#if tab==='history'}<div class="history-content"><ImageHistory {history} {loadThumbnail} {loadPreview} {loadOriginal} download={r=>act('download',{name:r.name})}/></div>
     {:else}<div class="generation-canvas" class:working={panel.busy}>
-      {#if isText}<Textarea value={text} readonly rows={20} aria-label="文本结果"/>{:else}<ZoomPreview {preview} result={activeResult} {loadOriginal} onload={loaded}/>{/if}
+      {#if isText}<Textarea value={text} readonly rows={20} aria-label="文本结果"/>{:else if isVideo}<video class="video-result" src={preview} controls playsinline preload="auto" onloadeddata={loaded} aria-label="生成视频"></video>{:else}<ZoomPreview {preview} result={activeResult} {loadOriginal} onload={loaded}/>{/if}
     </div>
     <div class="generation-bottom"><Progress value={panel.step} max={panel.total||1} aria-label="执行进度"/><div class="output-status"><div class="row"><i class="status-dot" class:pulse={panel.busy}></i><span role="status">{requestedRun&&requestedRun!==panel.run_id?'提交任务…':panel.message}{panel.busy&&panel.total?` · ${panel.step}/${panel.total}`:''}</span></div><span title="点击生成至最终图片显示">{timingLabel}</span></div>
     {#if results.length>1}<div class="row">{#each results as result,index}<Button size="sm" variant={imageIndex===index?'secondary':'ghost'} onclick={()=>{imageIndex=index;act('show_result',{name:result.name});}}>图片 {index+1}</Button>{/each}</div>{/if}
@@ -58,3 +60,4 @@ let timingLabel=$derived(requestedRun&&!totalMs&&!['error','cancelled'].includes
   </section>
   <div class="generation-runbar">{#if panel.initializing}<p class="hint">{panel.initialization}</p>{/if}<div class="row"><Button class="generate-button" size="lg" disabled={panel.busy||panel.spec.ready===false} onclick={generate}><Play size={15}/>{panel.busy?'正在生成…':panel.spec.run_label||'生成图片'}</Button><Button size="lg" variant="outline" disabled={!panel.busy} onclick={()=>act('cancel')}><Square size={13}/>停止</Button></div></div>
 </article>
+<style>.video-result{width:100%;height:100%;max-height:100%;object-fit:contain;background:#10151c;border-radius:8px}</style>

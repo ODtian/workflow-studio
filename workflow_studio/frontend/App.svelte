@@ -82,7 +82,7 @@
       elem_id:undefined, visible:true, interactive:true, scale:0, component_id:index+1}))]);
   let settingsSnapshot = $derived(JSON.stringify({active:activeId, model_bindings:modelBindings, panels:state.panels.map(panel => ({
     id:panel.id, params:Object.fromEntries(panel.spec.fields
-      .filter(field => field.persist ?? (field.area !== 'prompts' && field.type !== 'image'))
+      .filter(field => field.persist ?? (field.area !== 'prompts' && !['image','media_list','keyframe_list'].includes(field.type)))
       .map(field => [field.key,drafts[panel.id]?.[field.key] ?? field.default ?? '']))
   }))}));
   $effect(() => {
@@ -193,8 +193,8 @@
       if (previewURLs.get(id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(id));
       previewData.set(id,source);
       const frame = source?.data ? source : {data:source};
-      previewURLs.set(id,typeof frame.data === 'string' ? frame.data : URL.createObjectURL(new Blob([frame.data],{type:'image/jpeg'})));
-      previewInfo[id] = {run_id:frame.run_id, final:frame.final, server_ms:frame.server_ms};
+      previewURLs.set(id,typeof frame.data === 'string' ? frame.data : URL.createObjectURL(new Blob([frame.data],{type:frame.mime||'image/jpeg'})));
+      previewInfo[id] = {run_id:frame.run_id, final:frame.final, server_ms:frame.server_ms, mime:frame.mime||'image/jpeg'};
     }
     for (const id of previewData.keys()) {
       if (!(id in current)) {
@@ -272,7 +272,7 @@
       if (['image_detail','image_thumbnail','image_preview'].includes(msg.type)) {
         const thumbnail = msg.type === 'image_thumbnail';
         const comparison = msg.type === 'image_preview';
-        const image = {url:URL.createObjectURL(new Blob([buffers[0]], {type:thumbnail || comparison ? 'image/jpeg' : 'image/png'}))};
+        const image = {url:URL.createObjectURL(new Blob([buffers[0]], {type:msg.mime || (thumbnail || comparison ? 'image/jpeg' : 'image/png')}))};
         (comparison ? comparisonImages : thumbnail ? thumbnailImages : originalImages).set(msg.name, image);
         if (comparison) comparisonPending.delete(msg.name);
         imageRequests.get(msg.request)(image);

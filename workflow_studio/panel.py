@@ -5,6 +5,7 @@ import base64
 import importlib.util
 import io
 import json
+import mimetypes
 from pathlib import Path
 import secrets
 import threading
@@ -234,6 +235,8 @@ class WorkflowSession:
                     self.owner.set_payload("results", self.id,
                                            [{"name": filename, "kind": "text", "bytes": path.stat().st_size}])
                 self.update(phase="complete", message="文本生成完成", step=self.state["total"])
+            elif isinstance(result, dict) and result.get("kind") == "video":
+                self.publish_video(result, params, module.SPEC)
             else:
                 self.publish_images(result, params, module.SPEC)
         except Cancelled:
@@ -256,7 +259,8 @@ class WorkflowSession:
             images = [images]
         images = [Image.open(image) if isinstance(image, (str, Path)) else image for image in images]
         self.update(phase="publishing", message="显示结果…")
-        image_fields = {field["key"] for field in spec["fields"] if field["type"] == "image"}
+        image_fields = {field["key"] for field in spec["fields"]
+                        if field["type"] in ("image", "media_list", "keyframe_list")}
         metadata = {"workflow": self.state["selected"], "params": {
             key: value for key, value in params.items() if key not in image_fields}}
         metadata["run_info"] = dict(self.state["metadata"])
@@ -282,6 +286,26 @@ class WorkflowSession:
             self.owner.set_payload("previews", self.id, {
                 "data": preview, "run_id": self.state["run_id"], "final": True,
                 "server_ms": round((self.published_at - self.started_at) * 1000)})
+
+    def publish_video(self, video, params, spec):
+        path = Path(video["path"])
+        media_fields = {field["key"] for field in spec["fields"]
+                        if field["type"] in ("image", "media_list", "keyframe_list")}
+        metadata = {"workflow": self.state["selected"], "params": {
+            key: value for key, value in params.items() if key not in media_fields},
+                    "run_info": dict(self.state["metadata"])}
+        if "Seed" in metadata["run_info"]:
+            metadata["params"]["seed"] = metadata["run_info"]["Seed"]
+        entry = self.owner.history_store.add_video(path, video, metadata)
+        self.owner.history_store.save()
+        self.owner.histories = self.owner.history_store.snapshot()
+        self.owner.set_payload("results", self.id, [entry])
+        self.update(phase="complete", message=f"完成 · {video['duration']:.1f} 秒视频", step=self.state["total"])
+        preview = memoryview(path.read_bytes())
+        self.published_at = time.monotonic()
+        self.owner.set_payload("previews", self.id, {
+            "data": preview, "mime": "video/mp4", "run_id": self.state["run_id"], "final": True,
+            "server_ms": round((self.published_at - self.started_at) * 1000)})
 
 
 class WorkflowPanel(anywidget.AnyWidget):
@@ -344,7 +368,8 @@ class WorkflowPanel(anywidget.AnyWidget):
             {"id": session.id, "workflow": session.state["selected"], "params": {
                 field["key"]: session.params[field["key"]]
                 for field in session.state["spec"]["fields"]
-                if field.get("persist", field.get("area") != "prompts" and field["type"] != "image")}}
+                if field.get("persist", field.get("area") != "prompts" and
+                             field["type"] not in ("image", "media_list", "keyframe_list"))}}
             for session in self.sessions.values()]}
         self.settings_path.write_text(json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
         if self.settings_backup:
@@ -490,23 +515,30 @@ class WorkflowPanel(anywidget.AnyWidget):
                                    delivery_ms=max(0, content["end_to_end_ms"] - content["server_ms"]))
             elif action == "download":
                 path = self.image_path(content["name"])
-                mime = "text/plain;charset=utf-8" if path.suffix == ".txt" else "image/png"
+                mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
                 self.send({"type": "download", "id": session.id, "name": path.name, "mime": mime},
                           buffers=[memoryview(path.read_bytes())])
             elif action == "image_detail":
                 path = self.image_path(content["name"])
                 self.send({"type": "image_detail", "id": session.id, "name": path.name,
-                           "request": content["request"]}, buffers=[memoryview(path.read_bytes())])
+                           "request": content["request"], "mime": mimetypes.guess_type(path.name)[0]},
+                          buffers=[memoryview(path.read_bytes())])
             elif action == "image_thumbnail":
                 path = self.history_store.thumbnail(content["name"])
                 self.send({"type": "image_thumbnail", "id": session.id, "name": content["name"],
                            "request": content["request"]}, buffers=[memoryview(path.read_bytes())])
             elif action == "image_preview":
+                source = self.image_path(content["name"])
+                if source.suffix == ".mp4":
+                    source = self.history_store.thumbnail(content["name"])
                 self.send({"type": "image_preview", "id": session.id, "name": content["name"],
                            "request": content["request"]},
-                          buffers=[image_bytes(self.image_path(content["name"]))])
+                          buffers=[image_bytes(source)])
             elif action == "show_result":
-                self.set_payload("previews", session.id, image_bytes(self.output_dir / content["name"]))
+                path = self.image_path(content["name"])
+                self.set_payload("previews", session.id,
+                                 {"data": memoryview(path.read_bytes()), "mime": "video/mp4"}
+                                 if path.suffix == ".mp4" else image_bytes(path))
             elif action == "export":
                 path = self.workflow_dir / session.state["selected"]
                 self.send({"type": "workflow", "name": path.name, "source": path.read_text(encoding="utf-8")})

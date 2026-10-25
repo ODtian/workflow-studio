@@ -2,6 +2,7 @@
 import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
 import Dropdown from './ui/Dropdown.svelte';import {Button} from '$lib/components/ui/button';import LoraStack from './LoraStack.svelte';import {readFile} from './bridge.js';
 import {ClipboardPaste} from '@lucide/svelte';
+import MediaInputs from './MediaInputs.svelte';
 let {field,value=$bindable(),busy=false,idPrefix='',paste=false,compact=false}=$props();
 const inputId=$props.id();
 let uploadInput;
@@ -14,6 +15,7 @@ async function replaceFromClipboard(){
 }
 </script>
 {#if field.type==='lora_stack'}<LoraStack bind:value options={field.options} {busy} {idPrefix}/>
+{:else if ['media_list','keyframe_list'].includes(field.type)}<div class="field"><span title={field.hint}>{field.label}</span><MediaInputs bind:value timeline={field.type==='keyframe_list'} {busy} label={field.label}/></div>
 {:else if field.type==='boolean'}
 <div class="field switch-field"><label for={inputId} title={field.hint}>{field.label}</label><Switch id={inputId} aria-label={field.label} bind:checked={value} disabled={busy}/></div>
 {:else if field.type==='select'}<Dropdown label={field.label} show_label={!compact} bind:value choices={options} interactive={!busy} info={field.hint}/>

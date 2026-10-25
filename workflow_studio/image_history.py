@@ -51,6 +51,23 @@ class ImageHistory:
                 self.add(source, json.loads(encoded))
         self.save()
 
+    def add_video(self, source, video, metadata):
+        source = Path(source)
+        original = self.directory / source.name
+        shutil.copy2(source, original)
+        entry = {"name": source.name, "kind": "video", "workflow": metadata["workflow"],
+                 **{key: video[key] for key in ("width", "height", "fps", "frames", "duration", "segments")},
+                 "bytes": original.stat().st_size,
+                 "created_at": datetime.fromtimestamp(source.stat().st_mtime, timezone.utc).isoformat(),
+                 "params": metadata["params"], "run_info": metadata["run_info"]}
+        thumbnail = video["poster"].convert("RGB")
+        thumbnail.thumbnail((240, 240))
+        thumbnail.save(self.thumbnails / (source.stem + ".jpg"), "JPEG", quality=75)
+        self.entries.append(entry)
+        if self.persist_image:
+            self.persist_image(source.name)
+        return entry
+
     def snapshot(self):
         workflows = {entry["workflow"] for entry in self.entries}
         return {workflow: sorted((entry for entry in self.entries if entry["workflow"] == workflow),
