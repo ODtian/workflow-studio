@@ -203,7 +203,7 @@
     const [id, key] = target.split(':');
     drafts[id] = {...drafts[id], [key]:text};
     activeId = id;
-    transferNotice = '文本已填入目标工作流，可继续编辑或生成。';
+    transferNotice = '已填入';
   }
 
   onMount(() => {
@@ -326,8 +326,8 @@
     <div class="app-content">
       {#if toolsOpen}
         <section class="management page-padding">
-          <div class="surface management-add"><Dropdown label="可用工作流" bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加工作流</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button></div>
-          <div class="workflow-list">{#each state.panels as panel}<div class="surface workflow-row"><div class="workflow-icon">{#if panel.spec.chat}<MessageSquare size={20}/>{:else}<Image size={20}/>{/if}</div><div><h3>{panel.spec.name}</h3><p>{panel.selected}</p></div><Badge variant="secondary">{panel.busy?'运行中':'已就绪'}</Badge><Button variant="outline" onclick={()=>send('export',{id:panel.id})}>导出代码</Button><Button variant="ghost" disabled={panel.busy} onclick={()=>send('remove',{id:panel.id})}>移除</Button></div>{/each}</div>
+          <div class="surface management-add"><Dropdown label="可用工作流" show_label={false} bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button></div>
+          <div class="workflow-list">{#each state.panels as panel}<div class="surface workflow-row"><div class="workflow-name"><h3 title={panel.selected}>{panel.spec.name}</h3></div>{#if panel.busy}<Badge variant="secondary">运行中</Badge>{/if}<Button variant="outline" onclick={()=>send('export',{id:panel.id})}>导出</Button><Button variant="ghost" disabled={panel.busy} onclick={()=>send('remove',{id:panel.id})}>移除</Button></div>{/each}</div>
         </section>
       {/if}
       {#each state.panels as panel (panel.id)}
