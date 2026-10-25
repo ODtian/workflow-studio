@@ -211,6 +211,14 @@ def run_moss(params, ctx):
         model = SkipLayerGuidanceDiTSimple.execute(
             model, start_percent=float(params["slg_start"]), end_percent=float(params["slg_end"]),
             double_layers=params["slg_double_layers"], single_layers=params["slg_single_layers"])[0]
+    spectrum = None
+    if params.get("spectrum_enabled", True):
+        from comfy.patcher_extension import WrappersMP
+        from vendor.spectrum_moss.nodes import SpectrumConfig, apply_spectrum_moss, WRAPPER_KEY
+
+        model = apply_spectrum_moss(model, SpectrumConfig(mode="adaptive", flex_window=0.5))
+        spectrum = model.model_options["transformer_options"]["wrappers"][WrappersMP.DIFFUSION_MODEL][WRAPPER_KEY][0].root_state
+        ctx.metadata(Spectrum="Adaptive")
     args.preview_method = LatentPreviewMethod.Latent2RGB
     previewer = latent_preview.get_previewer(model.load_device, model.model.latent_format)
     steps = int(params["steps"])
@@ -244,6 +252,9 @@ def run_moss(params, ctx):
                                       scheduler, positive, negative, latent,
                                       sigmas=sigmas, callback=callback, disable_pbar=True, seed=seed)
         ctx.metadata(采样秒=round(time.monotonic() - started, 3))
+        if spectrum is not None:
+            ctx.metadata(Spectrum实际次数=sum(branch.actual_count for branch in spectrum.branches.values()),
+                         Spectrum预测次数=sum(branch.forecast_count for branch in spectrum.branches.values()))
         ctx.status("解码图片…")
         started = time.monotonic()
         pixels = vae.decode(samples).detach().cpu().clamp(0, 1).mul(255).to(torch.uint8).numpy()
