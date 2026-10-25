@@ -52,7 +52,7 @@ let timingLabel=$derived(requestedRun&&!totalMs&&!['error','cancelled'].includes
     {:else}<div class="generation-canvas" class:working={panel.busy}>
       {#if isText}<Textarea value={text} readonly rows={20} aria-label="文本结果"/>{:else}<ZoomPreview {preview} result={activeResult} {loadOriginal} onload={loaded}/>{/if}
     </div>
-    <div class="generation-bottom"><Progress value={panel.step} max={panel.total||1} aria-label="执行进度"/><div class="output-status"><div class="row"><i class="status-dot" class:pulse={panel.busy}></i><span role="status">{panel.message}{panel.busy&&panel.total?` · ${panel.step}/${panel.total}`:''}</span></div><span title="点击生成至最终图片显示">{timingLabel}</span></div>
+    <div class="generation-bottom"><Progress value={panel.step} max={panel.total||1} aria-label="执行进度"/><div class="output-status"><div class="row"><i class="status-dot" class:pulse={panel.busy}></i><span role="status">{requestedRun&&requestedRun!==panel.run_id?'提交任务…':panel.message}{panel.busy&&panel.total?` · ${panel.step}/${panel.total}`:''}</span></div><span title="点击生成至最终图片显示">{timingLabel}</span></div>
     {#if results.length>1}<div class="row">{#each results as result,index}<Button size="sm" variant={imageIndex===index?'secondary':'ghost'} onclick={()=>{imageIndex=index;act('show_result',{name:result.name});}}>图片 {index+1}</Button>{/each}</div>{/if}
     {#if Object.keys(panel.metadata||{}).length}<details class="run-info"><summary>运行信息<ChevronDown size={12}/></summary><dl>{#each Object.entries(panel.metadata||{}) as [key,value]}<div><dt>{key}</dt><dd>{String(value)}</dd></div>{/each}</dl></details>{/if}</div>{/if}
   </section>
