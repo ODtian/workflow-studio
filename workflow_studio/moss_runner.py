@@ -20,6 +20,8 @@ _loaded = None
 _loaded_key = None
 _adapted = None
 _adapted_key = None
+_compiled = None
+_compiled_key = None
 _core_ready = False
 _conditioning = {}
 
@@ -74,7 +76,7 @@ def prepare_core(ctx):
 
 
 def load_models(params, ctx):
-    global _loaded, _loaded_key, _adapted, _adapted_key
+    global _loaded, _loaded_key, _adapted, _adapted_key, _compiled, _compiled_key
     started = time.monotonic()
     prepare_core(ctx)
     import comfy.sd
@@ -88,6 +90,7 @@ def load_models(params, ctx):
     if _loaded_key != key:
         parts = list(_loaded or (None, None, None))
         _adapted, _adapted_key = None, None
+        _compiled, _compiled_key = None, None
         _conditioning.clear()
         for index, label in enumerate(("DiT", "TE", "VAE")):
             if _loaded_key is not None and _loaded_key[index] == key[index]:
@@ -140,6 +143,29 @@ def encode_prompt(clip, text):
     return _conditioning[key]
 
 
+def compile_dit(model, ctx):
+    global _compiled, _compiled_key
+    import torch
+    import comfy.ops
+    from comfy_api.torch_helpers import set_torch_compile_wrapper
+    from comfy.ldm.moss_image import model as moss_model
+
+    if _compiled_key != _adapted_key:
+        cache = Path(os.environ.get("WORKFLOW_WORKSPACE", ROOT.parent)) / ".cache"
+        os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", str(cache / "torchinductor"))
+        os.environ.setdefault("TRITON_CACHE_DIR", str(cache / "triton"))
+        os.environ.setdefault("TORCHINDUCTOR_COMPILE_THREADS", "2")
+        ctx.status("准备 DiT 编译…")
+        # These fused INT8 kernels pass real CUDA tensors through DLPack.
+        moss_model.attention = torch.compiler.disable(moss_model.attention)
+        comfy.ops.linear_input_act = torch.compiler.disable(comfy.ops.linear_input_act)
+        compiled = model.clone(disable_dynamic=True)
+        set_torch_compile_wrapper(compiled, backend="inductor", dynamic=False)
+        _compiled, _compiled_key = compiled, _adapted_key
+    ctx.metadata(DiT编译="Inductor")
+    return _compiled
+
+
 def prepare_moss(params, ctx):
     import torch
     started = time.monotonic()
@@ -156,6 +182,8 @@ def run_moss(params, ctx):
     from PIL import Image
     model, clip, vae = load_models(params, ctx)
     model, clip = apply_loras(model, clip, params.get("loras", []), ctx)
+    if params.get("compile_dit", False):
+        model = compile_dit(model, ctx)
     import comfy.sample
     import comfy.samplers
     import comfy.model_management
@@ -211,9 +239,13 @@ def run_moss(params, ctx):
                  SLG=slg, CFG=float(params["cfg"]), 尺寸=f"{params['width']} × {params['height']}")
     ctx.status("开始采样…")
     with torch.no_grad():
+        started = time.monotonic()
         samples = comfy.sample.sample(model, noise, steps, float(params["cfg"]), params["sampler"],
                                       scheduler, positive, negative, latent,
                                       sigmas=sigmas, callback=callback, disable_pbar=True, seed=seed)
+        ctx.metadata(采样秒=round(time.monotonic() - started, 3))
         ctx.status("解码图片…")
+        started = time.monotonic()
         pixels = vae.decode(samples).detach().cpu().clamp(0, 1).mul(255).to(torch.uint8).numpy()
+        ctx.metadata(解码秒=round(time.monotonic() - started, 3))
     return [Image.fromarray(image) for image in pixels]

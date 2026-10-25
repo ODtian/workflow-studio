@@ -44,6 +44,8 @@ SPEC = {
          "min": 0, "max": 1, "step": 0.01},
         {"key": "slg_end", "label": "SLG end", "type": "number", "section": "SLG", "area": "advanced", "default": 1.0,
          "min": 0, "max": 1, "step": 0.01},
+        {"key": "compile_dit", "label": "编译 DiT", "type": "boolean", "area": "advanced", "default": False,
+         "hint": "首次编译耗时较长，同一输入尺寸后续复用缓存。"},
         {"key": "shift", "label": "Shift", "type": "number", "section": "高级", "area": "advanced", "default": 5.0, "min": 0.1, "step": 0.1},
         {"key": "width", "label": "宽度", "type": "number", "section": "画面", "default": 1024, "min": 16, "step": 16},
         {"key": "height", "label": "高度", "type": "number", "section": "画面", "default": 1024, "min": 16, "step": 16},
