@@ -15,8 +15,8 @@ async function replaceFromClipboard(){
 </script>
 {#if field.type==='lora_stack'}<LoraStack bind:value options={field.options} {busy} {idPrefix}/>
 {:else if field.type==='boolean'}
-<label class="field switch-field"><span title={field.hint}>{field.label}</span><Switch bind:checked={value} disabled={busy}/></label>
-{:else if field.type==='select'}<Dropdown label={field.label} show_label={!compact} bind:value choices={options} interactive={!busy} filterable={true} info={field.hint}/>
+<div class="field switch-field"><label for={inputId} title={field.hint}>{field.label}</label><Switch id={inputId} aria-label={field.label} bind:checked={value} disabled={busy}/></div>
+{:else if field.type==='select'}<Dropdown label={field.label} show_label={!compact} bind:value choices={options} interactive={!busy} info={field.hint}/>
 {:else if paste && ['text','textarea'].includes(field.type)}
 <div class="field">
   <div class="field-heading"><label for={inputId} title={field.hint}>{field.label}</label><Button variant="ghost" size="icon-sm" disabled={busy} aria-label={'用剪贴板替换'+field.label} title={'用剪贴板替换'+field.label} onclick={replaceFromClipboard}><ClipboardPaste size={14}/></Button></div>
@@ -36,4 +36,4 @@ async function replaceFromClipboard(){
 {:else}<Input bind:value placeholder={field.placeholder||''} disabled={busy}/>{/if}
 </label>
 {/if}
-<style>.field-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}.field-heading label{font-size:12px}.switch-field{display:flex;align-items:center;justify-content:space-between;gap:12px}.upload-preview{max-height:180px;width:100%;object-fit:contain;border-radius:8px}</style>
+<style>.field-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}.field-heading label{font-size:12px}.switch-field{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;min-height:32px}.switch-field>label{flex:1;min-width:0;font-size:12px;font-weight:500;color:#85909f}.upload-preview{max-height:180px;width:100%;object-fit:contain;border-radius:8px}</style>
