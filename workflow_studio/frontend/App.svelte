@@ -310,7 +310,16 @@
     <header class="app-topbar">
       <Button class="sidebar-toggle" variant="ghost" size="icon" aria-label="切换侧栏" onclick={()=>sidebarOpen=!sidebarOpen}>{#if sidebarOpen}<PanelLeftClose size={17}/>{:else}<PanelLeftOpen size={17}/>{/if}</Button>
       <div class="breadcrumb"><strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
-      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice==='正在保存设置…'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" onclick={()=>expanded=expand()}>{expanded?'返回 notebook':'展开工作台'}<ArrowUpRight size={13}/></Button></div>
+      <nav class="mobile-navigation" aria-label="手机工作空间导航">
+        {#each state.panels as panel (panel.id)}
+          <button class:active={!toolsOpen&&activeId===panel.id} aria-current={!toolsOpen&&activeId===panel.id?'page':undefined} onclick={()=>{activeId=panel.id;toolsOpen=false;}}>
+            <span>{panel.spec.chat?'对话':panel.spec.tab_name || panel.spec.name.split(' · ')[0]}</span>{#if panel.busy}<i class="status-dot pulse"></i>{/if}
+          </button>
+        {/each}
+        <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}>文件</button>
+        <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}>管理</button>
+      </nav>
+      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice==='正在保存设置…'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
     </header>
     {#if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
@@ -332,16 +341,6 @@
       {/each}
       <section class="panel-page" hidden={toolsOpen || activeId!=='__files__'}><FilesView {files} {send}/></section>
     </div>
-    <nav class="mobile-navigation" aria-label="手机工作空间导航">
-      {#each state.panels as panel (panel.id)}
-        <button class:active={!toolsOpen&&activeId===panel.id} aria-current={!toolsOpen&&activeId===panel.id?'page':undefined} onclick={()=>{activeId=panel.id;toolsOpen=false;}}>
-          <span class="mobile-nav-icon">{#if panel.spec.chat}<MessageSquare size={20}/>{:else}<Image size={20}/>{/if}{#if panel.busy}<i class="status-dot pulse"></i>{/if}</span>
-          <span>{panel.spec.chat?'对话':panel.spec.tab_name || panel.spec.name.split(' · ')[0]}</span>
-        </button>
-      {/each}
-      <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}><FolderOpen size={20}/><span>文件</span></button>
-      <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}><Settings2 size={20}/><span>管理</span></button>
-    </nav>
   </div>
   <input type="file" accept=".py" hidden bind:this={codeInput} onchange={async()=>{const file=codeInput.files[0];if(file)send('import',{name:file.name,source:await file.text()});codeInput.value='';}}/>
 </main>
