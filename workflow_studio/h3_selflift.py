@@ -73,7 +73,7 @@ def sample(model, positive, negative, vae, latent, params, seed, callback, ctx):
     import comfy.samplers
     nodes = prepare(ctx)
     steps = int(params['steps'])
-    transition = max(1,min(steps-1,round(steps*float(params.get('selflift_low_steps',.75)))))
+    transition = max(1,min(steps-1,int(steps*float(params.get('selflift_low_steps',.75))+.5)))
     scale = float(params.get('selflift_scale',.5))
     learned = params.get('selflift_mode','zero') == 'learned'
     rho = 0 if learned else float(params.get('selflift_rho',.6))
