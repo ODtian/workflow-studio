@@ -1,13 +1,18 @@
 import {join, dirname, basename} from 'node:path';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import {createAssistantMessageEventStream, getCurrentSystemPrompt, getCurrentTools} from '@earendil-works/pi-ai';
-import {createAgentSession, DefaultResourceLoader, ModelRuntime, SessionManager, SettingsManager} from '@earendil-works/pi-coding-agent';
+import {createAgentSession, DefaultResourceLoader, ModelRuntime, SessionManager, SettingsManager, parseSkillBlock} from '@earendil-works/pi-coding-agent';
 const send=value=>process.stdout.write(JSON.stringify(value)+'\n');
 const cwd=process.cwd(), agentDir=process.env.WORKFLOW_PI_DIR;
 await mkdir(agentDir,{recursive:true});
 const runtime=await ModelRuntime.create({authPath:join(agentDir,'auth.json'),modelsPath:null,refreshOnCreate:false});
 const pending=new Map(), sessions=new Map();let sequence=0;
 const usage=()=>({input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}});
+function displayText(text){const skill=parseSkillBlock(text);return skill?`/skill:${skill.name}${skill.userMessage?' '+skill.userMessage:''}`:text;}
+function displayMessage(message){
+  if(message.role!=='user')return message;
+  return {...message,content:typeof message.content==='string'?displayText(message.content):message.content.map(part=>part.type==='text'?{...part,text:displayText(part.text)}:part)};
+}
 function nativeMessages(context) {
   const system=getCurrentSystemPrompt(context.messages);
   return [...(system?[{role:'system',content:system}]:[]),...context.messages.filter(m=>m.role!=='system').map(m=>{
@@ -62,8 +67,8 @@ async function ensure(request){
 }
 async function snapshot(item){
   const {session,manager}=item,loader=session.resourceLoader;
-  return {id:manager.getSessionId(),name:manager.getSessionName()||'新对话',file:manager.getSessionFile(),messages:session.messages,
-    entries:manager.getEntries().filter(e=>e.type==='message').map(e=>({id:e.id,parentId:e.parentId,role:e.message.role,timestamp:e.message.timestamp,label:typeof e.message.content==='string'?e.message.content.slice(0,75):e.message.content.filter(p=>p.type==='text').map(p=>p.text).join('').slice(0,75)})),
+  return {id:manager.getSessionId(),name:manager.getSessionName()||'新对话',file:manager.getSessionFile(),messages:session.messages.map(displayMessage),
+    entries:manager.getEntries().filter(e=>e.type==='message').map(e=>{const message=displayMessage(e.message);return {id:e.id,parentId:e.parentId,role:message.role,timestamp:message.timestamp,label:typeof message.content==='string'?message.content.slice(0,75):message.content.filter(p=>p.type==='text').map(p=>p.text).join('').slice(0,75)};}),
     leaf:manager.getLeafId(),stats:session.getSessionStats(),sessions:await SessionManager.list(cwd,item.dir),tools:session.getAllTools(),activeTools:session.getActiveToolNames(),skills:loader.getSkills().skills,prompts:loader.getPrompts().prompts,
     extensions:loader.getExtensions().extensions.map(e=>({path:e.resolvedPath||e.path})),diagnostics:[...loader.getSkills().diagnostics,...loader.getPrompts().diagnostics,...loader.getExtensions().errors]};
 }
@@ -80,7 +85,7 @@ async function command(request){
     const result=await item.session.navigateTree(request.entry,{summarize:false});
     if(!result.cancelled&&target.type==='message'&&target.message.role==='user'){
       const parts=typeof target.message.content==='string'?[{type:'text',text:target.message.content}]:target.message.content;
-      editor={text:result.editorText??parts.filter(p=>p.type==='text').map(p=>p.text).join('\n'),images:parts.filter(p=>p.type==='image')};
+      editor={text:displayText(result.editorText??parts.filter(p=>p.type==='text').map(p=>p.text).join('\n')),images:parts.filter(p=>p.type==='image')};
     }
   }
   else if(action==='tools')item.session.setActiveToolsByName(request.tools);
@@ -89,7 +94,7 @@ async function command(request){
   else if(action==='save_skill'){const path=join(cwd,'.pi','skills',basename(request.name),'SKILL.md');await mkdir(dirname(path),{recursive:true});await writeFile(path,request.source);await item.session.reload();}
   else if(action==='export')send({type:'export',request:request.request,name:'pi-session.jsonl',source:await readFile(item.manager.getSessionFile(),'utf8')});
   else if(action==='prompt'||action==='compact'){
-    const off=item.session.subscribe(event=>send({type:'event',request:request.request,event}));
+    const off=item.session.subscribe(event=>send({type:'event',request:request.request,event:event.message?{...event,message:displayMessage(event.message)}:event}));
     try{
       if(action==='compact')await item.session.compact(request.text);
       else await item.session.prompt(request.text,{images:(request.images||[]).map(image=>{const [header,data]=image.url.split(',',2);return {type:'image',mimeType:header.slice(5).split(';')[0],data};})});
@@ -100,5 +105,5 @@ async function command(request){
 }
 let buffer='';process.stdin.setEncoding('utf8');process.stdin.on('data',chunk=>{
   buffer+=chunk;let end;while((end=buffer.indexOf('\n'))!==-1){const line=buffer.slice(0,end);buffer=buffer.slice(end+1);if(!line)continue;const record=JSON.parse(line);
-    if(record.type.startsWith('model_'))pending.get(record.id)?.(record);else command(record).catch(error=>send({type:'result',request:record.request,error:error.stack||String(error)}));}
+    if(record.type.startsWith('model_'))pending.get(record.id)?.(record);else command(record).catch(async error=>{const item=sessions.get(record.panel);send({type:'result',request:record.request,error:error.stack||String(error),...(item?{snapshot:await snapshot(item)}:{})});});}
 });process.stdin.on('end',()=>process.exit());send({type:'ready',version:'1.4.0'});

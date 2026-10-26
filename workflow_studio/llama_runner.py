@@ -111,6 +111,22 @@ def chat_formatter(template, eos, bos, stop):
     return Jinja2ChatFormatter(template=template, eos_token=eos, bos_token=bos, stop_token_ids=[stop])
 
 
+def template_messages(messages):
+    normalized = []
+    for message in messages:
+        message = dict(message)
+        if message.get("tool_calls"):
+            calls = []
+            for call in message["tool_calls"]:
+                function = dict(call["function"])
+                if isinstance(function.get("arguments"), str):
+                    function["arguments"] = json.loads(function["arguments"])
+                calls.append({**call, "function": function})
+            message["tool_calls"] = calls
+        normalized.append(message)
+    return normalized
+
+
 def configure_chat(llm, params, channels):
     if getattr(llm, "_studio_mtp", False):
         return llm.configure_chat(template_options(params), channels)
@@ -123,8 +139,9 @@ def configure_chat(llm, params, channels):
                                    llm._model.token_get_text(llm.token_bos()), llm.token_eos())
 
         def multimodal_messages(**kwargs):
+            kwargs["messages"] = template_messages(kwargs["messages"])
             messages = vision_handler._get_template_messages(kwargs["messages"], "<__media__>")
-            formatted = formatter(messages=messages, **options)
+            formatted = formatter(messages=messages, tools=kwargs.get("tools"), **options)
             match = re.search(r"(<think>|<analysis>|<\|channel>(?:thought|analysis))\s*$", formatted.prompt)
             channels.prefix = match[0] if match else ""
             return vision_handler(**kwargs, **options)
@@ -137,6 +154,7 @@ def configure_chat(llm, params, channels):
                                    llm._model.token_get_text(llm.token_bos()), llm.token_eos())
 
         def format_messages(**kwargs):
+            kwargs["messages"] = template_messages(kwargs["messages"])
             response = formatter(**kwargs, **options)
             match = re.search(r"(<think>|<analysis>|<\|channel>(?:thought|analysis))\s*$", response.prompt)
             channels.prefix = match[0] if match else ""

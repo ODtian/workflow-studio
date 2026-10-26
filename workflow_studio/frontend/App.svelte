@@ -16,6 +16,8 @@
   let previewInfo = $state({});
   const previewData = new Map();
   const previewURLs = new Map();
+  const requestedPreviews = new Set();
+  const customPreviewIds = new Set();
   const originalImages = new Map();
   const thumbnailImages = new Map();
   const comparisonImages = new Map();
@@ -197,7 +199,7 @@
       previewInfo[id] = {run_id:frame.run_id, final:frame.final, server_ms:frame.server_ms, mime:frame.mime||'image/jpeg'};
     }
     for (const id of previewData.keys()) {
-      if (!(id in current)) {
+      if (!(id in current) && !customPreviewIds.has(id)) {
         if (previewURLs.get(id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(id));
         previewData.delete(id);previewURLs.delete(id);
         delete previewInfo[id];
@@ -206,6 +208,14 @@
     previews = Object.fromEntries(previewURLs);
   }
   updatePreviews();
+
+  $effect(() => {
+    const first = results[activeId]?.[0];
+    if (settingsReady && first && !previewURLs.has(activeId) && !requestedPreviews.has(activeId)) {
+      requestedPreviews.add(activeId);
+      send('show_result', {id:activeId, name:first.name});
+    }
+  });
 
   function targetsFor(panel) {
     return state.panels.filter(p => p.id !== panel.id && !p.busy).flatMap(p =>
@@ -243,6 +253,15 @@
     };
     const updateFiles = () => files = model.get('files');
     const custom = (msg, buffers) => {
+      if (msg.type === 'preview_frame') {
+        if (msg.run_id && state.panels.find(p=>p.id===msg.id)?.run_id !== msg.run_id) return;
+        if (previewURLs.get(msg.id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(msg.id));
+        previewURLs.set(msg.id,URL.createObjectURL(new Blob([buffers[0]],{type:msg.mime})));
+        customPreviewIds.add(msg.id);
+        previewInfo[msg.id] = {run_id:msg.run_id,final:msg.final,server_ms:msg.server_ms,mime:msg.mime};
+        requestedPreviews.delete(msg.id);
+        previews = Object.fromEntries(previewURLs);
+      }
       if (msg.type === 'image_progress') {
         state = {...state,panels:state.panels.map(panel => panel.id === msg.id && panel.run_id === msg.run_id
           ? {...panel,step:msg.step,total:msg.total,message:msg.message} : panel)};
@@ -343,7 +362,7 @@
     <div class="app-content">
       {#if toolsOpen}
         <section class="management page-padding">
-          <div class="surface management-add"><Dropdown label="可用工作流" show_label={false} bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button></div>
+          <div class="surface management-add"><Dropdown label="可用工作流" show_label={false} bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button><Button variant="outline" disabled={state.panels.some(p=>p.busy||p.initializing)} onclick={()=>send('unload_models')}>卸载全部模型</Button></div>
           <div class="workflow-list">{#each state.panels as panel}<div class="surface workflow-row"><div class="workflow-name"><h3 title={panel.selected}>{panel.spec.name}</h3></div>{#if panel.busy}<Badge variant="secondary">运行中</Badge>{/if}<Button variant="outline" onclick={()=>send('export',{id:panel.id})}>导出</Button><Button variant="ghost" disabled={panel.busy} onclick={()=>send('remove',{id:panel.id})}>移除</Button></div>{/each}</div>
         </section>
       {/if}

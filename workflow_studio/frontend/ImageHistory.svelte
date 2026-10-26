@@ -25,7 +25,7 @@
   const optionLabel = entry => dateLabel(entry)+' · '+entry.name.slice(0,-4).split('-').at(-1);
   const imageTitle = entry => dateLabel(entry)+' · '+entry.width+' × '+entry.height+' · Seed '+(entry.params.seed ?? '—');
   async function choose(entry) {
-    if(entry.kind==='video') {videoName=entry.name;videoURL=(await loadOriginal(entry)).url;return;}
+    if(entry.kind==='video') {videoName=entry.name;videoURL=(await loadPreview(entry)).url;return;}
     if (!selectedA) selectedA = entry.name;
     else selectedB = entry.name;
   }

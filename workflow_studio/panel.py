@@ -18,6 +18,7 @@ from PIL.PngImagePlugin import PngInfo
 import traitlets
 from chat_tree import ChatTree
 from image_history import ImageHistory
+from preview_transport import WidgetTransport, jpeg
 
 ROOT = Path(__file__).parent
 INFERENCE_LOCK = threading.Lock()
@@ -29,13 +30,7 @@ class Cancelled(Exception):
 
 
 def image_bytes(image, *, preview=False):
-    if isinstance(image, (str, Path)):
-        image = Image.open(image)
-    image = image.copy().convert("RGB")
-    buffer = io.BytesIO()
-    image.thumbnail((512, 512) if preview else (1536, 1536))
-    image.save(buffer, "JPEG", quality=72 if preview else 92)
-    return memoryview(buffer.getvalue())
+    return jpeg(image, final=not preview)
 
 
 class RunContext:
@@ -95,8 +90,7 @@ class RunContext:
         now = time.monotonic()
         if preview is not None and (step == total or now - self.last_preview >= 0.5):
             self.last_preview = now
-            self.panel.owner.set_payload("previews", self.panel.id, {
-                "data": image_bytes(preview, preview=True), "run_id": self.panel.state["run_id"], "final": False})
+            self.panel.owner.transport.preview(self.panel.id, preview, run_id=self.panel.state["run_id"])
 
 
 class PrepareContext(RunContext):
@@ -277,15 +271,13 @@ class WorkflowSession:
             results.append({"name": filename, "kind": "image", "width": image.width,
                             "height": image.height, "bytes": path.stat().st_size})
         self.owner.history_store.save()
-        self.owner.histories = self.owner.history_store.snapshot()
+        self.owner.transport.attribute("histories", self.owner.history_store.snapshot())
         self.owner.set_payload("results", self.id, results)
         self.update(phase="complete", message=f"完成 · {len(results)} 张图片", step=self.state["total"])
         if images:
-            preview = image_bytes(images[0])
             self.published_at = time.monotonic()
-            self.owner.set_payload("previews", self.id, {
-                "data": preview, "run_id": self.state["run_id"], "final": True,
-                "server_ms": round((self.published_at - self.started_at) * 1000)})
+            self.owner.transport.preview(self.id, images[0], final=True,
+                                         run_id=self.state["run_id"], started=self.started_at)
 
     def publish_video(self, video, params, spec):
         path = Path(video["path"])
@@ -298,14 +290,12 @@ class WorkflowSession:
             metadata["params"]["seed"] = metadata["run_info"]["Seed"]
         entry = self.owner.history_store.add_video(path, video, metadata)
         self.owner.history_store.save()
-        self.owner.histories = self.owner.history_store.snapshot()
+        self.owner.transport.attribute("histories", self.owner.history_store.snapshot())
         self.owner.set_payload("results", self.id, [entry])
         self.update(phase="complete", message=f"完成 · {video['duration']:.1f} 秒视频", step=self.state["total"])
-        preview = memoryview(path.read_bytes())
         self.published_at = time.monotonic()
-        self.owner.set_payload("previews", self.id, {
-            "data": preview, "mime": "video/mp4", "run_id": self.state["run_id"], "final": True,
-            "server_ms": round((self.published_at - self.started_at) * 1000)})
+        self.owner.transport.preview(self.id, path, video=True, final=True,
+                                     run_id=self.state["run_id"], started=self.started_at)
 
 
 class WorkflowPanel(anywidget.AnyWidget):
@@ -320,6 +310,7 @@ class WorkflowPanel(anywidget.AnyWidget):
     def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None):
         super().__init__(_esm=("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
                              + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8")))
+        self.transport = WidgetTransport(self)
         self.workflow_dir = Path(workflow_dir or ROOT / "workflows").resolve()
         self.output_dir = Path(output_dir or ROOT / "generated").resolve()
         self.workflow_dir.mkdir(parents=True, exist_ok=True)
@@ -376,10 +367,25 @@ class WorkflowPanel(anywidget.AnyWidget):
             self.settings_backup(saved)
 
     def publish(self):
-        self.state = {**self.state, "panels": [session.state for session in self.sessions.values()]}
+        self.transport.payload("state", "panels", [session.state for session in self.sessions.values()])
+
+    def send(self, content, buffers=None):
+        self.transport.send(content, buffers)
 
     def set_payload(self, name, panel_id, value):
-        setattr(self, name, {**getattr(self, name), panel_id: value})
+        self.transport.payload(name, panel_id, value)
+
+    def unload_models(self, panel_id=None):
+        from model_residency import release, workflow_group
+
+        group = workflow_group(self.sessions[panel_id].state['selected']) if panel_id else 'all'
+        with INFERENCE_LOCK:
+            release(group)
+            for session in self.sessions.values():
+                if group == 'all' or workflow_group(session.state['selected']) == group:
+                    session.prepared_signature = None
+                    session.update(message='模型已卸载', metadata={**session.state['metadata'], '模型驻留':'已卸载'})
+        self.state = {**self.state, 'message':'全部模型已卸载' if group == 'all' else '当前工作流模型已卸载'}
 
     def image_path(self, name):
         archived = self.history_store.original(name)
@@ -465,6 +471,10 @@ class WorkflowPanel(anywidget.AnyWidget):
             if action == "scan_models":
                 self.refresh_models()
                 return
+            if action == "unload_models":
+                import marimo as mo
+                mo.Thread(target=self.unload_models, args=(content.get('id'),), daemon=True).start()
+                return
             if action == "import":
                 path = self.workflow_dir / Path(content["name"]).name
                 if path.suffix != ".py":
@@ -529,16 +539,11 @@ class WorkflowPanel(anywidget.AnyWidget):
                            "request": content["request"]}, buffers=[memoryview(path.read_bytes())])
             elif action == "image_preview":
                 source = self.image_path(content["name"])
-                if source.suffix == ".mp4":
-                    source = self.history_store.thumbnail(content["name"])
-                self.send({"type": "image_preview", "id": session.id, "name": content["name"],
-                           "request": content["request"]},
-                          buffers=[image_bytes(source)])
+                self.transport.preview(session.id, source, video=source.suffix == ".mp4", final=True,
+                    response={"type":"image_preview", "name":content["name"], "request":content["request"]})
             elif action == "show_result":
                 path = self.image_path(content["name"])
-                self.set_payload("previews", session.id,
-                                 {"data": memoryview(path.read_bytes()), "mime": "video/mp4"}
-                                 if path.suffix == ".mp4" else image_bytes(path))
+                self.transport.preview(session.id, path, video=path.suffix == ".mp4", final=True)
             elif action == "export":
                 path = self.workflow_dir / session.state["selected"]
                 self.send({"type": "workflow", "name": path.name, "source": path.read_text(encoding="utf-8")})
@@ -548,6 +553,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.state = {**self.state, "settings_result": {"request": content.get("request"), "error": str(exc)}}
 
     def close(self):
+        if hasattr(self, "transport"):
+            self.transport.close()
         if getattr(self, "files_bridge", None):
             self.files_bridge.close()
             self.files_bridge = None
