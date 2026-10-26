@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import shutil
+from content_store import read_text, write_text, open_image, save_image
 
 from PIL import Image
 
@@ -14,27 +15,28 @@ class ImageHistory:
         self.thumbnails = self.directory / "thumbnails"
         self.thumbnails.mkdir(exist_ok=True)
         self.index_path = self.directory / "index.json"
-        self.entries = json.loads(self.index_path.read_text(encoding="utf-8")) if self.index_path.exists() else []
+        self.entries = json.loads(read_text(self.index_path)) if self.index_path.exists() else []
         self.persist_image = None
         self.persist_index = None
 
     def save(self):
-        self.index_path.write_text(json.dumps(self.entries, ensure_ascii=False, indent=2), encoding="utf-8")
+        write_text(self.index_path, json.dumps(self.entries, ensure_ascii=False, indent=2))
         if self.persist_index:
             self.persist_index()
 
     def add(self, source, metadata):
         source = Path(source)
         original = self.directory / source.name
-        shutil.copy2(source, original)
-        with Image.open(original) as image:
+        if source != original:
+            shutil.copy2(source, original)
+        with open_image(original) as image:
             entry = {"name": source.name, "kind": "image", "workflow": metadata["workflow"],
                      "width": image.width, "height": image.height, "bytes": original.stat().st_size,
                      "created_at": datetime.fromtimestamp(source.stat().st_mtime, timezone.utc).isoformat(),
                      "params": metadata["params"], "run_info": metadata.get("run_info", {})}
             thumbnail = image.convert("RGB")
             thumbnail.thumbnail((240, 240))
-            thumbnail.save(self.thumbnails / (source.stem + ".jpg"), "JPEG", quality=75)
+            save_image(thumbnail, self.thumbnails / (source.stem + ".jpg"), "JPEG", quality=75)
         self.entries.append(entry)
         if self.persist_image:
             self.persist_image(source.name)
@@ -45,7 +47,7 @@ class ImageHistory:
         for source in sorted(Path(directory).glob("*.png")):
             if source.name in known:
                 continue
-            with Image.open(source) as image:
+            with open_image(source) as image:
                 encoded = image.info.get("workflow_studio")
             if encoded:
                 self.add(source, json.loads(encoded))
@@ -54,7 +56,8 @@ class ImageHistory:
     def add_video(self, source, video, metadata):
         source = Path(source)
         original = self.directory / source.name
-        shutil.copy2(source, original)
+        if source != original:
+            shutil.copy2(source, original)
         entry = {"name": source.name, "kind": "video", "workflow": metadata["workflow"],
                  **{key: video[key] for key in ("width", "height", "fps", "frames", "duration", "segments")},
                  "bytes": original.stat().st_size,
@@ -62,7 +65,7 @@ class ImageHistory:
                  "params": metadata["params"], "run_info": metadata["run_info"]}
         thumbnail = video["poster"].convert("RGB")
         thumbnail.thumbnail((240, 240))
-        thumbnail.save(self.thumbnails / (source.stem + ".jpg"), "JPEG", quality=75)
+        save_image(thumbnail, self.thumbnails / (source.stem + ".jpg"), "JPEG", quality=75)
         self.entries.append(entry)
         if self.persist_image:
             self.persist_image(source.name)

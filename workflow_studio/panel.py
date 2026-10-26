@@ -20,6 +20,7 @@ from chat_tree import ChatTree
 from image_history import ImageHistory
 from preview_transport import WidgetTransport, jpeg
 from settings_writer import SettingsWriter
+from content_store import enabled, read_bytes, write_text, open_image, save_image
 
 ROOT = Path(__file__).parent
 INFERENCE_LOCK = threading.Lock()
@@ -56,7 +57,7 @@ class RunContext:
     def image(self, value):
         if value.startswith("data:"):
             return Image.open(io.BytesIO(base64.b64decode(value.split(",", 1)[1])))
-        return Image.open(value)
+        return open_image(value)
 
     def text(self, value, *, final=False):
         self.check_cancelled()
@@ -227,7 +228,7 @@ class WorkflowSession:
                 if not module.SPEC.get("chat"):
                     filename = time.strftime("%Y%m%d-%H%M%S") + f"-{self.id}.txt"
                     path = self.owner.output_dir / filename
-                    path.write_text(result, encoding="utf-8")
+                    write_text(path, result)
                     self.owner.set_payload("results", self.id,
                                            [{"name": filename, "kind": "text", "bytes": path.stat().st_size}])
                 self.update(phase="complete", message="文本生成完成", step=self.state["total"])
@@ -240,7 +241,7 @@ class WorkflowSession:
         except Exception as exc:
             self.update(phase="error", message=f"{type(exc).__name__}: {exc}")
             if not self.chat:
-                (self.owner.output_dir / f"{self.id}-error.log").write_text(traceback.format_exc(), encoding="utf-8")
+                self.state['error_detail'] = traceback.format_exc()
         finally:
             if acquired:
                 INFERENCE_LOCK.release()
@@ -253,7 +254,7 @@ class WorkflowSession:
     def publish_images(self, images, params, spec):
         if isinstance(images, (Image.Image, str, Path)):
             images = [images]
-        images = [Image.open(image) if isinstance(image, (str, Path)) else image for image in images]
+        images = [open_image(image) if isinstance(image, (str, Path)) else image for image in images]
         self.update(phase="publishing", message="显示结果…")
         image_fields = {field["key"] for field in spec["fields"]
                         if field["type"] in ("image", "media_list", "keyframe_list")}
@@ -268,7 +269,7 @@ class WorkflowSession:
             path = self.owner.output_dir / filename
             png_info = PngInfo()
             png_info.add_text("workflow_studio", json.dumps(metadata, ensure_ascii=False))
-            image.save(path, pnginfo=png_info, compress_level=1)
+            save_image(image, path, "PNG", pnginfo=png_info, compress_level=1)
             self.owner.history_store.add(path, metadata)
             results.append({"name": filename, "kind": "image", "width": image.width,
                             "height": image.height, "bytes": path.stat().st_size})
@@ -317,12 +318,16 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.output_dir = Path(output_dir or ROOT / "generated").resolve()
         self.workflow_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.history_store = ImageHistory(self.workflow_dir.parent / "studio_history")
+        self.history_store = ImageHistory(self.output_dir if enabled() else self.workflow_dir.parent / "studio_history")
         self.history_store.import_directory(self.output_dir)
         self.histories = self.history_store.snapshot()
         self.settings_path = self.workflow_dir.parent / "studio_settings.json"
         self.settings_backup = settings_backup
-        saved = json.loads(self.settings_path.read_text(encoding="utf-8")) if self.settings_path.exists() else {}
+        if enabled():
+            from workspace_store import read
+            saved = read().get('studio_settings', {})
+        else:
+            saved = json.loads(self.settings_path.read_text(encoding="utf-8")) if self.settings_path.exists() else {}
         self.settings_writer = SettingsWriter(self.settings_path, self.settings_backup, self.settings_saved)
         self.model_bindings = saved.get("model_bindings", {})
         self._modules = {}
@@ -362,7 +367,7 @@ class WorkflowPanel(anywidget.AnyWidget):
             {"id": session.id, "workflow": session.state["selected"], "params": {
                 field["key"]: session.params[field["key"]]
                 for field in session.state["spec"]["fields"]
-                if field.get("persist", field.get("area") != "prompts" and
+                if enabled() or field.get("persist", field.get("area") != "prompts" and
                              field["type"] not in ("image", "media_list", "keyframe_list"))}}
             for session in self.sessions.values()]}
         self.settings_writer.submit(saved, request)
@@ -529,16 +534,16 @@ class WorkflowPanel(anywidget.AnyWidget):
                 path = self.image_path(content["name"])
                 mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
                 self.send({"type": "download", "id": session.id, "name": path.name, "mime": mime},
-                          buffers=[memoryview(path.read_bytes())])
+                          buffers=[memoryview(read_bytes(path))])
             elif action == "image_detail":
                 path = self.image_path(content["name"])
                 self.send({"type": "image_detail", "id": session.id, "name": path.name,
                            "request": content["request"], "mime": mimetypes.guess_type(path.name)[0]},
-                          buffers=[memoryview(path.read_bytes())])
+                          buffers=[memoryview(read_bytes(path))])
             elif action == "image_thumbnail":
                 path = self.history_store.thumbnail(content["name"])
                 self.send({"type": "image_thumbnail", "id": session.id, "name": content["name"],
-                           "request": content["request"]}, buffers=[memoryview(path.read_bytes())])
+                           "request": content["request"]}, buffers=[memoryview(read_bytes(path))])
             elif action == "image_preview":
                 source = self.image_path(content["name"])
                 self.transport.preview(session.id, source, video=source.suffix == ".mp4", final=True,

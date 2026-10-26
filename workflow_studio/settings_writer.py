@@ -2,6 +2,7 @@
 from copy import deepcopy
 import json
 import threading
+from content_store import enabled
 
 
 class SettingsWriter:
@@ -32,7 +33,8 @@ class SettingsWriter:
                 self.pending = None
             error = ''
             try:
-                self.path.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding='utf-8')
+                if not enabled():
+                    self.path.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding='utf-8')
                 if self.backup:
                     self.backup(settings)
             except Exception as exc:

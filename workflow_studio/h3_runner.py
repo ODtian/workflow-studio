@@ -8,6 +8,7 @@ import secrets
 import time
 
 from moss_runner import MODELS, model_files, prepare_core, preferred
+from content_store import enabled, read_bytes, write_bytes
 
 _components = {}
 _lora_models = {}
@@ -121,7 +122,7 @@ def _media_source(item):
     value = item.get("data") or item.get("path") if isinstance(item, dict) else item
     if str(value).startswith("data:"):
         return io.BytesIO(base64.b64decode(value.split(",", 1)[1]))
-    return str(value)
+    return io.BytesIO(read_bytes(value)) if enabled() else str(value)
 
 
 def read_image(item):
@@ -282,8 +283,11 @@ def _save_clip(frames, audio, path):
     from comfy_api.latest import Types
 
     video = CreateVideo.execute(frames, FPS, audio=audio)[0]
-    video.save_to(str(path), format=Types.VideoContainer.MP4, codec=Types.VideoCodec.H264,
+    output = io.BytesIO() if enabled() else str(path)
+    video.save_to(output, format=Types.VideoContainer.MP4, codec=Types.VideoCodec.H264,
                   crf=18, preset="fast")
+    if enabled():
+        write_bytes(path, output.getvalue())
 
 
 def _fit_audio(audio, frames):

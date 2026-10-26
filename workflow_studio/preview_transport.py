@@ -8,11 +8,12 @@ import time
 
 import anywidget
 from PIL import Image
+from content_store import enabled, open_image, read_bytes
 
 
 def jpeg(image, *, final=False):
     if isinstance(image, (str, Path)):
-        image = Image.open(image)
+        image = open_image(image)
     image = image.convert('RGB')
     image.thumbnail((1280, 1280) if final else (512, 512))
     buffer = io.BytesIO()
@@ -25,9 +26,10 @@ def video_proxy(path):
 
     path = Path(path)
     target = path.with_name(path.stem + '-preview.mp4')
-    if target.exists():
+    if not enabled() and target.exists():
         return target
-    with av.open(str(path)) as source, av.open(str(target), 'w', options={'movflags': '+faststart'}) as output:
+    buffer = io.BytesIO() if enabled() else target
+    with av.open(io.BytesIO(read_bytes(path))) as source, av.open(buffer, 'w', format='mp4', options={'movflags': '+frag_keyframe+empty_moov'}) as output:
         video = source.streams.video[0]
         scale = min(1, 640 / max(video.width, video.height))
         encoded = output.add_stream('libx264', rate=video.average_rate)
@@ -52,7 +54,7 @@ def video_proxy(path):
                 output.mux(packet)
         for ready in encoded.encode():
             output.mux(ready)
-    return target
+    return buffer.getvalue() if enabled() else target
 
 
 class WidgetTransport:
@@ -112,7 +114,8 @@ class WidgetTransport:
                 if session is None or run_id and session.state.get('run_id') != run_id:
                     continue
                 try:
-                    data = memoryview(video_proxy(source).read_bytes()) if video else jpeg(source, final=final)
+                    proxy = video_proxy(source) if video else None
+                    data = memoryview(proxy if isinstance(proxy, bytes) else proxy.read_bytes()) if video else jpeg(source, final=final)
                 except Exception as error:
                     self.last_error = str(error)
                     continue

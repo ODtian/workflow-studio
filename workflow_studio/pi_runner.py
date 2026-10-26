@@ -1,17 +1,18 @@
 """Pi tools, resources and sessions over pipes to the resident native model."""
 import atexit
 import json
+import io
 import os
 from pathlib import Path
 import queue
 import shutil
 import subprocess
-import tempfile
 import threading
 import time
 import uuid
 import llama_runner
 import workspace_store
+from content_store import enabled
 
 ROOT = Path(__file__).parent / "pi_bridge"
 _client = None
@@ -24,11 +25,11 @@ class PiClient:
             ctx.status("安装 Pi 运行库…")
             subprocess.run([shutil.which("npm"), "install", "--prefix", str(ROOT), "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"], check=True, capture_output=True, text=True)
         workspace = Path(os.environ.get("WORKFLOW_WORKSPACE", os.getcwd()))
-        self.log_path = Path(tempfile.gettempdir()) / "workflow-studio-pi.log"
-        self.log = self.log_path.open("w", encoding="utf-8")
+        self.log = io.StringIO()
         self.process = subprocess.Popen([shutil.which("node"), str(ROOT / "worker.mjs")], cwd=workspace,
             env={**os.environ, "PI_OFFLINE":"1", "WORKFLOW_PI_DIR":str(workspace / ".pi" / "agent")},
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log, text=True, encoding="utf-8", bufsize=1)
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", bufsize=1)
+        threading.Thread(target=self.read_errors, daemon=True).start()
         self.pending = {}
         self.write_lock = threading.Lock()
         self.model_events = None
@@ -42,7 +43,11 @@ class PiClient:
             if target is not None:
                 target.put(record)
         for target in list(self.pending.values()):
-            target.put({"type":"result", "error":self.log_path.read_text(encoding="utf-8")})
+            target.put({"type":"result", "error":self.log.getvalue()})
+
+    def read_errors(self):
+        for line in self.process.stderr:
+            self.log.write(line)
 
     def send(self, value):
         with self.write_lock:
@@ -63,7 +68,6 @@ class PiClient:
     def close(self):
         if self.process.poll() is None:
             self.process.terminate()
-        self.log.close()
 
 
 def prepare_pi(ctx):

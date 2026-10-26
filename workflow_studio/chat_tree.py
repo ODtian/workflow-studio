@@ -9,6 +9,7 @@ import sqlite3
 import tempfile
 import threading
 from PIL import Image, ImageOps
+from content_store import enabled
 
 
 SESSION_DIRECTORY = tempfile.TemporaryDirectory(prefix="workflow-studio-chats-")
@@ -17,7 +18,8 @@ SESSION_DIRECTORY = tempfile.TemporaryDirectory(prefix="workflow-studio-chats-")
 class ChatTree:
     def __init__(self):
         self.path = Path(SESSION_DIRECTORY.name) / f"{secrets.token_hex(8)}.sqlite3"
-        self.db = sqlite3.connect(self.path, check_same_thread=False)
+        self.db = sqlite3.connect(':memory:' if enabled() else self.path, check_same_thread=False)
+        self.images = {}
         self.db.row_factory = sqlite3.Row
         self.lock = threading.RLock()
         self.db.executescript("""
@@ -35,6 +37,7 @@ class ChatTree:
     def close(self):
         self._response = None
         self.db.close()
+        self.images.clear()
 
     def _node(self, node_id):
         if self._response and self._response["id"] == node_id:
@@ -51,13 +54,21 @@ class ChatTree:
             data = base64.b64decode(image["url"].split(",", 1)[1])
             source = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
             filename = secrets.token_hex(8) + ".png"
-            source.save(directory / filename)
+            if enabled():
+                original = io.BytesIO()
+                source.save(original, 'PNG')
+                self.images[filename] = original.getvalue()
+            else:
+                source.save(directory / filename)
             source.thumbnail((512, 512))
             preview = io.BytesIO()
             source.save(preview, "JPEG", quality=85)
             attachments.append({"name": image["name"], "file": filename,
                                 "preview": "data:image/jpeg;base64," + base64.b64encode(preview.getvalue()).decode()})
         return attachments
+
+    def image_bytes(self, name):
+        return self.images[name] if enabled() else (self.path.with_suffix('') / name).read_bytes()
 
     def _flush(self):
         if self._response:
@@ -151,7 +162,7 @@ class ChatTree:
                 content = node["content"]
                 if node["attachments"]:
                     content = [{"type": "image_url", "image_url": {"url": "data:image/png;base64," +
-                                base64.b64encode((self.path.with_suffix("") / image["file"]).read_bytes()).decode()}}
+                                base64.b64encode(self.image_bytes(image["file"])).decode()}}
                                for image in node["attachments"]] + [{"type": "text", "text": content}]
                 messages.append({"role": node["role"], "content": content})
             return messages
@@ -185,7 +196,7 @@ class ChatTree:
                 node["attachments"] = json.loads(node["attachments"])
                 for image in node["attachments"]:
                     image["url"] = "data:image/png;base64," + base64.b64encode(
-                        (self.path.with_suffix("") / image["file"]).read_bytes()).decode()
+                        self.image_bytes(image["file"])).decode()
             return json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
 
     def import_snapshot(self, data):
