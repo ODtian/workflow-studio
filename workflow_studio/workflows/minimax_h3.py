@@ -2,6 +2,7 @@
 from h3_runner import MODELS, h3_files, preferred, run_h3
 from runtime_options import sampling_options
 from size_presets import common_size_presets
+from h3_selflift import fields as selflift_fields
 
 _files = h3_files()
 _samplers, _schedulers = sampling_options()
@@ -61,6 +62,7 @@ SPEC = {
         {"key": "width", "label": "宽度", "type": "number", "section": "画面", "default": 768, "min": 32, "step": 32},
         {"key": "height", "label": "高度", "type": "number", "section": "画面", "default": 768, "min": 32, "step": 32},
         {"key": "seed", "label": "随机种子", "type": "number", "section": "画面", "default": -1, "min": -1, "step": 1},
+        *selflift_fields(),
         {"key": "shift", "label": "视频 Shift", "type": "number", "area": "advanced", "default": 12, "min": 0.01, "step": 0.1},
         {"key": "attention", "label": "注意力加速", "type": "select", "area": "advanced", "default": "auto",
          "options": [{"label": "自动", "value": "auto"}, {"label": "Sol 稀疏", "value": "sol"},

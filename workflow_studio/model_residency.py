@@ -22,6 +22,9 @@ def release(group='all'):
         moss._compiled = moss._compiled_key = None
         moss._conditioning.clear()
     if group in ('all','h3') and h3 is not None:
+        from h3_selflift import release_upscalers
+        for patcher in release_upscalers():
+            targets.add(id(patcher.model))
         for value in h3._components.values():
             patcher = getattr(value, 'patcher', value)
             targets.add(id(patcher.model))

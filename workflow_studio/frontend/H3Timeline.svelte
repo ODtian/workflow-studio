@@ -23,6 +23,7 @@ let total=$derived(plan.at(-1)?.end||Number(values.duration)||0);
 let axisEnd=$derived(Math.max(total,...plan.map(c=>c.sampleEnd))||1);
 let busy=$derived(panel.busy||panel.initializing);
 let layout=$derived(timeline.layout||{});
+let selfliftSteps=$derived(Math.max(1,Math.min(Number(values.steps)-1,Math.round(Number(values.steps)*Number(values.selflift_low_steps??.75)))));
 let allSources=$derived([...(values.references||[]).map(item=>({...item,resourceKind:'reference'})),...(values.loras||[]).map(item=>({...item,resourceKind:'lora'}))]);
 let tracks=$derived(timeline.resources.map(resource=>({...resource,source:allSources.find(item=>item.id===resource.id)})).filter(resource=>resource.source));
 let activeResource=$derived(tracks.find(r=>r.id===resourceId));
@@ -31,7 +32,8 @@ let anchors=$derived([...(values.first_frame?[{id:'__first',time:0,data:values.f
 const clone=value=>JSON.parse(JSON.stringify(value));
 const pct=time=>100*time/axisEnd;
 const fmt=time=>Number(Number(time).toFixed(3));
-const field=key=>panel.spec.fields.find(f=>f.key===key);
+const field=key=>{const definition=panel.spec.fields.find(f=>f.key===key);return key==='sampler'&&values.selflift_enabled?{...definition,options:['euler']}:definition;};
+const visible=definition=>Object.entries(definition.when||{}).every(([key,expected])=>Array.isArray(expected)?expected.includes(values[key]):values[key]===expected);
 const act=(action,data={})=>send(action,{id:panel.id,...data});
 
 function commit(next,{history=true}={}){
@@ -144,6 +146,7 @@ async function pastePrompt(){try{patchClip('prompt',await navigator.clipboard.re
         {#if selected.index&&['motion','overlap'].includes(selected.method)}<div class="h3-two"><label class="field"><span>运动上下文 / 帧</span><select value={selected.context_frames} disabled={busy} onchange={e=>patchClip('context_frames',Number(e.currentTarget.value))}>{#each [5,22,39,56] as value}<option {value}>{value}</option>{/each}</select></label><label class="field"><span>音频上下文 / 帧</span><Input type="number" min={0} step={3} value={selected.audio_context_frames} disabled={busy} onchange={e=>patchClip('audio_context_frames',Number(e.currentTarget.value))}/></label></div>{/if}
         {#if selected.index&&selected.method==='overlap'}<label class="field"><span>图像混合 / 帧</span><Input type="number" min={0} step={1} value={selected.blend_frames} disabled={busy} onchange={e=>patchClip('blend_frames',Number(e.currentTarget.value))}/></label>{/if}
         <div class="h3-cost">交叠 {selected.carry}f ＋ 新增 {selected.frames}f ＋ 补齐 {selected.padding}f<br>计算 {selected.sample}f · {fmt(seconds(selected.sample))} s</div>
+        {#if values.selflift_enabled}<div class="h3-cost">SelfLift · {selfliftSteps} 步低分辨率 → {Number(values.steps)-selfliftSteps} 步原分辨率</div>{/if}
         <div class="h3-heading"><label for={'h3-audio-'+panel.id}>本段声音</label><Switch id={'h3-audio-'+panel.id} checked={selected.audio} disabled={busy} onCheckedChange={checked=>patchClip('audio',checked)}/></div>
       {:else if inspector==='references'||inspector==='loras'}
         {@const kind=inspector==='references'?'reference':'lora'}
@@ -164,7 +167,8 @@ async function pastePrompt(){try{patchClip('prompt',await navigator.clipboard.re
         <Field field={field('negative_prompt')} bind:value={values.negative_prompt} {busy} paste/>
         <ResolutionControls presets={panel.spec.size_presets} bind:values {busy}/>
         <div class="h3-two">{#each ['steps','cfg','sampler','scheduler','seed'] as key}<Field field={field(key)} bind:value={values[key]} {busy}/>{/each}</div>
-        <details class="settings-group"><summary>高级设置</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>f.area==='advanced'&&!['context_frames','audio_context_frames'].includes(f.key)) as definition}<Field field={definition} bind:value={values[definition.key]} {busy}/>{/each}</div></details>
+        <details class="settings-group"><summary>SelfLift</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>f.section==='SelfLift'&&visible(f)) as definition}<Field field={definition} bind:value={values[definition.key]} {busy}/>{/each}</div></details>
+        <details class="settings-group"><summary>高级设置</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>f.area==='advanced'&&f.section!=='SelfLift'&&!['context_frames','audio_context_frames'].includes(f.key)) as definition}<Field field={definition} bind:value={values[definition.key]} {busy}/>{/each}</div></details>
       {/if}
       </div>
     </aside>

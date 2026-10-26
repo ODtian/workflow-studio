@@ -296,6 +296,9 @@ def _fit_audio(audio, frames):
 
 def run_h3(params, ctx):
     import torch
+    from h3_selflift import sample as sample_selflift, validate as validate_selflift
+    if params.get('selflift_enabled'):
+        validate_selflift(params)
     segments = plan_segments(params)
     used_loras = {item['name']:item for segment in segments
                   for item in segment.get('loras', params.get('loras', [])) if item['strength']}
@@ -374,7 +377,7 @@ def run_h3(params, ctx):
             if negative_key not in _conditioning:
                 _conditioning[negative_key] = clip.encode_from_tokens_scheduled(
                     clip.tokenize(negative_key[1]))
-            noise = comfy.sample.prepare_noise(latent["samples"], seed + number)
+            noise = None
 
             def callback(step, x0, x, count):
                 preview = None
@@ -386,10 +389,14 @@ def run_h3(params, ctx):
                              message=f"第 {number+1}/{len(segments)} 段 · 采样 {step+1}/{count}")
 
             started = time.monotonic()
-            samples = comfy.sample.sample(model, noise, steps, float(params["cfg"]),
-                params["sampler"], params["scheduler"], positive, _conditioning[negative_key],
-                latent["samples"], noise_mask=latent.get("noise_mask"), callback=callback,
-                disable_pbar=True, seed=seed + number)
+            if params.get('selflift_enabled'):
+                samples = sample_selflift(model,positive,_conditioning[negative_key],vae,latent,params,seed+number,callback,ctx)
+            else:
+                noise = comfy.sample.prepare_noise(latent['samples'],seed+number)
+                samples = comfy.sample.sample(model, noise, steps, float(params["cfg"]),
+                    params["sampler"], params["scheduler"], positive, _conditioning[negative_key],
+                    latent["samples"], noise_mask=latent.get("noise_mask"), callback=callback,
+                    disable_pbar=True, seed=seed + number)
             sample_seconds += time.monotonic() - started
             video_latent, audio_latent = samples.unbind()
             started = time.monotonic()

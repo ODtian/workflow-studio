@@ -411,7 +411,7 @@ class WorkflowPanel(anywidget.AnyWidget):
         roots = {Path(module.SPEC["model_root"]) for _, module in self._modules.values()
                  if module.SPEC.get("model_root")}
         return sorted(str(path) for root in roots for path in root.rglob("*")
-                      if path.suffix.lower() in (".safetensors", ".gguf"))
+                      if path.is_file() and path.suffix.lower() in (".safetensors", ".gguf", ".pth"))
 
     def refresh_models(self):
         if self.model_entries() != self._model_entries:

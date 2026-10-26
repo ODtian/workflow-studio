@@ -28,7 +28,7 @@ _conditioning = {}
 
 def model_files():
     files = {}
-    for folder in ("diffusion_models", "text_encoders", "vae", "loras", "embeddings", "vae_approx"):
+    for folder in ("diffusion_models", "text_encoders", "vae", "loras", "embeddings", "vae_approx", "latent_upscale_models"):
         directory = MODELS / folder
         directory.mkdir(parents=True, exist_ok=True)
         files[folder] = sorted(p.relative_to(directory).as_posix()
@@ -70,7 +70,7 @@ def prepare_core(ctx):
     if str(CORE) not in sys.path:
         sys.path.insert(0, str(CORE))
     import folder_paths
-    for folder in ("diffusion_models", "text_encoders", "vae", "loras", "embeddings", "vae_approx"):
+    for folder in ("diffusion_models", "text_encoders", "vae", "loras", "embeddings", "vae_approx", "latent_upscale_models"):
         folder_paths.add_model_folder_path(folder, str(MODELS / folder), is_default=True)
     _core_ready = True
 
