@@ -33,8 +33,6 @@ def get_studio(workspace=None):
     saved_state = workspace_store.read()
     config.update(saved_state.get("studio_config", {}))
     workspace_store.edit(lambda state: state.update(studio_config=config))
-    if config.get("h3_models") and not saved_state.get("h3_models"):
-        workspace_store.edit(lambda state: state.update(h3_models=config["h3_models"]))
     os.environ["WORKFLOW_MODELS_DIR"] = config["model_dir"]
     os.environ["WORKFLOW_COMFY_ROOT"] = config["core_dir"]
     if importlib.util.find_spec("anywidget") is None:

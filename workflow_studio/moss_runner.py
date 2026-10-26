@@ -32,7 +32,7 @@ def model_files():
         directory = MODELS / folder
         directory.mkdir(parents=True, exist_ok=True)
         files[folder] = sorted(p.relative_to(directory).as_posix()
-                               for p in directory.rglob("*.safetensors"))
+                               for p in directory.rglob("*.safetensors") if p.is_file())
     return files
 
 
@@ -77,6 +77,12 @@ def prepare_core(ctx):
 
 def load_models(params, ctx):
     global _loaded, _loaded_key, _adapted, _adapted_key, _compiled, _compiled_key
+    paths = [MODELS / folder / params[key] for folder, key in
+             (("diffusion_models", "model"), ("text_encoders", "text_encoder"), ("vae", "vae"))]
+    selected = paths + [MODELS / "loras" / item["name"] for item in params.get("loras", []) if item["strength"]]
+    missing = [str(path) for path in selected if not path.is_file()]
+    if missing:
+        raise FileNotFoundError("缺少本地模型文件：\n" + "\n".join(missing))
     started = time.monotonic()
     prepare_core(ctx)
     import comfy.sd
@@ -84,8 +90,6 @@ def load_models(params, ctx):
     import comfy.model_management
     ctx.metadata(运行库准备秒=round(time.monotonic() - started, 3))
 
-    paths = [MODELS / folder / params[key] for folder, key in
-             (("diffusion_models", "model"), ("text_encoders", "text_encoder"), ("vae", "vae"))]
     key = tuple((str(path), path.stat().st_mtime_ns) for path in paths)
     if _loaded_key != key:
         parts = list(_loaded or (None, None, None))

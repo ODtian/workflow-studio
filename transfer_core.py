@@ -51,26 +51,9 @@ def cancelled(event):
         raise Cancelled('已取消；原文件保持不变')
 
 
-SENSITIVE_PARTS = {'.ssh', '.aws', '.azure', '.gnupg', '.kube', '.docker', '.codex',
-                   '.git', 'secrets', 'credentials', 'gdrive-fsspec', 'gdrivefs',
-                   'gcloud', 'rclone', '1password', 'keyrings', 'jupyter_runtime',
-                   'privatekeys', 'private_keys', 'private-keys'}
-SENSITIVE_NAMES = {'.netrc', '.pypirc', '.npmrc', '.git-credentials', 'rclone.conf',
-                   'kaggle.json', 'id_rsa', 'id_dsa', 'id_ecdsa', 'id_ed25519',
-                   'authorized_keys', 'shadow', 'gshadow', 'application_default_credentials.json'}
-SENSITIVE_EXTENSIONS = {'.pem', '.key', '.p12', '.pfx', '.jks', '.keystore', '.kdbx'}
-SENSITIVE_WORDS = re.compile(r'(?:^|[._ -])(?:tokens?|secrets?|credentials?|passwords?|private[_ -]?key|client[_ -]?secret|service[_ -]?account)(?:$|[._ -])', re.I)
 BLOCKED_LOCAL_PREFIXES = (Path('/proc'), Path('/sys'), Path('/dev'), Path('/run'),
     Path('/var/run'), Path('/etc/ssh'), Path('/etc/ssl/private'),
     Path('/tmp/molab-comfy-runtime/tunnel'))
-# Content guards catch explicit credentials in otherwise innocuously named
-# text/code files. Bytes are inspected locally, never shown or logged.
-CONTENT_SECRET = re.compile(
-    rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----|'
-    rb'(?i:["\'](?:private_key|client_secret|refresh_token|access_token|api_key|password)["\']\s*:\s*["\'][^"\']+)|'
-    rb'sk-(?:proj-)?[A-Za-z0-9_-]{24,}|github_pat_[A-Za-z0-9_]{24,}|'
-    rb'gh[pousr]_[A-Za-z0-9]{24,}|(?:AKIA|ASIA)[A-Z0-9]{16}|'
-    rb'(?im:^[ \t]*(?:export\s+)?[A-Z0-9_]*(?:API_KEY|PASSWORD|CLIENT_SECRET|PRIVATE_KEY|ACCESS_TOKEN|REFRESH_TOKEN)\s*=\s*(?!(?:os\.(?:getenv|environ)|process\.env|getenv\(|environ\[|None\b|\$))["\']?[^\s"\']+["\']?[ \t]*(?:#[^\r\n]*)?\r?\n)')
 
 
 def safe_name(name):
@@ -85,11 +68,6 @@ def safe_name(name):
 def safe_parts(parts):
     for part in parts:
         safe_name(part)
-        lower = part.lower()
-        if (lower in SENSITIVE_PARTS or lower in SENSITIVE_NAMES
-                or lower == '.env' or lower.startswith('.env.') or lower.endswith('.env')
-                or Path(lower).suffix in SENSITIVE_EXTENSIONS or SENSITIVE_WORDS.search(lower)):
-            raise TransferError('凭证或敏感路径默认禁止读取和传输')
     return parts
 
 
@@ -99,26 +77,6 @@ def safe_local_path(path):
     if any(path == prefix or path.is_relative_to(prefix) for prefix in BLOCKED_LOCAL_PREFIXES):
         raise TransferError('系统敏感目录和伪文件系统不支持读取或复制')
     return path
-
-
-def guard_content(data, tail=b''):
-    block = tail + data
-    # Literal prefixes cover every alternative in CONTENT_SECRET. Binary model
-    # chunks usually contain none, so keep the expensive regex for candidates.
-    markers = (b'private key', b'private_key', b'client_secret', b'refresh_token',
-               b'access_token', b'api_key', b'password', b'github_pat_',
-               b'ghp_', b'gho_', b'ghu_', b'ghs_', b'ghr_', b'akia', b'asia')
-    lowered = block.lower()
-    if any(marker in lowered for marker in markers):
-        if CONTENT_SECRET.search(block):
-            raise TransferError('文件包含明确的凭证内容，已阻止传输')
-    else:
-        offset = block.find(b'sk-')
-        while offset >= 0:
-            if CONTENT_SECRET.match(block, offset):
-                raise TransferError('文件包含明确的凭证内容，已阻止传输')
-            offset = block.find(b'sk-', offset + 3)
-    return block[-16384:]
 
 
 def fingerprint(info):
@@ -294,8 +252,6 @@ class GuardedReader:
     """Validate mutable local uploads before returning each block to the SDK."""
     def __init__(self, stream, expected, cancel):
         self.stream, self.expected, self.cancel = stream, expected, cancel
-        self.tail = b''
-        self.last_position = stream.tell()
 
     def _check(self):
         cancelled(self.cancel)
@@ -304,23 +260,13 @@ class GuardedReader:
 
     def read(self, size=-1):
         self._check()
-        position = self.stream.tell()
-        if position != self.last_position:
-            self.tail = b''
         data = self.stream.read(size)
         self._check()
-        self.tail = guard_content(data, self.tail)
-        self.last_position = self.stream.tell()
         return data
 
     def seek(self, offset, whence=0):
         self._check()
-        before = self.stream.tell()
-        result = self.stream.seek(offset, whence)
-        if result != before:
-            self.tail = b''
-        self.last_position = result
-        return result
+        return self.stream.seek(offset, whence)
 
     def tell(self):
         return self.stream.tell()
@@ -329,14 +275,12 @@ class GuardedReader:
 class HashingWriter:
     def __init__(self, stream, limit):
         self.stream, self.limit, self.count = stream, limit, 0
-        self._secret_tail = b''
         self.md5 = hashlib.md5(usedforsecurity=False)
         self.sha256 = hashlib.sha256()
 
     def write(self, data):
         if self.count + len(data) > self.limit:
             raise TransferError('下载超过已验证大小，未保存文件')
-        self._secret_tail = guard_content(data, self._secret_tail)
         result = self.stream.write(data)
         if result != len(data):
             raise TransferError('本地写入不完整')
@@ -344,9 +288,6 @@ class HashingWriter:
         self.md5.update(data)
         self.sha256.update(data)
         return result
-
-    def finish(self):
-        guard_content(b'\n', self._secret_tail)
 
     def tell(self):
         return self.count
@@ -896,7 +837,6 @@ class TransferController:
                     writer = HashingWriter(stream, source.size)
                     self.provider.download(source.remote_id, writer, source.size, progress, cancel)
                     cancelled(cancel)
-                    writer.finish()
                     fresh = self._validate_drive(source)
                     if (fresh.get('version') != meta.get('version') or fresh.get('name') != meta.get('name')
                             or not checksum_matches(fresh, writer.count, writer.md5.hexdigest(), writer.sha256.hexdigest())):
@@ -943,13 +883,10 @@ class TransferController:
         item['target_remote_id'] = target_meta['id']
         with local_file(self.local_roots['root'], source.parts, source.fp) as (stream, before):
             md5, sha256 = hashlib.md5(usedforsecurity=False), hashlib.sha256()
-            secret_tail = b''
             while block := stream.read(CHUNK):
                 cancelled(cancel)
-                secret_tail = guard_content(block, secret_tail)
                 md5.update(block)
                 sha256.update(block)
-            guard_content(b'\n', secret_tail)
             if fingerprint(os.fstat(stream.fileno())) != fingerprint(before):
                 raise TransferError('本地输出正在变化，未上传；请生成完成后重试')
             stream.seek(0)

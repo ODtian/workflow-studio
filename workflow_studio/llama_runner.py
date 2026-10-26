@@ -39,7 +39,7 @@ def gguf_files():
     directory = MODELS / "LLM"
     return [(path.relative_to(directory).as_posix(), gguf_profile(path))
             for path in directory.rglob("*.gguf")
-            if "-of-" not in path.stem or "-00001-of-" in path.stem]
+            if path.is_file() and ("-of-" not in path.stem or "-00001-of-" in path.stem)]
 
 
 def companion_files(role):

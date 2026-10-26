@@ -78,6 +78,8 @@ def validate_files(model, mmproj=None, mtp=None, embedded=False):
     for field, path in [('model', model), ('mmproj', mmproj), ('mtp', mtp)]:
         if path is None:
             continue
+        if not path.is_file():
+            raise FileNotFoundError(f"缺少本地{labels[field]}文件：{path}")
         info = profile(path)
         matches = info['has_mtp'] if field == 'mtp' else info['role'] == field
         if not matches:

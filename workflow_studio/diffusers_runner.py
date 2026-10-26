@@ -14,9 +14,8 @@ _pipeline = None
 
 def fields(family):
     return [
-        {"key": "model", "label": "模型目录 / Hugging Face 模型 ID", "type": "text", "section": "模型",
-         "default": "stabilityai/stable-diffusion-xl-base-1.0" if family == "sdxl" else "stable-diffusion-v1-5/stable-diffusion-v1-5",
-         "required": True, "hint": "支持 Diffusers 模型目录、模型 ID 或该架构的单文件 checkpoint。"},
+        {"key": "model", "label": "本地模型目录 / checkpoint", "type": "text", "section": "模型",
+         "default": "", "required": True, "hint": "填写本地 Diffusers 模型目录或该架构的 checkpoint 文件路径。"},
         {"key": "prompt", "label": "提示词", "type": "textarea", "section": "创作", "rows": 5,
          "default": "A small ceramic house in a moss garden, soft morning light, macro photography", "required": True},
         {"key": "negative_prompt", "label": "负面提示词", "type": "textarea", "section": "创作", "rows": 2, "default": ""},
@@ -37,6 +36,9 @@ def fields(family):
 
 
 def run_diffusion(family, params, ctx):
+    model = params["model"].strip()
+    if not model or not Path(model).exists():
+        raise FileNotFoundError("缺少本地模型文件或目录：" + model)
     if any(importlib.util.find_spec(name) is None for name in ("diffusers", "accelerate")):
         ctx.status("准备此工作流的 Diffusers 依赖…")
         subprocess.run(["uv", "pip", "install", "--no-deps", "--python", sys.executable,
@@ -52,7 +54,6 @@ def run_diffusion(family, params, ctx):
     )
 
     global _cache_key, _pipeline
-    model = params["model"].strip()
     key = family, model
     ctx.check_cancelled()
     if key != _cache_key:
@@ -64,7 +65,7 @@ def run_diffusion(family, params, ctx):
         cls = StableDiffusionXLPipeline if family == "sdxl" else StableDiffusionPipeline
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
         loader = cls.from_single_file if Path(model).is_file() else cls.from_pretrained
-        _pipeline = loader(model, torch_dtype=dtype)
+        _pipeline = loader(model, torch_dtype=dtype, local_files_only=True)
         _pipeline.to("cuda" if torch.cuda.is_available() else "cpu")
         _pipeline.set_progress_bar_config(disable=True)
         _cache_key = key

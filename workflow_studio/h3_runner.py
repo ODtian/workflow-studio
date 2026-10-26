@@ -4,8 +4,6 @@ from __future__ import annotations
 import base64
 import io
 import json
-import os
-from pathlib import Path
 import secrets
 import time
 
@@ -17,54 +15,20 @@ _conditioning = {}
 FPS = 24
 
 
-def model_sources():
-    import workspace_store
-
-    records = workspace_store.read().get("h3_models", [])
-    if not records:
-        config = Path(os.environ.get("WORKFLOW_WORKSPACE", ".")) / "studio_config.json"
-        if config.exists():
-            records = json.loads(config.read_text(encoding="utf-8")).get("h3_models", [])
-    return records
-
-
 def h3_files():
     files = model_files()
-    for item in model_sources():
-        files[item["folder"]].append(item["name"])
     return {folder: sorted({name for name in names if folder == "loras" or "h3" in name.lower() or "minimax" in name.lower()})
             for folder, names in files.items()}
 
 
 def ensure_weights(params, ctx):
-    records = {(item["folder"], item["name"]): item for item in model_sources()}
     selected = [("diffusion_models", params["model"]), ("text_encoders", params["text_encoder"]),
                 ("vae", params["vae"]), ("vae", params["audio_vae"])]
     selected.extend(("loras", item["name"]) for item in params.get("loras", []) if item["strength"])
-    missing = [(folder, name) for folder, name in selected if not (MODELS / folder / name).is_file()]
-    if not missing:
-        return
-    from files_bridge import connect_drive
-
-    provider = connect_drive()
-    for folder, name in missing:
-        record = records[folder, name]
-        path = MODELS / folder / name
-        path.parent.mkdir(parents=True, exist_ok=True)
-        partial = path.with_suffix(path.suffix + ".part")
-        last_update = 0
-
-        def progress(done):
-            nonlocal last_update
-            now = time.monotonic()
-            if now - last_update >= 1 or done == record["size"]:
-                ctx.status(f"下载 {name} · {done/record['size']:.0%} · {done/1024**3:.1f} GiB")
-                last_update = now
-
-        ctx.status("从 GDrive 恢复 · " + name)
-        with partial.open("w+b") as stream:
-            provider.download(record["id"], stream, record["size"], progress, ctx.cancel)
-        partial.replace(path)
+    missing = [str(MODELS / folder / name) for folder, name in selected
+               if not (MODELS / folder / name).is_file()]
+    if missing:
+        raise FileNotFoundError("缺少本地模型文件：\n" + "\n".join(missing))
 
 
 def load_models(params, ctx):
