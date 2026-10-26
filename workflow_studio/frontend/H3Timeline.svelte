@@ -15,6 +15,7 @@ import {FPS,MAX_FRAMES,frameCount,seconds,uid,methodNames,initialTimeline,planTi
 
 let {panel,values=$bindable(),children,send,playhead=$bindable(0),onseek,onplay,hasPreview=false}=$props();
 let selectedId=$state(''),checked=$state([]),view=$state('preview'),inspector=$state('segment'),resourceId=$state(''),notice=$state(''),undo=$state([]),drag=$state(null),picker;
+let promptEditing=false;
 let timeline=$derived(values.timeline?.clips?values.timeline:{clips:[],resources:[]});
 let plan=$derived(planTimeline(timeline));
 let selected=$derived(plan.find(c=>c.id===selectedId)||plan[0]);
@@ -63,6 +64,7 @@ onMount(()=>{
 });
 function choose(id,event){selectedId=id;inspector='segment';if(event?.shiftKey&&checked.length){const indices=timeline.clips.map(c=>c.id),a=indices.indexOf(checked[0]),b=indices.indexOf(id);checked=indices.slice(Math.min(a,b),Math.max(a,b)+1);}view='segment';}
 function patchClip(key,value){const next=clone(timeline),clip=next.clips.find(c=>c.id===selected.id);clip[key]=value;commit(next);}
+function editPrompt(value){const next=clone(timeline);next.clips.find(clip=>clip.id===selected.id).prompt=value;if(commit(next,{history:!promptEditing}))promptEditing=true;}
 function applyPrompt(all){
   const ids=all?timeline.clips.map(clip=>clip.id):checked,next=clone(timeline),prompt=selected.prompt;
   for(const clip of next.clips)if(ids.includes(clip.id))clip.prompt=prompt;
@@ -137,7 +139,7 @@ async function pastePrompt(){try{patchClip('prompt',await navigator.clipboard.re
         <div class="h3-heading"><strong>第 {selected.index+1} 段</strong><span>{fmt(selected.start)}–{fmt(selected.end)} s</span></div>
         <label class="field"><span>名称</span><Input value={selected.name} disabled={busy} onchange={e=>patchClip('name',e.currentTarget.value)}/></label>
         <label class="field"><span>输出时长 / 秒</span><Input type="number" min={1/FPS} step={1/FPS} value={fmt(selected.duration)} disabled={busy} onchange={e=>{patchClip('duration',seconds(frameCount(e.currentTarget.value)));e.currentTarget.value=fmt(selected.duration);}}/></label>
-        <div class="field"><div class="h3-heading"><span>片段提示词</span><Button size="icon-sm" variant="ghost" aria-label="用剪贴板替换片段提示词" disabled={busy} onclick={pastePrompt}><ClipboardPaste size={13}/></Button></div><Textarea aria-label="片段提示词" value={selected.prompt} rows={3} disabled={busy} onchange={e=>patchClip('prompt',e.currentTarget.value)}/><div class="h3-prompt-actions"><Button size="xs" variant="outline" disabled={busy||!checked.length} onclick={()=>applyPrompt(false)}>应用到勾选{checked.length?' · '+checked.length:''}</Button><Button size="xs" variant="outline" disabled={busy} onclick={()=>applyPrompt(true)}>应用到全部</Button></div></div>
+        <div class="field"><div class="h3-heading"><span>片段提示词</span><Button size="icon-sm" variant="ghost" aria-label="用剪贴板替换片段提示词" disabled={busy} onclick={pastePrompt}><ClipboardPaste size={13}/></Button></div><Textarea aria-label="片段提示词" value={selected.prompt} rows={3} disabled={busy} onfocus={()=>promptEditing=false} onblur={()=>promptEditing=false} oninput={e=>editPrompt(e.currentTarget.value)}/><div class="h3-prompt-actions"><Button size="xs" variant="outline" disabled={busy||!checked.length} onclick={()=>applyPrompt(false)}>应用到勾选{checked.length?' · '+checked.length:''}</Button><Button size="xs" variant="outline" disabled={busy} onclick={()=>applyPrompt(true)}>应用到全部</Button></div></div>
         {#if selected.index}<label class="field"><span>与前段衔接</span><select value={selected.method} disabled={busy} onchange={e=>patchClip('method',e.currentTarget.value)}>{#each Object.entries(methodNames) as [value,label]}<option {value}>{label}</option>{/each}</select></label>{/if}
         {#if selected.index&&['motion','overlap'].includes(selected.method)}<div class="h3-two"><label class="field"><span>运动上下文 / 帧</span><select value={selected.context_frames} disabled={busy} onchange={e=>patchClip('context_frames',Number(e.currentTarget.value))}>{#each [5,22,39,56] as value}<option {value}>{value}</option>{/each}</select></label><label class="field"><span>音频上下文 / 帧</span><Input type="number" min={0} step={3} value={selected.audio_context_frames} disabled={busy} onchange={e=>patchClip('audio_context_frames',Number(e.currentTarget.value))}/></label></div>{/if}
         {#if selected.index&&selected.method==='overlap'}<label class="field"><span>图像混合 / 帧</span><Input type="number" min={0} step={1} value={selected.blend_frames} disabled={busy} onchange={e=>patchClip('blend_frames',Number(e.currentTarget.value))}/></label>{/if}
