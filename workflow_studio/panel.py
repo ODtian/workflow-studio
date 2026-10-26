@@ -19,6 +19,7 @@ import traitlets
 from chat_tree import ChatTree
 from image_history import ImageHistory
 from preview_transport import WidgetTransport, jpeg
+from settings_writer import SettingsWriter
 
 ROOT = Path(__file__).parent
 INFERENCE_LOCK = threading.Lock()
@@ -203,6 +204,7 @@ class WorkflowSession:
         self.update(busy=True, phase="queued", message="等待推理资源…", step=0,
                     total=0, elapsed=0, display_ms=0, delivery_ms=0, end_to_end_ms=0,
                     run_id=run_id or secrets.token_hex(8), metadata={})
+        self.owner.send({"type":"preview_reset", "id":self.id, "run_id":self.state['run_id']})
         import marimo as mo
         self.worker = mo.Thread(target=self.execute, args=(module, params, self.cancel), daemon=True)
         self.worker.start()
@@ -321,6 +323,7 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.settings_path = self.workflow_dir.parent / "studio_settings.json"
         self.settings_backup = settings_backup
         saved = json.loads(self.settings_path.read_text(encoding="utf-8")) if self.settings_path.exists() else {}
+        self.settings_writer = SettingsWriter(self.settings_path, self.settings_backup, self.settings_saved)
         self.model_bindings = saved.get("model_bindings", {})
         self._modules = {}
         self.sessions = {}
@@ -341,7 +344,7 @@ class WorkflowPanel(anywidget.AnyWidget):
             from files_bridge import FilesBridge
             self.files_bridge = FilesBridge(self)
 
-    def save_settings(self, panels=None, active=None, model_bindings=None):
+    def save_settings(self, panels=None, active=None, model_bindings=None, request=None):
         if model_bindings is not None:
             self.model_bindings = model_bindings
         for item in panels or []:
@@ -362,9 +365,10 @@ class WorkflowPanel(anywidget.AnyWidget):
                 if field.get("persist", field.get("area") != "prompts" and
                              field["type"] not in ("image", "media_list", "keyframe_list"))}}
             for session in self.sessions.values()]}
-        self.settings_path.write_text(json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
-        if self.settings_backup:
-            self.settings_backup(saved)
+        self.settings_writer.submit(saved, request)
+
+    def settings_saved(self, request, error):
+        self.send({"type":"settings_saved", "request":request, "error":error})
 
     def publish(self):
         self.transport.payload("state", "panels", [session.state for session in self.sessions.values()])
@@ -450,9 +454,7 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.files_bridge.receive(content["command"])
                 return
             if action == "settings":
-                self.save_settings(content["panels"], content["active"], content.get("model_bindings"))
-                self.state = {**self.state, "settings_result": {"request": content.get("request"), "error": ""}}
-                self.send({"type": "settings_saved", "request": content.get("request")})
+                self.save_settings(content["panels"], content["active"], content.get("model_bindings"), content.get("request"))
                 return
             if action == "chat_visibility":
                 for item in content["panels"]:
@@ -542,8 +544,11 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.transport.preview(session.id, source, video=source.suffix == ".mp4", final=True,
                     response={"type":"image_preview", "name":content["name"], "request":content["request"]})
             elif action == "show_result":
+                if session.state['busy']:
+                    return
                 path = self.image_path(content["name"])
-                self.transport.preview(session.id, path, video=path.suffix == ".mp4", final=True)
+                self.transport.preview(session.id, path, video=path.suffix == ".mp4", final=True,
+                                       run_id=session.state.get('run_id'))
             elif action == "export":
                 path = self.workflow_dir / session.state["selected"]
                 self.send({"type": "workflow", "name": path.name, "source": path.read_text(encoding="utf-8")})
@@ -553,6 +558,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.state = {**self.state, "settings_result": {"request": content.get("request"), "error": str(exc)}}
 
     def close(self):
+        if hasattr(self, "settings_writer"):
+            self.settings_writer.close()
         if hasattr(self, "transport"):
             self.transport.close()
         if getattr(self, "files_bridge", None):

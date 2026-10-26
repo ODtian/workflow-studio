@@ -305,8 +305,11 @@ def run_h3(params, ctx):
     from comfy_extras.nodes_minimax_h3 import MiniMaxH3SigmaShift
     from comfy_extras.nodes_audio import vae_decode_audio
     from vendor.h3_motion_context.nodes import MiniMaxH3MotionContext, MiniMaxH3MotionContextTrim
+    from latent_preview import Latent2RGBPreviewer
 
     variants = {}
+    latent_format = base_model.model.latent_format
+    previewer = Latent2RGBPreviewer(latent_format.latent_rgb_factors, latent_format.latent_rgb_factors_bias)
     width, height = int(params["width"]), int(params["height"])
     seed = int(params.get("seed", -1))
     if seed == -1:
@@ -374,7 +377,12 @@ def run_h3(params, ctx):
             noise = comfy.sample.prepare_noise(latent["samples"], seed + number)
 
             def callback(step, x0, x, count):
+                preview = None
+                if time.monotonic() - ctx.last_preview >= 0.5 or step+1 == count:
+                    video = x0.tensors[0] if x0.is_nested else x0
+                    preview = previewer.decode_latent_to_preview(video[:, :, -1:])
                 ctx.progress(number * steps + step + 1, total_steps,
+                             preview=preview,
                              message=f"第 {number+1}/{len(segments)} 段 · 采样 {step+1}/{count}")
 
             started = time.monotonic()

@@ -6,20 +6,23 @@ import H3Timeline from './H3Timeline.svelte';
 let {panel,values=$bindable(),preview='',previewInfo={},text='',results=[],send,history=[],loadThumbnail,loadPreview,targets=[],onTransfer,loadOriginal,mode='full'}=$props();
 let tab=$state('preview'),imageIndex=$state(0),modelsOpen=$state(false),displayMs=$state(0);
 let mobileView=$state('settings');
-let requestedRun=$state(''),totalMs=$state(0),elapsedMs=$state(0);
+let requestedRun=$state(''),pendingRun=$state(''),totalMs=$state(0),elapsedMs=$state(0);
 let requestStartedAt=0;
 const visible=field=>Object.entries(field.when||{}).every(([key,expected])=>Array.isArray(expected)?expected.includes(values[key]):values[key]===expected);
 let fields=$derived((panel.spec.fields||[]).filter(visible)),parameterFields=$derived(fields.filter(f=>!f.area)),groups=$derived([...new Set(parameterFields.map(f=>f.section||'参数'))]);
 let isText=$derived(panel.spec.output==='text'),activeResult=$derived(results[imageIndex]);
-let isVideo=$derived(previewInfo.mime?.startsWith('video/'));
+let previewRun=$derived(pendingRun||(panel.busy?panel.run_id:''));
+let shownPreview=$derived(previewRun&&previewInfo.run_id!==previewRun?'':preview);
+let isVideo=$derived(Boolean(shownPreview)&&previewInfo.mime?.startsWith('video/'));
 let isH3=$derived(panel.selected==='minimax_h3.py'&&values.output_type==='video');
 let videoElement=$state(null),playhead=$state(0);
 const act=(action,data={})=>send(action,{id:panel.id,...data});let receivedAt=0;
 $effect(()=>{if(preview)receivedAt=performance.now();});$effect(()=>{results;imageIndex=0;});
 function generate(){
-  requestedRun=crypto.randomUUID();requestStartedAt=performance.now();totalMs=0;elapsedMs=0;displayMs=0;
+  requestedRun=crypto.randomUUID();pendingRun=requestedRun;requestStartedAt=performance.now();totalMs=0;elapsedMs=0;displayMs=0;
   tab='preview';mobileView='preview';act('run',{run_id:requestedRun,params:{...values}});
 }
+$effect(()=>{if(pendingRun===panel.run_id)pendingRun='';});
 $effect(()=>{
   if(!requestedRun||totalMs||['error','cancelled'].includes(panel.phase))return;
   const timer=setInterval(()=>elapsedMs=performance.now()-requestStartedAt,100);
@@ -44,7 +47,7 @@ let timingLabel=$derived(requestedRun&&!totalMs&&!['error','cancelled'].includes
     <div class="output-toolbar"><div class="segmented"><Button variant={tab==='preview'?'secondary':'ghost'} size="sm" onclick={()=>tab='preview'}><Image size={14}/>预览</Button><Button variant={tab==='history'?'secondary':'ghost'} size="sm" onclick={()=>tab='history'}><History size={14}/>历史 <span class="count">{history.length}</span></Button></div><div class="row">{#if activeResult}<Badge variant="outline">{activeResult.width} × {activeResult.height}{activeResult.kind==='video'?` · ${activeResult.duration.toFixed(1)} s`:''}</Badge>{/if}<Button variant="outline" size="sm" disabled={!activeResult} onclick={()=>act('download',{name:activeResult.name})}><Download size={14}/>{activeResult?.kind==='video'?'下载视频':'下载原图'}</Button></div></div>
     {#if tab==='history'}<div class="history-content"><ImageHistory {history} {loadThumbnail} {loadPreview} {loadOriginal} download={r=>act('download',{name:r.name})}/></div>
     {:else}<div class="generation-canvas" class:working={panel.busy}>
-      {#if isText}<Textarea value={text} readonly rows={20} aria-label="文本结果"/>{:else if isVideo}<video bind:this={videoElement} class="video-result" src={preview} controls playsinline preload="auto" onloadeddata={loaded} ontimeupdate={()=>playhead=videoElement.currentTime} aria-label="生成视频"></video>{:else}<ZoomPreview {preview} result={activeResult} {loadOriginal} onload={loaded}/>{/if}
+      {#if isText}<Textarea value={text} readonly rows={20} aria-label="文本结果"/>{:else if isVideo}<video bind:this={videoElement} class="video-result" src={shownPreview} controls playsinline preload="auto" onloadeddata={loaded} ontimeupdate={()=>playhead=videoElement.currentTime} aria-label="生成视频"></video>{:else}<ZoomPreview preview={shownPreview} result={activeResult} {loadOriginal} onload={loaded}/>{/if}
     </div>
     <div class="generation-bottom"><Progress value={panel.step} max={panel.total||1} aria-label="执行进度"/><div class="output-status"><div class="row"><i class="status-dot" class:pulse={panel.busy}></i><span role="status">{requestedRun&&requestedRun!==panel.run_id?'提交任务…':panel.message}{panel.busy&&panel.total?` · ${panel.step}/${panel.total}`:''}</span></div><span title="点击生成至最终图片显示">{timingLabel}</span></div>
     {#if results.length>1}<div class="row">{#each results as result,index}<Button size="sm" variant={imageIndex===index?'secondary':'ghost'} onclick={()=>{imageIndex=index;act('show_result',{name:result.name});}}>图片 {index+1}</Button>{/each}</div>{/if}
@@ -53,7 +56,7 @@ let timingLabel=$derived(requestedRun&&!totalMs&&!['error','cancelled'].includes
 {/snippet}
 <article class="generation-workspace" class:h3-workspace={isH3} data-mobile-view={mobileView} aria-label={panel.spec.name}>
   {#if isH3}
-    <H3Timeline {panel} bind:values {send} bind:playhead hasPreview={Boolean(videoElement&&preview)} onseek={time=>{if(videoElement)videoElement.currentTime=time;}} onplay={()=>videoElement?.paused?videoElement.play():videoElement?.pause()}>{@render output()}</H3Timeline>
+    <H3Timeline {panel} bind:values {send} bind:playhead hasPreview={Boolean(videoElement&&shownPreview)} onseek={time=>{if(videoElement)videoElement.currentTime=time;}} onplay={()=>videoElement?.paused?videoElement.play():videoElement?.pause()}>{@render output()}</H3Timeline>
   {:else}
   <nav class="mobile-generation-tabs" aria-label="生成视图"><Button variant={mobileView==='settings'?'secondary':'ghost'} aria-pressed={mobileView==='settings'} onclick={()=>mobileView='settings'}><SlidersHorizontal size={16}/>参数</Button><Button variant={mobileView==='preview'?'secondary':'ghost'} aria-pressed={mobileView==='preview'} onclick={()=>mobileView='preview'}><Image size={16}/>预览与历史{#if panel.busy}<i class="status-dot pulse"></i>{/if}</Button></nav>
   <section class="generation-controls">

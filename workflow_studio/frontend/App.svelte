@@ -150,14 +150,17 @@
   $effect(() => {
     const snapshot = settingsSnapshot;
     if (!settingsReady || snapshot === submittedSettingsSnapshot) return;
-    settingsNotice = '正在保存设置…';
-    const timer = setTimeout(() => {
-      submittedSettingsSnapshot = snapshot;
-      settingsRequest = crypto.randomUUID();
-      send('settings', {...JSON.parse(snapshot), request:settingsRequest});
-    }, 400);
-    return () => clearTimeout(timer);
+    settingsNotice = '待后台保存';
   });
+
+  function saveSettings() {
+    const snapshot = settingsSnapshot;
+    if (!settingsReady || snapshot === submittedSettingsSnapshot) return;
+    submittedSettingsSnapshot = snapshot;
+    settingsRequest = crypto.randomUUID();
+    settingsNotice = '后台保存中…';
+    send('settings', {...JSON.parse(snapshot), request:settingsRequest});
+  }
 
   function updateState() {
     const next = model.get('state');
@@ -211,7 +214,7 @@
 
   $effect(() => {
     const first = results[activeId]?.[0];
-    if (settingsReady && first && !previewURLs.has(activeId) && !requestedPreviews.has(activeId)) {
+    if (settingsReady && first && !state.panels.find(panel=>panel.id===activeId)?.busy && !previewURLs.has(activeId) && !requestedPreviews.has(activeId)) {
       requestedPreviews.add(activeId);
       send('show_result', {id:activeId, name:first.name});
     }
@@ -235,8 +238,9 @@
     updateCompact();
     compact.addEventListener('change', updateCompact);
     const scanModels = () => {if (!document.hidden) send('scan_models');};
-    const visibility = () => {pageVisible = !document.hidden;scanModels();};
+    const visibility = () => {pageVisible = !document.hidden;scanModels();if(document.hidden)saveSettings();};
     const modelTimer = setInterval(scanModels, 5000);
+    const settingsTimer = setInterval(saveSettings, 1500);
     document.addEventListener('visibilitychange', visibility);
     scanModels();
     const updateTexts = () => texts = model.get('texts');
@@ -253,7 +257,17 @@
     };
     const updateFiles = () => files = model.get('files');
     const custom = (msg, buffers) => {
+      if (msg.type === 'settings_saved' && msg.request === settingsRequest) {
+        settingsNotice = msg.error ? '设置保存失败' : '设置已保存';
+      }
+      if (msg.type === 'preview_reset') {
+        if (previewURLs.get(msg.id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(msg.id));
+        previewURLs.delete(msg.id);previewData.delete(msg.id);customPreviewIds.delete(msg.id);
+        delete previewInfo[msg.id];requestedPreviews.delete(msg.id);
+        previews = Object.fromEntries(previewURLs);
+      }
       if (msg.type === 'preview_frame') {
+        if (state.panels.find(p=>p.id===msg.id)?.busy && msg.run_id !== state.panels.find(p=>p.id===msg.id)?.run_id) return;
         if (msg.run_id && state.panels.find(p=>p.id===msg.id)?.run_id !== msg.run_id) return;
         if (previewURLs.get(msg.id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(msg.id));
         previewURLs.set(msg.id,URL.createObjectURL(new Blob([buffers[0]],{type:msg.mime})));
@@ -311,6 +325,8 @@
     return () => {
       compact.removeEventListener('change', updateCompact);
       clearInterval(modelTimer);
+      clearInterval(settingsTimer);
+      saveSettings();
       document.removeEventListener('visibilitychange', visibility);
       model.off('change:state', updateState);
       model.off('change:previews', updatePreviews);
@@ -355,7 +371,7 @@
         <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}>文件</button>
         <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}>管理</button>
       </nav>
-      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice==='正在保存设置…'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
+      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
     </header>
     {#if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
