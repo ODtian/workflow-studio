@@ -10,7 +10,7 @@ export function render({model, el}) {
   const shadow = host.attachShadow({mode: 'open'});
   const style = document.createElement('style');
   style.textContent = GRADIO_COMPONENT_CSS.replaceAll(':root', ':host') +
-    ':host{display:block;width:100%}';
+    ':host{display:block;width:100%;color-scheme:light}';
   shadow.append(style);
   let expanded = true;
   const viewport = window.visualViewport;

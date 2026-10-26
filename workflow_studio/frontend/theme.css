@@ -7,6 +7,7 @@
 @custom-variant data-checked (&[data-state="checked"]);
 @custom-variant data-unchecked (&[data-state="unchecked"]);
 @custom-variant data-disabled (&[data-disabled]);
+@custom-variant dark (&:where(.studio-dark, .studio-dark *));
 @theme inline {
  --color-background:var(--background);--color-foreground:var(--foreground);--color-card:var(--background);--color-card-foreground:var(--foreground);--color-popover:var(--background);--color-popover-foreground:var(--foreground);--color-primary:var(--primary);--color-primary-foreground:var(--primary-foreground);--color-secondary:var(--secondary);--color-secondary-foreground:var(--foreground);--color-muted:var(--muted);--color-muted-foreground:var(--muted-foreground);--color-accent:var(--secondary);--color-accent-foreground:var(--foreground);--color-destructive:var(--destructive);--color-border:var(--border);--color-input:var(--border);--color-ring:var(--ring);--radius-sm:4px;--radius-md:6px;--radius-lg:8px;--radius-xl:12px;
 }

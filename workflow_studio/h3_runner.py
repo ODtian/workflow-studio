@@ -236,6 +236,9 @@ def _references(items, width, height):
 
 def plan_segments(params):
     """Plan the delivered timeline separately from H3's 17k+5 sampling grid."""
+    if params.get('output_type') == 'video' and params.get('timeline', {}).get('clips'):
+        from h3_timeline import plan_timeline
+        return plan_timeline(params)
     image = params.get("output_type", "image") == "image"
     total = 1 if image else max(1, round(float(params["duration"]) * FPS))
     technique = params.get("long_video", "motion")
@@ -329,22 +332,21 @@ def _fit_audio(audio, frames):
 
 def run_h3(params, ctx):
     import torch
-    model, clip, vae, audio_vae = load_models(params, ctx)
+    segments = plan_segments(params)
+    used_loras = {item['name']:item for segment in segments
+                  for item in segment.get('loras', params.get('loras', [])) if item['strength']}
+    base_model, base_clip, vae, audio_vae = load_models({**params, 'loras':list(used_loras.values())}, ctx)
     import comfy.sample
     import comfy.model_management
     from comfy_extras.nodes_minimax_h3 import MiniMaxH3SigmaShift
     from comfy_extras.nodes_audio import vae_decode_audio
     from vendor.h3_motion_context.nodes import MiniMaxH3MotionContext, MiniMaxH3MotionContextTrim
 
-    model, clip = apply_loras(model, clip, params.get("loras", []), ctx)
-    model = MiniMaxH3SigmaShift.execute(model, float(params.get("shift", 12)),
-                                      float(params.get("audio_shift", 3)))[0]
-    model = apply_attention(model, params.get("attention", "auto"), ctx)
+    variants = {}
     width, height = int(params["width"]), int(params["height"])
     seed = int(params.get("seed", -1))
     if seed == -1:
         seed = secrets.randbelow(2**32)
-    segments = plan_segments(params)
     steps = int(params["steps"])
     total_steps = steps * len(segments)
     ctx.metadata(Seed=seed, 模型=params["model"], 引擎="Comfy · H3 进程内", 分段数=len(segments),
@@ -352,31 +354,53 @@ def run_h3(params, ctx):
     ctx.status("读取 H3 参考素材…")
     first = read_image(params["first_frame"]) if params.get("first_frame") else None
     last = read_image(params["last_frame"]) if params.get("last_frame") else None
-    refs = _references(params.get("references", []), width, height)
+    reference_cache = {}
     previous_latent = None
     previous_tail = None
+    previous_frames = None
+    previous_audio = None
     clips = []
     sample_seconds = 0
     decode_seconds = 0
     prefix = time.strftime("%Y%m%d-%H%M%S") + "-h3-" + secrets.token_hex(3)
-    technique = params.get("long_video", "motion")
+    any_audio = any(segment.get('audio', params.get('audio', True)) for segment in segments)
+    ctx.metadata(时间轴=[{'id':segment.get('id', str(index)), 'start':segment['start'],
+        'frames':segment['frames'], 'sample_frames':segment['sample_frames'], 'carry':segment['carry'],
+        'method':segment.get('method', params.get('long_video', 'motion')),
+        'references':[item.get('id', item.get('name', '')) for item in segment.get('references', params.get('references', []))],
+        'loras':[{key:item[key] for key in ('name', 'strength')} for item in segment.get('loras', params.get('loras', []))]}
+        for index, segment in enumerate(segments)])
     with torch.inference_mode():
         for number, segment in enumerate(segments):
             ctx.check_cancelled()
+            loras = segment.get('loras', params.get('loras', []))
+            key = tuple((item['name'], float(item['strength'])) for item in loras)
+            if key not in variants:
+                model, clip = apply_loras(base_model, base_clip, loras, ctx)
+                model = MiniMaxH3SigmaShift.execute(model, float(params.get('shift', 12)), float(params.get('audio_shift', 3)))[0]
+                variants[key] = apply_attention(model, params.get('attention', 'auto'), ctx), clip
+            model, clip = variants[key]
+            references = segment.get('references', params.get('references', []))
+            reference_key = tuple(item.get('id') or item.get('path') or item.get('data') for item in references)
+            if reference_key not in reference_cache:
+                reference_cache[reference_key] = _references(references, width, height)
+            refs = reference_cache[reference_key]
+            segment_params = {**params, 'references':references}
             ctx.status(f"第 {number+1}/{len(segments)} 段 · 编码条件…")
             segment_first = first if number == 0 else (
                 previous_tail if segment["continuation"] == "tail" else None)
             segment_last = last if number == len(segments)-1 else None
-            positive, latent = _condition(clip, vae, audio_vae, params, segment, refs,
+            positive, latent = _condition(clip, vae, audio_vae, segment_params, segment, refs,
                                           segment_first, segment_last)
             positive = _guides(positive, latent, params.get("guides", []), segment,
                                vae, audio_vae, width, height)
             trim = 0
-            if previous_latent is not None and segment["carry"] and segment["continuation"] == "motion":
+            if number and segment['carry'] and segment['continuation'] == 'motion':
                 positive, trim = MiniMaxH3MotionContext().apply(
                     positive, vae, latent, str(segment["carry"]),
-                    audio_context_length=int(params.get("audio_context_frames", 18)),
-                    context_latent=previous_latent)
+                    audio_context_length=int(segment.get('audio_context_frames', params.get('audio_context_frames', 18))),
+                    **({'context_latent':previous_latent} if previous_latent is not None else
+                       {'context_frames':previous_frames, 'context_audio':previous_audio, 'audio_vae':audio_vae}))
             elif segment_first is not None and number:
                 trim = 1
             negative_key = id(clip), params.get("negative_prompt", "")
@@ -399,15 +423,18 @@ def run_h3(params, ctx):
             started = time.monotonic()
             ctx.status(f"第 {number+1}/{len(segments)} 段 · 解码…")
             frames = vae.decode(video_latent).reshape(-1, height, width, 3).cpu()
-            audio = vae_decode_audio(audio_vae, {"samples": audio_latent}) if params.get("audio", True) else None
+            next_segment = segments[number+1] if number+1 < len(segments) else None
+            need_context_audio = next_segment is not None and next_segment['continuation'] == 'motion'
+            output_audio = segment.get('audio', params.get('audio', True))
+            audio = vae_decode_audio(audio_vae, {"samples": audio_latent}) if output_audio or need_context_audio else None
             decode_seconds += time.monotonic() - started
-            previous_tail = frames[trim+segment["frames"]-1:trim+segment["frames"]].clone()
             if params.get("output_type", "image") == "image":
                 ctx.metadata(采样秒=round(sample_seconds, 3), 解码秒=round(decode_seconds, 3))
                 return [_pil(frames[0])]
-            if technique == "overlap" and previous_latent is not None:
+            fade = segment.get('blend_frames', 6 if params.get('long_video') == 'overlap' and number else 0)
+            if fade and trim:
                 # The pinned head warms up motion; blend its final frame into the delivered head.
-                fade = min(6, segment["frames"])
+                fade = min(fade, segment['frames'])
                 alpha = torch.linspace(0, 1, fade).view(-1, 1, 1, 1)
                 frames[trim:trim+fade] = frames[trim-1:trim] * (1-alpha) + frames[trim:trim+fade] * alpha
             if trim:
@@ -415,14 +442,25 @@ def run_h3(params, ctx):
             frames = frames[:segment["frames"]]
             if audio is not None:
                 audio = _fit_audio(audio, len(frames))
+            previous_tail = frames[-1:].clone()
+            previous_latent = None
+            previous_frames = None
+            previous_audio = None
+            if next_segment is not None and next_segment['continuation'] == 'motion':
+                if segment['sample_frames'] == trim + segment['frames']:
+                    previous_latent = {'samples':samples.to(device='cpu')}
+                else:
+                    previous_frames = frames[-next_segment['carry']:].clone()
+                    previous_audio = audio
             poster = _pil(frames[0])
             ctx.progress((number+1)*steps, total_steps, preview=poster,
                          message=f"第 {number+1}/{len(segments)} 段 · 保存…")
             path = ctx.output_dir / f"{prefix}-part{number+1}.mp4"
+            if not output_audio:
+                audio = {'waveform':torch.zeros((1, 2, round(len(frames)/FPS*32000))), 'sample_rate':32000} if any_audio else None
             _save_clip(frames, audio, path)
             clips.append(path)
-            previous_latent = {"samples": samples.to(device="cpu")}
-            del frames, audio, noise, video_latent, audio_latent, positive, latent
+            del frames, audio, noise, video_latent, audio_latent, positive, latent, samples
     ctx.status("合成 H3 视频…")
     output = ctx.output_dir / f"{prefix}.mp4"
     if len(clips) == 1:

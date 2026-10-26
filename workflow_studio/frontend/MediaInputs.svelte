@@ -19,7 +19,7 @@
     error='';
     try {
       const added=[];
-      for(const file of files) added.push({name:file.name,kind:kindOf(file),data:await readFile(file),...(timeline?{time:Number(time)}:{})});
+      for(const file of files) added.push({id:crypto.randomUUID(),name:file.name,kind:kindOf(file),data:await readFile(file),...(timeline?{time:Number(time)}:{})});
       value=[...(value||[]),...added];
     } catch(e) {error=String(e.message||e);}
   }
@@ -35,7 +35,7 @@
   function addPath() {
     if(!path.trim())return;
     const name=path.trim().split(/[\\/]/).at(-1);
-    value=[...(value||[]),{name,path:path.trim(),kind:kindOf({name}),...(timeline?{time:Number(time)}:{})}];
+    value=[...(value||[]),{id:crypto.randomUUID(),name,path:path.trim(),kind:kindOf({name}),...(timeline?{time:Number(time)}:{})}];
     path='';
   }
 </script>
