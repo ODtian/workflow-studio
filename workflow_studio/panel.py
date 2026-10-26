@@ -332,7 +332,8 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.model_bindings = saved.get("model_bindings", {})
         self._modules = {}
         self.sessions = {}
-        self.state = {"workflows": [], "panels": [], "message": "", "active": saved.get("active", ""), "model_bindings": self.model_bindings}
+        self.state = {"workflows": [], "panels": [], "message": "", "active": saved.get("active", ""), "model_bindings": self.model_bindings,
+                      "persist_inputs": enabled()}
         self.on_msg(self._message)
         self.refresh()
         available = {item["id"] for item in self.state["workflows"]}

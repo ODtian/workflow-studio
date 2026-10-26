@@ -84,7 +84,7 @@
       elem_id:undefined, visible:true, interactive:true, scale:0, component_id:index+1}))]);
   let settingsSnapshot = $derived(JSON.stringify({active:activeId, model_bindings:modelBindings, panels:state.panels.map(panel => ({
     id:panel.id, params:Object.fromEntries(panel.spec.fields
-      .filter(field => field.persist ?? (field.area !== 'prompts' && !['image','media_list','keyframe_list'].includes(field.type)))
+      .filter(field => state.persist_inputs || (field.persist ?? (field.area !== 'prompts' && !['image','media_list','keyframe_list'].includes(field.type))))
       .map(field => [field.key,drafts[panel.id]?.[field.key] ?? field.default ?? '']))
   }))}));
   $effect(() => {
