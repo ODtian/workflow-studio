@@ -1,39 +1,59 @@
-"""Source-backed settings: Molab persists Python source across sandboxes."""
+"""Studio user state in marimo's default persistent-cache store."""
 import ast
 import copy
 import json
 import os
 from pathlib import Path
 import threading
-import uuid
+from marimo._runtime.context import get_context
 
 PATH = Path(os.environ.get('WORKFLOW_WORKSPACE', str(Path(__file__).parent))) / 'workspace_saved.py'
 LOCK = globals().get('LOCK') or threading.RLock()
+STORE = get_context().cache.store
+KEY = 'workflow_studio/state.json'
 
 def read():
     with LOCK:
-        try:
+        blob = STORE.get(KEY)
+        if blob is not None:
+            state = json.loads(blob)
+        elif PATH.exists():
             tree = ast.parse(PATH.read_text(encoding='utf-8'))
             assignment = next(n for n in tree.body if isinstance(n, ast.Assign)
                               and any(isinstance(t, ast.Name) and t.id == 'STATE' for t in n.targets))
             state = ast.literal_eval(assignment.value)
-        except FileNotFoundError:
+        else:
             state = {'schema': 1, 'nodes': [], 'copies': []}
         if state.get('schema') != 1 or not all(isinstance(state.get(k), list) for k in ('nodes','copies')):
             raise ValueError('保存的清单格式需要修复')
+        if blob is None:
+            STORE.put(KEY, json.dumps(state, ensure_ascii=False).encode('utf-8'))
         return copy.deepcopy(state)
 
 def edit(callback):
     with LOCK:
         state = read()
         result = callback(state)
-        # JSON round-trip restricts settings to inert, serializable data.
-        state = json.loads(json.dumps(state, ensure_ascii=False))
-        source = '# 节点与复制清单，由 notebook 面板维护。\nSTATE = ' + repr(state) + '\n'
-        temporary = PATH.with_name('workspace_saved_' + uuid.uuid4().hex + '.py')
-        with temporary.open('w', encoding='utf-8') as stream:
-            stream.write(source)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, PATH)
+        STORE.put(KEY, json.dumps(state, ensure_ascii=False).encode('utf-8'))
         return result
+
+
+def save_files(paths):
+    with LOCK:
+        state = read()
+        saved = state.setdefault('resource_files', [])
+        for path in paths:
+            path = Path(path)
+            relative = path.relative_to(PATH.parent).as_posix()
+            STORE.put('workflow_studio/files/' + relative, path.read_bytes())
+            if relative not in saved:
+                saved.append(relative)
+        STORE.put(KEY, json.dumps(state, ensure_ascii=False).encode('utf-8'))
+
+
+def restore_files():
+    with LOCK:
+        for relative in read().get('resource_files', []):
+            path = PATH.parent / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(STORE.get('workflow_studio/files/' + relative))

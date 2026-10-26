@@ -49,11 +49,12 @@ async function create(panel,config,manager){
   const loader=new DefaultResourceLoader({cwd,agentDir,settingsManager:settings,appendSystemPrompt:[config.system_prompt||'']});await loader.reload();
   const {session}=await createAgentSession({cwd,agentDir,model:register(config),modelRuntime:runtime,thinkingLevel:config.thinking==='on'?'medium':'off',tools:['read','bash','edit','write','grep','find','ls'],sessionManager:manager,resourceLoader:loader,settingsManager:settings});
   await session.bindExtensions({});
+  if(config.saved_tools)session.setActiveToolsByName(config.saved_tools);
   const item={session,manager,config,dir:join(agentDir,'sessions',panel)};sessions.set(panel,item);return item;
 }
 async function ensure(request){
   let item=sessions.get(request.panel);
-  if(!item)item=await create(request.panel,request.config,SessionManager.continueRecent(cwd,join(agentDir,'sessions',request.panel)));
+  if(!item){const dir=join(agentDir,'sessions',request.panel),saved='saved_session' in request.config;item=await create(request.panel,request.config,saved?(request.config.saved_session?SessionManager.open(request.config.saved_session,dir,cwd):SessionManager.create(cwd,dir)):SessionManager.continueRecent(cwd,dir));}
   if(JSON.stringify(item.config)!==JSON.stringify(request.config)){
     if(item.config.system_prompt!==request.config.system_prompt){item.session.dispose();return create(request.panel,request.config,item.manager);}
     await item.session.setModel(register(request.config));item.session.setThinkingLevel(request.config.thinking==='on'?'medium':'off');item.config=request.config;

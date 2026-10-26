@@ -25,12 +25,18 @@ def get_studio(workspace=None):
     if config_path.exists():
         config.update(json.loads(config_path.read_text(encoding="utf-8")))
     source = SOURCE / "workflow_studio"
-    os.environ["WORKFLOW_MODELS_DIR"] = config["model_dir"]
-    os.environ["WORKFLOW_COMFY_ROOT"] = config["core_dir"]
     os.environ["WORKFLOW_WORKSPACE"] = str(workspace)
     for directory in (SOURCE, source):
         if str(directory) not in sys.path:
             sys.path.insert(0, str(directory))
+    import workspace_store
+    saved_state = workspace_store.read()
+    config.update(saved_state.get("studio_config", {}))
+    workspace_store.edit(lambda state: state.update(studio_config=config))
+    if config.get("h3_models") and not saved_state.get("h3_models"):
+        workspace_store.edit(lambda state: state.update(h3_models=config["h3_models"]))
+    os.environ["WORKFLOW_MODELS_DIR"] = config["model_dir"]
+    os.environ["WORKFLOW_COMFY_ROOT"] = config["core_dir"]
     if importlib.util.find_spec("anywidget") is None:
         subprocess.run(["uv", "pip", "install", "--no-deps", "--python", sys.executable,
                         "anywidget"], check=True)
@@ -44,10 +50,10 @@ def get_studio(workspace=None):
         target = workflows / sample.name
         if not target.exists():
             shutil.copy2(sample, target)
-    import workspace_store
+    workspace_store.restore_files()
     settings = workspace / "studio_settings.json"
     saved = workspace_store.read().get("studio_settings")
-    if not settings.exists() and saved:
+    if saved:
         settings.write_text(json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
     def save_settings(value):
         workspace_store.edit(lambda state: state.update(studio_settings=value))

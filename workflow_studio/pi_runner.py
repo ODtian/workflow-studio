@@ -11,6 +11,7 @@ import threading
 import time
 import uuid
 import llama_runner
+import workspace_store
 
 ROOT = Path(__file__).parent / "pi_bridge"
 _client = None
@@ -53,7 +54,9 @@ class PiClient:
         events = self.pending[request] = queue.Queue()
         if inference:
             self.model_events = events
-        self.send({"type":"command", "panel":panel.id, "config":{k:v for k,v in params.items() if k not in ("messages", "pi_request")},
+        config = {k:v for k,v in params.items() if k not in ("messages", "pi_request")}
+        config.update(workspace_store.read().get("pi_preferences", {}).get(panel.id, {}))
+        self.send({"type":"command", "panel":panel.id, "config":config,
                    "request":request, **command})
         return request, events
 
@@ -73,6 +76,17 @@ def prepare_pi(ctx):
 
 def apply_record(panel, record):
     if record["type"] == "result" and record.get("snapshot"):
+        snapshot = record["snapshot"]
+        session_file = Path(snapshot["file"]) if snapshot["file"] else None
+        saved_session = str(session_file) if session_file is not None and session_file.is_file() else None
+        workspace_store.edit(lambda state: state.setdefault("pi_preferences", {}).update({
+            panel.id: {"saved_tools": snapshot["activeTools"], "saved_session": saved_session}}))
+        workspace = Path(os.environ["WORKFLOW_WORKSPACE"])
+        resources = [path for directory in (".pi/skills", ".pi/prompts", ".pi/agent/skills", ".pi/agent/prompts")
+                     for path in (workspace / directory).rglob("*") if path.is_file()]
+        if saved_session:
+            resources.append(session_file)
+        workspace_store.save_files(resources)
         panel.update(pi=record["snapshot"])
     elif record["type"] in ("skill", "export"):
         panel.owner.send({**record, "type":"pi_" + record["type"], "id":panel.id})
