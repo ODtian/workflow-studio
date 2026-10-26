@@ -116,6 +116,43 @@ def apply_loras(model, clip, loras, ctx):
     return _lora_models[key]
 
 
+def apply_attention(model, mode, ctx):
+    import torch
+    import comfy_kitchen
+    from comfy.ldm.modules import attention
+
+    if mode == "auto":
+        if comfy_kitchen.sol_attn_is_available(model.load_device):
+            mode = "sol"
+        elif comfy_kitchen.int8_attention_is_available(model.load_device):
+            mode = "int8"
+        else:
+            mode = "pytorch"
+    patched = model.clone()
+    dense_method = "comfy_kitchen_int8" if mode in {"sol", "int8"} else "pytorch"
+    config = torch.tensor(list(json.dumps({"attention": dense_method}).encode()), dtype=torch.uint8)
+    for name, module in model.model.diffusion_model.named_modules():
+        if isinstance(module, attention.ComfyAttention):
+            if mode == "pytorch":
+                selected = attention.ComfyAttention()
+                selected.function = attention.attention_pytorch
+                selected.method = "pytorch"
+            else:
+                selected = module.with_config(config)
+            patched.add_object_patch("diffusion_model." + name, selected)
+    if mode == "sol":
+        from comfy_extras.nodes_sparse_attention import apply_block_sparse_attention
+
+        patched = apply_block_sparse_attention(
+            patched, tau=1.0, topk_ratio=0.0, vsa=False,
+            start_percent=0.2, end_percent=1.0, min_tokens=12288,
+            dense_blocks=set(), sink_conditioning="exact_kv_and_rows",
+            extra_tokens=256, verbose=False,
+        )
+    ctx.metadata(Attention={"sol": "Sol 稀疏（参考与音频精确）", "int8": "INT8", "pytorch": "PyTorch"}[mode])
+    return patched
+
+
 def _media_source(item):
     value = item.get("data") or item.get("path") if isinstance(item, dict) else item
     if str(value).startswith("data:"):
@@ -302,6 +339,7 @@ def run_h3(params, ctx):
     model, clip = apply_loras(model, clip, params.get("loras", []), ctx)
     model = MiniMaxH3SigmaShift.execute(model, float(params.get("shift", 12)),
                                       float(params.get("audio_shift", 3)))[0]
+    model = apply_attention(model, params.get("attention", "auto"), ctx)
     width, height = int(params["width"]), int(params["height"])
     seed = int(params.get("seed", -1))
     if seed == -1:
