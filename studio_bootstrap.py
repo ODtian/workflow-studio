@@ -47,6 +47,7 @@ def get_studio(workspace=None):
     workspace_store.edit(lambda state: state.update(studio_config=config))
     os.environ["WORKFLOW_MODELS_DIR"] = config["model_dir"]
     os.environ["WORKFLOW_COMFY_ROOT"] = config["core_dir"]
+    os.environ["WORKFLOW_OUTPUT_DIR"] = config["output_dir"]
     if importlib.util.find_spec("anywidget") is None:
         subprocess.run(["uv", "pip", "install", "--no-deps", "--python", sys.executable,
                         "anywidget"], check=True)

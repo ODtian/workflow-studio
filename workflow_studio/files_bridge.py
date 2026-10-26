@@ -1,7 +1,10 @@
 """Adapt the existing Drive transfer queue to the Studio component UI."""
 import sys
+import os
+from pathlib import Path
 import threading
 import uuid
+from content_store import enabled
 
 
 def connect_drive():
@@ -29,7 +32,9 @@ class FilesBridge:
             session = getattr(sys.modules.get("transfer_widget"), "_SESSION", None)
             controller = session.controller if session and not session.controller.closed else None
             if controller is None:
-                controller = TransferController(None, provider_factory=connect_drive)
+                from transfer_core import LOCAL_ROOTS
+                roots = {**LOCAL_ROOTS, 'output':Path(os.environ['WORKFLOW_OUTPUT_DIR'])} if enabled() else None
+                controller = TransferController(None, local_roots=roots, provider_factory=connect_drive)
         self.controller = controller
         self.hidden_tasks = getattr(controller, "studio_hidden_tasks", set())
         self.undo = getattr(controller, "studio_undo", [])
