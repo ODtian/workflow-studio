@@ -81,11 +81,15 @@ def apply_loras(model, clip, loras, ctx):
     return _lora_models[key]
 
 
-def apply_attention(model, mode, ctx):
+def apply_attention(model, params, ctx):
     import torch
     import comfy_kitchen
     from comfy.ldm.modules import attention
+    from h3_spark import apply as apply_spark, supported as spark_supported
 
+    mode = params.get('attention', 'auto')
+    if mode == 'spark' or (mode == 'auto' and spark_supported()):
+        return apply_spark(model, params, ctx)
     if mode == "auto":
         if comfy_kitchen.sol_attn_is_available(model.load_device):
             mode = "sol"
@@ -352,7 +356,7 @@ def run_h3(params, ctx):
             if key not in variants:
                 model, clip = apply_loras(base_model, base_clip, loras, ctx)
                 model = MiniMaxH3SigmaShift.execute(model, float(params.get('shift', 12)), float(params.get('audio_shift', 3)))[0]
-                variants[key] = apply_attention(model, params.get('attention', 'auto'), ctx), clip
+                variants[key] = apply_attention(model, params, ctx), clip
             model, clip = variants[key]
             references = segment.get('references', params.get('references', []))
             reference_key = tuple(item.get('id') or item.get('path') or item.get('data') for item in references)

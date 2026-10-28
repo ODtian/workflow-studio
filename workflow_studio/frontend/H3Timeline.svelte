@@ -168,7 +168,7 @@ async function pastePrompt(){try{patchClip('prompt',await navigator.clipboard.re
         <ResolutionControls presets={panel.spec.size_presets} bind:values {busy}/>
         <div class="h3-two">{#each ['steps','cfg','sampler','scheduler','seed'] as key}<Field field={field(key)} bind:value={values[key]} {busy}/>{/each}</div>
         <details class="settings-group"><summary>SelfLift</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>f.section==='SelfLift'&&visible(f)) as definition}<Field field={definition} bind:value={values[definition.key]} {busy}/>{/each}</div></details>
-        <details class="settings-group"><summary>高级设置</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>f.area==='advanced'&&f.section!=='SelfLift'&&!['context_frames','audio_context_frames'].includes(f.key)) as definition}<Field field={definition} bind:value={values[definition.key]} {busy}/>{/each}</div></details>
+        <details class="settings-group"><summary>高级设置</summary><div class="settings-fields">{#each panel.spec.fields.filter(f=>f.area==='advanced'&&f.section!=='SelfLift'&&!['context_frames','audio_context_frames'].includes(f.key)&&visible(f)) as definition}<Field field={definition} bind:value={values[definition.key]} {busy}/>{/each}</div></details>
       {/if}
       </div>
     </aside>

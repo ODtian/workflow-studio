@@ -3,6 +3,7 @@ from h3_runner import MODELS, h3_files, preferred, run_h3
 from runtime_options import sampling_options
 from size_presets import common_size_presets
 from h3_selflift import fields as selflift_fields
+from h3_spark import fields as spark_fields
 
 _files = h3_files()
 _samplers, _schedulers = sampling_options()
@@ -65,9 +66,10 @@ SPEC = {
         *selflift_fields(),
         {"key": "shift", "label": "视频 Shift", "type": "number", "area": "advanced", "default": 12, "min": 0.01, "step": 0.1},
         {"key": "attention", "label": "注意力加速", "type": "select", "area": "advanced", "default": "auto",
-         "options": [{"label": "自动", "value": "auto"}, {"label": "Sol 稀疏", "value": "sol"},
+         "options": [{"label": "自动", "value": "auto"}, {"label": "Spark-H3", "value": "spark"}, {"label": "Sol 稀疏", "value": "sol"},
                      {"label": "INT8", "value": "int8"}, {"label": "PyTorch", "value": "pytorch"}],
-         "hint": "Sol 保留参考与音频条件的精确注意力。"},
+         "hint": "自动模式在 CUDA 13 的 SM86、SM89、SM120 GPU 上优先使用 Spark-H3。"},
+        *spark_fields(),
         {"key": "audio_shift", "label": "音频 Shift", "type": "number", "area": "advanced", "default": 3, "min": 0.01, "step": 0.1},
         {"key": "ref_image_size", "label": "参考图尺寸", "type": "select", "area": "advanced", "default": "match",
          "options": [{"label": "匹配输出尺寸", "value": "match"}, {"label": "原生参考尺寸", "value": "max"}]},

@@ -25,7 +25,7 @@ def get_studio(workspace=None):
     os.environ['WORKFLOW_WORKSPACE'] = str(runtime)
     os.environ['WORKFLOW_GZIP_CONTENT'] = '1'
     os.environ['WORKFLOW_MODELS_DIR'] = str(Path(tempfile.gettempdir()) / 'molab-comfy-runtime/models')
-    os.environ['WORKFLOW_COMFY_ROOT'] = str(Path(tempfile.gettempdir()) / 'workflow-studio-comfy-core')
+    os.environ['WORKFLOW_COMFY_ROOT'] = str(Path(tempfile.gettempdir()) / 'workflow-studio-comfy-core-0.42.0')
     import workspace_store
     output = workspace_store.CONTENT_DIR / 'media'
     os.environ['WORKFLOW_OUTPUT_DIR'] = str(output)

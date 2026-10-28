@@ -10,6 +10,10 @@ LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama�
 
 运行库使用官方预编译 CUDA wheel。MTP 使用本地函数、线程队列和 Python 迭代器；模型驻留时复用已加载实例。
 
+MOSS 默认启用 Spectrum 自适应特征预测，高级设置提供预热步数、误差容忍度与特征缓存设备。H3 的注意力选择提供 Spark-H3；自动模式在 CUDA 13 的 SM86、SM89、SM120 GPU 上优先使用 Spark-H3，可调整保真／速度／自定义预热、精确计算比例、参考视频稀疏范围和 QKV 分块。页面配置继续使用 Notebook 的 gzip 存储。
+
+共享 Comfy 核心固定为 0.42.0，首次加载前使用 [Spark-H3 官方安装器](https://github.com/zechengtang/Spark-H3/blob/main/comfyui/install.py)准备对应 GPU 的 comfy-kitchen CUDA 内核。Spark-H3 源码固定在 `2eb2dc1be261490f86a57c93904551a5bf456af7`，源码与推理缓存位于临时运行目录。H3 每个分段的 LoRA 和 Sigma Shift 应用后，经 Spark 模型补丁进入现有采样器，结果仍由原有 VAE 与媒体输出流程处理。
+
 ## 启动
 
 `notebook.py` 的启动单元格保留 6 行：加载 GitHub 的启动模块并显示工作台。Git 更新和初始化放在 `studio_entry.py`，每次执行更新 `main` 后加载 MOSS、MiniMax H3 和 Pi 面板。Notebook 的持久缓存保存页面配置，Secrets 保存 Drive 授权配置。

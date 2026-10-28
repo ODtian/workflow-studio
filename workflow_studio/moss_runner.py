@@ -13,9 +13,10 @@ import time
 
 
 ROOT = Path(__file__).parent
+CORE_VERSION = '0.42.0'
 MODELS = Path(os.environ.get("WORKFLOW_MODELS_DIR", "/tmp/molab-comfy-runtime/models"
                           if Path("/marimo").exists() else ROOT / "models"))
-CORE = Path(os.environ.get("WORKFLOW_COMFY_ROOT", ROOT / "runtime/comfy-core"))
+CORE = Path(os.environ.get("WORKFLOW_COMFY_ROOT", ROOT / f"runtime/comfy-core-{CORE_VERSION}"))
 _loaded = None
 _loaded_key = None
 _adapted = None
@@ -48,11 +49,12 @@ def prepare_core(ctx):
     if not (CORE / "comfy/sd.py").exists():
         ctx.status("准备模型加载模块…")
         CORE.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["git", "clone", "--depth", "1", "https://github.com/Comfy-Org/ComfyUI.git", str(CORE)], check=True)
+        subprocess.run(["git", "clone", "--depth", "1", "--branch", f"v{CORE_VERSION}",
+                        "https://github.com/Comfy-Org/ComfyUI.git", str(CORE)], check=True)
     dependencies = {
         "torchsde": "torchsde", "trampoline": "trampoline", "einops": "einops", "scipy": "scipy",
         "sentencepiece": "sentencepiece", "av": "av>=17", "simpleeval": "simpleeval>=1",
-        "blake3": "blake3", "safetensors": "safetensors", "psutil": "psutil",
+        "blake3": "blake3", "safetensors": "safetensors", "psutil": "psutil", "tqdm": "tqdm",
     }
     for line in (CORE / "requirements.txt").read_text(encoding="utf-8").splitlines():
         if line.startswith(("comfy-kitchen", "comfy-aimdo")):
@@ -67,6 +69,8 @@ def prepare_core(ctx):
         ctx.status("准备模型加载依赖…")
         installer = ["uv", "pip", "install", "--python", sys.executable] if shutil.which("uv") else [sys.executable, "-m", "pip", "install"]
         subprocess.run([*installer, "--no-deps", *missing], check=True)
+    from h3_spark import prepare_backend
+    prepare_backend(ctx)
     if str(CORE) not in sys.path:
         sys.path.insert(0, str(CORE))
     import folder_paths
@@ -220,7 +224,12 @@ def run_moss(params, ctx):
         from comfy.patcher_extension import WrappersMP
         from vendor.spectrum_moss.nodes import SpectrumConfig, apply_spectrum_moss, WRAPPER_KEY
 
-        model = apply_spectrum_moss(model, SpectrumConfig(mode="adaptive", flex_window=0.5))
+        model = apply_spectrum_moss(model, SpectrumConfig(
+            mode="adaptive", flex_window=0.5,
+            warmup_steps=int(params.get("spectrum_warmup_steps", 8)),
+            error_tolerance=float(params.get("spectrum_error_tolerance", 1.0)),
+            cache_device=params.get("spectrum_cache_device", "main_device"),
+        ))
         spectrum = model.model_options["transformer_options"]["wrappers"][WrappersMP.DIFFUSION_MODEL][WRAPPER_KEY][0].root_state
         ctx.metadata(Spectrum="Adaptive")
     args.preview_method = LatentPreviewMethod.Latent2RGB
