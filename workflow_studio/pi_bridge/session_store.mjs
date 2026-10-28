@@ -1,48 +1,44 @@
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {mkdir,readFile,writeFile,readdir,stat} from 'node:fs/promises';
+import {gzipSync,gunzipSync} from 'node:zlib';
 import {SessionManager} from '@earendil-works/pi-coding-agent';
 
-const magic=Buffer.from('WFSC1\0');
 export class PiSessionStore {
-  constructor(cwd){this.cwd=cwd;this.protected=process.env.WORKFLOW_OBFUSCATE_CONTENT==='1';this.files=new WeakMap();this.pending=new WeakMap();}
-  create(dir){return this.protected?SessionManager.inMemory(this.cwd):SessionManager.create(this.cwd,dir);}
+  constructor(cwd){this.cwd=cwd;this.compressed=process.env.WORKFLOW_GZIP_CONTENT==='1';this.files=new WeakMap();this.pending=new WeakMap();}
+  create(dir){return this.compressed?SessionManager.inMemory(this.cwd):SessionManager.create(this.cwd,dir);}
   file(manager,dir){
-    if(!this.protected)return manager.getSessionFile();
+    if(!this.compressed)return manager.getSessionFile();
     if(!this.files.has(manager))this.files.set(manager,join(dir,manager.getSessionId()+'.jsonl'));
     return this.files.get(manager);
   }
   source(manager){return [manager.getHeader(),...manager.getEntries()].map(entry=>JSON.stringify(entry)).join('\n')+'\n';}
   async entries(file){
-    const data=await readFile(file);let offset=0;
-    if(data.subarray(0,magic.length).equals(magic)){offset=magic.length;for(let i=offset;i<data.length;i++)data[i]^=0xA7;}
-    return data.subarray(offset).toString('utf8').trim().split('\n').map(line=>JSON.parse(line));
+    const data=gunzipSync(await readFile(file));
+    return data.toString('utf8').trim().split('\n').map(line=>JSON.parse(line));
   }
   async open(file,dir){
-    if(!this.protected)return SessionManager.open(file,dir,this.cwd);
+    if(!this.compressed)return SessionManager.open(file,dir,this.cwd);
     const manager=SessionManager.inMemory(this.cwd,undefined,await this.entries(file));this.files.set(manager,file);return manager;
   }
   async recent(dir){
-    if(!this.protected)return SessionManager.continueRecent(this.cwd,dir);
+    if(!this.compressed)return SessionManager.continueRecent(this.cwd,dir);
     const sessions=await this.list(dir);return sessions.length?this.open(sessions[0].path,dir):this.create(dir);
   }
   async fork(manager,dir){
-    if(!this.protected)return SessionManager.forkFrom(manager.getSessionFile(),this.cwd,dir);
+    if(!this.compressed)return SessionManager.forkFrom(manager.getSessionFile(),this.cwd,dir);
     const header={...manager.getHeader(),id:randomUUID(),timestamp:new Date().toISOString(),parentSession:this.file(manager,dir)};
     return SessionManager.inMemory(this.cwd,undefined,[header,...manager.getEntries()]);
   }
   save(manager,dir){
-    if(!this.protected)return Promise.resolve();
+    if(!this.compressed)return Promise.resolve();
     const pending=(this.pending.get(manager)||Promise.resolve()).then(async()=>{
       await mkdir(dir,{recursive:true});
-      const text=this.source(manager),data=Buffer.allocUnsafe(magic.length+Buffer.byteLength(text));
-      magic.copy(data);data.write(text,magic.length,'utf8');
-      for(let i=magic.length;i<data.length;i++)data[i]^=0xA7;
-      await writeFile(this.file(manager,dir),data);
+      await writeFile(this.file(manager,dir),gzipSync(this.source(manager)));
     });this.pending.set(manager,pending);return pending;
   }
   async list(dir){
-    if(!this.protected)return SessionManager.list(this.cwd,dir);
+    if(!this.compressed)return SessionManager.list(this.cwd,dir);
     await mkdir(dir,{recursive:true});const sessions=[];
     for(const name of await readdir(dir)){
       if(!name.endsWith('.jsonl'))continue;

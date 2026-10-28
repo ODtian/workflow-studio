@@ -18,6 +18,12 @@ LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama�
 
 现有 Molab 工作区通过 `persistent_drive_auth.connect_from_secrets()` 连接 Google Drive。模型与 Drive 授权由工作区管理。
 
+## 内容存储
+
+Molab 中的工作区状态、会话和媒体内容通过标准 gzip 保存，读取时还原原值供工作台显示。现有逻辑文件名和缓存键继续用于定位内容，gzip 文件头用于识别存储格式。Python 使用 `gzip`，Pi 会话使用 Node.js 的 `zlib`；`WORKFLOW_GZIP_CONTENT` 控制压缩，Molab 默认启用。
+
+marimo 输出缓存与会话快照交由平台正常管理。
+
 ## 文件
 
 - `studio_bootstrap.py`：从 Git 源码启动面板，读取 notebook 工作区设置。

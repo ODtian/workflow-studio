@@ -37,7 +37,7 @@ def get_studio(workspace=None):
     if enabled():
         content = workspace_store.CONTENT_DIR
         config['output_dir'] = str(content / 'media')
-        os.environ['WORKFLOW_OBFUSCATE_CONTENT'] = '1'
+        os.environ['WORKFLOW_GZIP_CONTENT'] = '1'
         os.environ['WORKFLOW_PI_SESSIONS'] = str(content / '.pi/agent/sessions')
         for directory in (workspace / 'studio_history', old_output):
             if directory.exists() and directory != content / 'media':
@@ -103,9 +103,4 @@ def get_studio(workspace=None):
                 migrate_file(path, content / 'legacy_chats' / path.relative_to(workspace / 'studio_chats'))
     from panel import get_panel
     panel = get_panel(workflow_dir=workflows, output_dir=config["output_dir"], settings_backup=save_settings)
-    if enabled():
-        for directory in workspace_store.STORE.save_path.glob('_cell_*studio*'):
-            shutil.rmtree(directory)
-        for path in (workspace / '__marimo__/notebook.html', workspace / '__marimo__/session/notebook.py.json'):
-            path.unlink(missing_ok=True)
     return panel

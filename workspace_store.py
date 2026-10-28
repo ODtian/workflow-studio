@@ -7,7 +7,7 @@ from pathlib import Path
 import threading
 import secrets
 from marimo._runtime.context import get_context
-from content_store import enabled, pack, unpack, MAGIC, write_bytes
+from content_store import enabled, pack, unpack, write_bytes
 
 PATH = Path(os.environ.get('WORKFLOW_WORKSPACE', str(Path(__file__).parent))) / 'workspace_saved.py'
 LOCK = globals().get('LOCK') or threading.RLock()
@@ -18,8 +18,6 @@ CONTENT_DIR = STORE.save_path / 'workflow_studio/content'
 def _get(key):
     blob = STORE.get(key)
     if blob is not None:
-        if enabled() and not blob.startswith(MAGIC):
-            STORE.put(key, pack(blob))
         return unpack(blob)
     return None
 

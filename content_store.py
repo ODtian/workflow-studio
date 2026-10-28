@@ -1,22 +1,24 @@
-"""Obfuscate persisted content; runtime objects use their original values."""
+"""Gzip persisted content; runtime objects use their original values."""
+import gzip
 import io
 import os
 from pathlib import Path
 
-MAGIC = b'WFSC1\x00'
-TABLE = bytes(value ^ 0xA7 for value in range(256))
+GZIP_MAGIC = b'\x1f\x8b'
 
 
 def enabled():
-    return os.environ.get('WORKFLOW_OBFUSCATE_CONTENT', '1' if Path('/marimo').is_dir() else '0') == '1'
+    return os.environ.get('WORKFLOW_GZIP_CONTENT', '1' if Path('/marimo').is_dir() else '0') == '1'
 
 
 def pack(data):
-    return MAGIC + data.translate(TABLE) if enabled() else data
+    return gzip.compress(data, compresslevel=6, mtime=0) if enabled() else data
 
 
 def unpack(data):
-    return data[len(MAGIC):].translate(TABLE) if data.startswith(MAGIC) else data
+    if data.startswith(GZIP_MAGIC):
+        return gzip.decompress(data)
+    return data
 
 
 def read_bytes(path):

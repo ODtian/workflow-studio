@@ -58,7 +58,7 @@ async function create(panel,config,manager){
   await session.bindExtensions({});
   if(config.saved_tools)session.setActiveToolsByName(config.saved_tools);
   const item={session,manager,config,dir:join(sessionRoot,panel)};
-  session.subscribe(event=>{if(storage.protected&&event.type==='message_end')storage.save(manager,item.dir).catch(error=>{item.saveError=error;});});
+  session.subscribe(event=>{if(storage.compressed&&event.type==='message_end')storage.save(manager,item.dir).catch(error=>{item.saveError=error;});});
   sessions.set(panel,item);return item;
 }
 async function ensure(request){
@@ -96,7 +96,7 @@ async function command(request){
   else if(action==='reload')await item.session.reload();
   else if(action==='read_skill')send({type:'skill',request:request.request,path:request.path,source:await readFile(request.path,'utf8')});
   else if(action==='save_skill'){const path=join(cwd,'.pi','skills',basename(request.name),'SKILL.md');await mkdir(dirname(path),{recursive:true});await writeFile(path,request.source);await item.session.reload();}
-  else if(action==='export')send({type:'export',request:request.request,name:'pi-session.jsonl',source:storage.protected?storage.source(item.manager):await readFile(item.manager.getSessionFile(),'utf8')});
+  else if(action==='export')send({type:'export',request:request.request,name:'pi-session.jsonl',source:storage.compressed?storage.source(item.manager):await readFile(item.manager.getSessionFile(),'utf8')});
   else if(action==='prompt'||action==='compact'){
     const off=item.session.subscribe(event=>send({type:'event',request:request.request,event:event.message?{...event,message:displayMessage(event.message)}:event}));
     try{
