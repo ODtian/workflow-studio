@@ -24,8 +24,8 @@ SCHEMA = 'general-files-v2'
 DRIVE_ROOTS = {'root': 'root', 'models': '15hWuax1e3-jKpYMRR8JlnbFpC6huMbAe',
                'results': '1XedAN9O0OzkdFvkqqeWdXHMZ08qXXmht'}
 LOCAL_ROOTS = {'root': Path('/'), 'models': Path('/tmp/molab-comfy-runtime/models'),
-               'input': Path('/marimo/comfy_external/input'),
-               'output': Path('/marimo/comfy_external/output')}
+               'input': Path('/tmp/workflow-studio-runtime/input'),
+               'output': Path('/tmp/workflow-studio-runtime/content/media')}
 LABELS = {'root': '/', 'models': '模型目录', 'results': '结果目录', 'input': '输入目录', 'output': '输出目录'}
 FOLDER = 'application/vnd.google-apps.folder'
 CHUNK = 32 * 1024 * 1024
@@ -144,7 +144,7 @@ class GoogleDriveProvider:
     """Accept an existing authenticated Resource, never a token or auth JSON."""
     def __init__(self, service):
         if service is None:
-            raise TransferError('Drive 尚未连接，请先完成已有的安全连接')
+            raise TransferError('Drive 连接待授权，请在本 Notebook 完成 Google Drive 安全连接后刷新')
         self.service = service
         self.lock = threading.RLock()
         self._thread_transports = threading.local()
@@ -672,7 +672,7 @@ class TransferController:
                 internal = {'task': task, 'source': source, 'target': target, 'cancel': threading.Event(),
                             'remote_upload_id': None, 'destination_name': None, 'key': key}
                 from copy_registry import remember
-                internal['recipe_id'] = remember(self, source, target, task)
+                remember(self, source, target)
                 self.tasks.append(task)
                 self.task_internal[task['id']] = internal
                 self.transfers.submit(self._run, internal)
@@ -746,8 +746,6 @@ class TransferController:
         except Exception:
             with self.lock:
                 task.update(status='failed', speed=0, error='传输未完成，请重试')
-        from copy_registry import finish
-        finish(item)
         self._publish()
         target = item['target']
         if not self.closed and self.positions[target.pane] == target:

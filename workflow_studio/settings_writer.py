@@ -5,6 +5,17 @@ import threading
 from content_store import enabled
 
 
+def configuration_parameters(fields, params):
+    saved = {field['key']: deepcopy(params[field['key']]) for field in fields
+             if field['type'] not in ('image', 'media_list', 'keyframe_list') and field['key'] in params}
+    for field in fields:
+        if field['type'] == 'h3_timeline' and field['key'] in saved:
+            timeline = saved[field['key']]
+            timeline['resources'] = [resource for resource in timeline.get('resources', [])
+                                     if resource['kind'] == 'lora']
+    return saved
+
+
 class SettingsWriter:
     def __init__(self, path, backup, on_saved, interval=1.5):
         self.path, self.backup, self.on_saved, self.interval = path, backup, on_saved, interval

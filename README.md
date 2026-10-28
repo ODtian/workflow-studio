@@ -8,25 +8,29 @@ LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama�
 
 生图与对话交替时复用各自的模型缓存。LLM 的“生成后释放显存”设置用于主动释放；默认使用“保留模型”。
 
-运行库使用官方预编译 CUDA wheel。MTP 使用本地函数、线程队列和 Python 迭代器；模型驻留时复用已加载实例。原 FP8 默认模型设置在启动时迁移为 Q8_0 及配套权重。
+运行库使用官方预编译 CUDA wheel。MTP 使用本地函数、线程队列和 Python 迭代器；模型驻留时复用已加载实例。
 
 ## 启动
 
-`notebook.py` 提供一个 cell 的 Git 启动入口。每次执行更新 `main` 分支，随后加载工作流面板。Molab 工作区保留自己的 `studio_config.json`、`studio_settings.json`、`workspace_saved.py` 和 Drive 授权配置。
+`notebook.py` 提供一个 cell 的 Git 启动入口。每次执行更新 `main` 分支，随后加载 MOSS、MiniMax H3 和 Pi 面板。Notebook 的持久缓存保存页面配置，Secrets 保存 Drive 授权配置。
 
 模型存放在 `model_dir/LLM/`。公开模型目录记录下载仓库、固定版本与文件大小；notebook 的 `workspace_store` 中可保存自己的 Drive 模型清单，运行时优先使用该清单恢复权重。公开仓库保存工作流源码和前端资源。
 
-现有 Molab 工作区通过 `persistent_drive_auth.connect_from_secrets()` 连接 Google Drive。模型与 Drive 授权由工作区管理。
+Molab 工作区通过 `persistent_drive_auth.connect_from_secrets()` 读取本 Notebook Secrets 中的 `MOLAB_DRIVE_AUTH_JSON` 并连接 Google Drive。首次授权通过 `persistent_drive_auth.complete_user_setup()` 完成。
 
 ## 内容存储
 
-Molab 中的工作区状态、会话和媒体内容通过标准 gzip 保存，读取时还原原值供工作台显示。现有逻辑文件名和缓存键继续用于定位内容，gzip 文件头用于识别存储格式。Python 使用 `gzip`，Pi 会话使用 Node.js 的 `zlib`；`WORKFLOW_GZIP_CONTENT` 控制压缩，Molab 默认启用。
+Notebook 持久保存页面中的模型选择、采样参数、提示词、H3 分段与时间轴布局、LoRA 配置、文件快捷操作以及页面编辑保存的 Skill，格式统一为标准 gzip。恢复面板时加载这些配置。
+
+上传的参考图片、视频与音频保留在运行内存；生成媒体、缩略图、索引、Pi 会话、工具运行文件和工作流副本存放在 `/tmp/workflow-studio-runtime/`。模型、依赖和推理内核同样使用 `/tmp`。这些内容随运行容器回收。临时媒体与 Pi 会话也沿用 gzip 读写。
 
 marimo 输出缓存与会话快照交由平台正常管理。
 
 ## 文件
 
-- `studio_bootstrap.py`：从 Git 源码启动面板，读取 notebook 工作区设置。
+- `studio_bootstrap.py`：从 Git 源码启动面板，准备临时运行目录并加载 Notebook 配置。
+- `workspace_store.py`：Notebook 页面配置的 gzip 读写。
+- `persistent_drive_auth.py`：通过 Notebook Secrets 恢复 Drive 连接。
 - `workflow_studio/llama_runner.py`：进程内 GGUF 加载、模型恢复、图片及流式对话。
 - `workflow_studio/pi_runner.py`、`pi_bridge/`：Pi 会话与本地推理的管道适配。
 - `studio_workflows/`：工作区使用的默认工作流。

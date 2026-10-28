@@ -7,7 +7,7 @@ import time
 import uuid
 import workspace_store as store
 
-def remember(controller, source, target, task=None):
+def remember(controller, source, target):
     local=target if source.pane=='drive' else source
     remote=source if source.pane=='drive' else target
     path=str(controller.local_roots['root'].joinpath(*local.parts))
@@ -20,21 +20,8 @@ def remember(controller, source, target, task=None):
                  'drive_id':remote.remote_id,'local_path':path,'enabled':True,'name':source.name}
             state['copies'].append(old)
         old['source_kind']=source.kind
-        if task:
-            old['last_status']=task['status']
-            old['last_bytes']=task.get('bytes',0)
-            old['last_time']=int(time.time())
         return old['id']
     return store.edit(save)
-
-def finish(item):
-    key=item.get('recipe_id')
-    if not key: return
-    def save(state):
-        old=next((r for r in state['copies'] if r['id']==key),None)
-        if old:
-            old.update(last_status=item['task']['status'],last_bytes=item['task'].get('bytes',0),last_time=int(time.time()))
-    store.edit(save)
 
 def drive_id(value):
     value=str(value).strip()

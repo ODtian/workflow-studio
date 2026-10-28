@@ -81,16 +81,8 @@ def prepare_pi(ctx):
 def apply_record(panel, record):
     if record["type"] == "result" and record.get("snapshot"):
         snapshot = record["snapshot"]
-        session_file = Path(snapshot["file"]) if snapshot["file"] else None
-        saved_session = str(session_file) if session_file is not None and session_file.is_file() else None
         workspace_store.edit(lambda state: state.setdefault("pi_preferences", {}).update({
-            panel.id: {"saved_tools": snapshot["activeTools"], "saved_session": saved_session}}))
-        workspace = Path(os.environ["WORKFLOW_WORKSPACE"])
-        resources = [path for directory in (".pi/skills", ".pi/prompts", ".pi/agent/skills", ".pi/agent/prompts")
-                     for path in (workspace / directory).rglob("*") if path.is_file()]
-        if saved_session:
-            resources.append(session_file)
-        workspace_store.save_files(resources)
+            panel.id: {"saved_tools": snapshot["activeTools"]}}))
         panel.update(pi=record["snapshot"])
     elif record["type"] in ("skill", "export"):
         panel.owner.send({**record, "type":"pi_" + record["type"], "id":panel.id})
@@ -107,6 +99,9 @@ def control(panel, command, params=None):
             apply_record(panel, record)
             if record["type"] == "result":
                 if command["action"] == "save_skill":
+                    if not record.get('error'):
+                        path = Path(os.environ['WORKFLOW_WORKSPACE']) / '.pi/skills' / Path(command['name']).name / 'SKILL.md'
+                        workspace_store.save_files([path])
                     panel.owner.send({"type":"pi_skill_saved", "id":panel.id, "error":record.get("error", "")})
                 if record.get("error"):
                     panel.update(message=record["error"])

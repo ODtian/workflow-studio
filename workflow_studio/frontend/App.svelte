@@ -11,7 +11,7 @@
   import {filesForModel, bindingFromValues, parameterFields, fieldValue} from './modelBindings.js';
 
   let {model, expand, initialExpanded = true} = $props();
-  let state = $state(model.get('state'));
+  let state = $state({workflows:[], panels:[], message:'', active:'', model_bindings:{}});
   let previews = $state({});
   let previewInfo = $state({});
   const previewData = new Map();
@@ -24,13 +24,13 @@
   const comparisonPending = new Map();
   const imageRequests = new Map();
   let imageRequestId = 0;
-  let texts = $state(model.get('texts'));
-  let results = $state(model.get('results'));
-  let histories = $state(model.get('histories') || {});
-  let chats = $state(model.get('chats') || {});
+  let texts = $state({});
+  let results = $state({});
+  let histories = $state({});
+  let chats = $state({});
   const chatResponses = new Map();
   let pageVisible = $state(!document.hidden);
-  let files = $state(model.get('files') || {});
+  let files = $state({});
   let drafts = $state({});
   let specs = {};
   let modelBindings = $state(state.model_bindings || {});
@@ -84,7 +84,7 @@
       elem_id:undefined, visible:true, interactive:true, scale:0, component_id:index+1}))]);
   let settingsSnapshot = $derived(JSON.stringify({active:activeId, model_bindings:modelBindings, panels:state.panels.map(panel => ({
     id:panel.id, params:Object.fromEntries(panel.spec.fields
-      .filter(field => state.persist_inputs || (field.persist ?? (field.area !== 'prompts' && !['image','media_list','keyframe_list'].includes(field.type))))
+      .filter(field => !['image','media_list','keyframe_list'].includes(field.type))
       .map(field => [field.key,drafts[panel.id]?.[field.key] ?? field.default ?? '']))
   }))}));
   $effect(() => {
@@ -162,8 +162,7 @@
     send('settings', {...JSON.parse(snapshot), request:settingsRequest});
   }
 
-  function updateState() {
-    const next = model.get('state');
+  function updateState(next) {
     if (next.settings_result?.request === settingsRequest) {
       settingsNotice = next.settings_result.error ? '设置保存失败' : '设置已保存';
     }
@@ -184,15 +183,12 @@
       }
     }
     if (!activeId) activeId = next.active || '';
-    if (next.panels.length > state.panels.length) activeId = next.panels.at(-1).id;
+    if (settingsReady && next.panels.length > state.panels.length) activeId = next.panels.at(-1).id;
     if (activeId !== '__files__' && !next.panels.some(panel => panel.id === activeId)) activeId = next.panels[0]?.id || '__files__';
     state = next;
     if (!addWorkflow) addWorkflow = next.workflows[0]?.id || '';
   }
-  updateState();
-
-  function updatePreviews() {
-    const current = model.get('previews') || {};
+  function updatePreviews(current) {
     for (const [id,source] of Object.entries(current)) {
       if (previewData.get(id) === source) continue;
       if (previewURLs.get(id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(id));
@@ -210,7 +206,6 @@
     }
     previews = Object.fromEntries(previewURLs);
   }
-  updatePreviews();
 
   $effect(() => {
     const first = results[activeId]?.[0];
@@ -243,20 +238,27 @@
     const settingsTimer = setInterval(saveSettings, 1500);
     document.addEventListener('visibilitychange', visibility);
     scanModels();
-    const updateTexts = () => texts = model.get('texts');
-    const updateResults = () => {
-      results = model.get('results');
-    };
-    const updateHistories = () => histories = model.get('histories');
-    const updateChats = () => {
-      chats = {...model.get('chats')};
+    const updateTexts = value => texts = value;
+    const updateResults = value => results = value;
+    const updateHistories = value => histories = value;
+    const updateChats = value => {
+      chats = {...value};
       for (const [id,node] of chatResponses) {
         if (chats[id]?.nodes[node.id]?.status === 'pending') applyChatResponse(id,node);
         else chatResponses.delete(id);
       }
     };
-    const updateFiles = () => files = model.get('files');
+    const updateFiles = value => files = value;
+    const runtimeHandlers = {state:updateState, previews:updatePreviews, texts:updateTexts,
+      results:updateResults, histories:updateHistories, chats:updateChats, files:updateFiles};
     const custom = (msg, buffers) => {
+      if (msg.type === 'runtime_state') runtimeHandlers[msg.name](msg.value);
+      if (msg.type === 'runtime_snapshot') {
+        modelBindings = msg.values.state.model_bindings;
+        for (const [name,value] of Object.entries(msg.values)) runtimeHandlers[name](value);
+        submittedSettingsSnapshot = settingsSnapshot;
+        settingsReady = true;
+      }
       if (msg.type === 'settings_saved' && msg.request === settingsRequest) {
         settingsNotice = msg.error ? '设置保存失败' : '设置已保存';
       }
@@ -312,29 +314,14 @@
         imageRequests.delete(msg.request);
       }
     };
-    model.on('change:state', updateState);
-    model.on('change:previews', updatePreviews);
-    model.on('change:texts', updateTexts);
-    model.on('change:results', updateResults);
-    model.on('change:histories', updateHistories);
-    model.on('change:chats', updateChats);
-    model.on('change:files', updateFiles);
     model.on('msg:custom', custom);
-    submittedSettingsSnapshot = settingsSnapshot;
-    settingsReady = true;
+    send('sync');
     return () => {
       compact.removeEventListener('change', updateCompact);
       clearInterval(modelTimer);
       clearInterval(settingsTimer);
       saveSettings();
       document.removeEventListener('visibilitychange', visibility);
-      model.off('change:state', updateState);
-      model.off('change:previews', updatePreviews);
-      model.off('change:texts', updateTexts);
-      model.off('change:results', updateResults);
-      model.off('change:histories', updateHistories);
-      model.off('change:chats', updateChats);
-      model.off('change:files', updateFiles);
       model.off('msg:custom', custom);
       for (const url of previewURLs.values()) if (url.startsWith('blob:')) URL.revokeObjectURL(url);
       for (const image of originalImages.values()) URL.revokeObjectURL(image.url);
@@ -373,7 +360,7 @@
       </nav>
       <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
     </header>
-    {#if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
+    {#if !settingsReady}<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
     <div class="app-content">
       {#if toolsOpen}

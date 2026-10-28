@@ -8,10 +8,12 @@ from content_store import enabled
 
 
 def connect_drive():
+    from persistent_drive_auth import connect_from_secrets, has_persistent_secret
+    if not has_persistent_secret():
+        return None
     import httplib2
     from google_auth_httplib2 import AuthorizedHttp
     from googleapiclient.discovery import build
-    from persistent_drive_auth import connect_from_secrets
     from transfer_core import GoogleDriveProvider
 
     def service(credentials):

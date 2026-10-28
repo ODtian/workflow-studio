@@ -19,7 +19,7 @@ import traitlets
 from chat_tree import ChatTree
 from image_history import ImageHistory
 from preview_transport import WidgetTransport, jpeg
-from settings_writer import SettingsWriter
+from settings_writer import SettingsWriter, configuration_parameters
 from content_store import enabled, read_bytes, write_text, open_image, save_image
 
 ROOT = Path(__file__).parent
@@ -113,7 +113,7 @@ class WorkflowSession:
         self.prepared_signature = None
         spec = owner.load(workflow_id).SPEC
         defaults = {field["key"]: field.get("default", "") for field in spec["fields"]}
-        self.params = {**defaults, **(params or {})}
+        self.params = {**defaults, **configuration_parameters(spec['fields'], params or {})}
         if spec.get("model_binding_fields"):
             self.params.update(owner.model_bindings.get(self.params["model"], {}))
         self.state = {"id": self.id, "selected": workflow_id, "spec": spec,
@@ -302,13 +302,17 @@ class WorkflowSession:
 
 
 class WorkflowPanel(anywidget.AnyWidget):
-    state = traitlets.Dict().tag(sync=True)
-    previews = traitlets.Dict().tag(sync=True)
-    texts = traitlets.Dict().tag(sync=True)
-    results = traitlets.Dict().tag(sync=True)
-    chats = traitlets.Dict().tag(sync=True)
-    files = traitlets.Dict().tag(sync=True)
-    histories = traitlets.Dict().tag(sync=True)
+    state = traitlets.Dict()
+    previews = traitlets.Dict()
+    texts = traitlets.Dict()
+    results = traitlets.Dict()
+    chats = traitlets.Dict()
+    files = traitlets.Dict()
+    histories = traitlets.Dict()
+
+    @traitlets.observe('state', 'previews', 'texts', 'results', 'chats', 'files', 'histories')
+    def runtime_changed(self, change):
+        self.send({'type': 'runtime_state', 'name': change['name'], 'value': change['new']})
 
     def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None):
         super().__init__(_esm=("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
@@ -332,15 +336,14 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.model_bindings = saved.get("model_bindings", {})
         self._modules = {}
         self.sessions = {}
-        self.state = {"workflows": [], "panels": [], "message": "", "active": saved.get("active", ""), "model_bindings": self.model_bindings,
-                      "persist_inputs": enabled()}
+        self.state = {"workflows": [], "panels": [], "message": "", "active": saved.get("active", ""), "model_bindings": self.model_bindings}
         self.on_msg(self._message)
         self.refresh()
         available = {item["id"] for item in self.state["workflows"]}
         if initial is None:
             initial = saved.get("panels")
         if initial is None:
-            initial = [{"workflow": name} for name in ("moss_image.py", "llama_cpp.py") if name in available]
+            initial = [{"workflow": name} for name in ("moss_image.py", "minimax_h3.py", "llama_cpp.py") if name in available]
         if not initial and available:
             initial = [{"workflow": self.state["workflows"][0]["id"]}]
         for item in initial:
@@ -365,11 +368,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.model_bindings[session.params["model"]] = {key: session.params.get(key, "") for key in keys}
         self.state = {**self.state, "model_bindings": self.model_bindings}
         saved = {"active": self.state["active"], "model_bindings": self.model_bindings, "panels": [
-            {"id": session.id, "workflow": session.state["selected"], "params": {
-                field["key"]: session.params[field["key"]]
-                for field in session.state["spec"]["fields"]
-                if enabled() or field.get("persist", field.get("area") != "prompts" and
-                             field["type"] not in ("image", "media_list", "keyframe_list"))}}
+            {"id": session.id, "workflow": session.state["selected"],
+             "params": configuration_parameters(session.state['spec']['fields'], session.params)}
             for session in self.sessions.values()]}
         self.settings_writer.submit(saved, request)
 
@@ -456,6 +456,10 @@ class WorkflowPanel(anywidget.AnyWidget):
     def _message(self, widget, content, buffers):
         try:
             action = content["action"]
+            if action == 'sync':
+                self.send({'type': 'runtime_snapshot', 'values': {name: getattr(self, name)
+                           for name in ('state', 'previews', 'texts', 'results', 'chats', 'files', 'histories')}})
+                return
             if action == "files":
                 self.files_bridge.receive(content["command"])
                 return

@@ -63,7 +63,7 @@ async function create(panel,config,manager){
 }
 async function ensure(request){
   let item=sessions.get(request.panel);
-  if(!item){const dir=join(sessionRoot,request.panel),saved='saved_session' in request.config;item=await create(request.panel,request.config,await(saved?(request.config.saved_session?storage.open(request.config.saved_session,dir):storage.create(dir)):storage.recent(dir)));}
+  if(!item){const dir=join(sessionRoot,request.panel);item=await create(request.panel,request.config,await storage.recent(dir));}
   if(JSON.stringify(item.config)!==JSON.stringify(request.config)){
     if(item.config.system_prompt!==request.config.system_prompt){item.session.dispose();return create(request.panel,request.config,item.manager);}
     await item.session.setModel(register(request.config));item.session.setThinkingLevel(request.config.thinking==='on'?'medium':'off');item.config=request.config;
