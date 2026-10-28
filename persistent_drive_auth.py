@@ -271,6 +271,40 @@ class NotebookSecretsCache:
             raise DriveAuthError("无法保存 Drive 长期授权，请重新完成安全配置。") from None
 
 
+class DriveAuthorization:
+    """Split the SDK's console OAuth flow into page actions."""
+
+    def __init__(self):
+        self.flow = None
+
+    def begin(self):
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from pydata_google_auth import auth as sdk
+        config = {'installed': {
+            'client_id': sdk.WEBAPP_CLIENT_ID,
+            'client_secret': sdk.WEBAPP_CLIENT_SECRET,
+            'auth_uri': sdk.GOOGLE_AUTH_URI,
+            'token_uri': sdk.GOOGLE_TOKEN_URI,
+            'redirect_uris': [sdk.WEBAPP_REDIRECT_URI],
+        }}
+        self.flow = InstalledAppFlow.from_client_config(config, scopes=[DRIVE_SCOPE])
+        self.flow.redirect_uri = sdk.WEBAPP_REDIRECT_URI
+        url, _ = self.flow.authorization_url(**sdk.AUTH_URI_KWARGS)
+        return url
+
+    def complete(self, code):
+        try:
+            self.flow.fetch_token(code=code.strip())
+            NotebookSecretsCache(user_setup=True).save(self.flow.credentials)
+            return True
+        except DriveAuthError:
+            raise
+        except Exception:
+            raise DriveAuthError('Drive 授权码验证失败，请重新授权后提交。') from None
+        finally:
+            self.flow = None
+
+
 def sdk_capabilities():
     """Return booleans/version strings only; never touch credential storage."""
     import inspect

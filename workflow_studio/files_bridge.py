@@ -43,6 +43,8 @@ class FilesBridge:
         controller.studio_hidden_tasks = self.hidden_tasks
         controller.studio_undo = self.undo
         self.message = ""
+        self.drive_setup = None
+        self.drive_auth = {'phase': 'idle', 'url': '', 'error': ''}
         if not hasattr(controller, "tools_listeners"):
             controller.tools_listeners = []
         controller.tools_listeners.append(self.publish)
@@ -53,7 +55,7 @@ class FilesBridge:
     def publish(self):
         value = self.controller.snapshot()
         saved = self.store.read()
-        value.update(recipes=saved["copies"], message=self.message,
+        value.update(recipes=saved["copies"], message=self.message, drive_auth=dict(self.drive_auth),
                      can_undo=bool(self.undo or saved.get("copy_trash")))
         value["tasks"] = [task for task in value["tasks"] if task["id"] not in self.hidden_tasks]
         self.owner.files = value
@@ -61,7 +63,14 @@ class FilesBridge:
     def receive(self, command):
         self.message = ""
         action = command["action"]
-        if action == "save_recipe":
+        if action == 'drive_connect':
+            from persistent_drive_auth import DriveAuthorization
+            self.drive_setup = DriveAuthorization()
+            self.drive_auth = {'phase': 'pending', 'url': self.drive_setup.begin(), 'error': ''}
+        elif action == 'drive_authorize':
+            self.drive_auth = {'phase': 'working', 'url': '', 'error': ''}
+            threading.Thread(target=self.authorize_drive, args=(command['code'],), daemon=True).start()
+        elif action == "save_recipe":
             from copy_registry import save_recipe
             save_recipe(command["recipe"])
             self.message = "快捷操作已保存。"
@@ -93,6 +102,20 @@ class FilesBridge:
         else:
             self.controller.handle({**command, "request_id": uuid.uuid4().hex})
         self.publish()
+
+    def authorize_drive(self, code):
+        from persistent_drive_auth import DriveAuthError
+        try:
+            self.drive_setup.complete(code)
+            self.controller.provider = None
+            self.drive_auth = {'phase': 'complete', 'url': '', 'error': ''}
+            self.message = 'Drive 授权已保存，正在读取目录。'
+            self.controller.handle({'action': 'root', 'pane': 'drive', 'root': 'root', 'request_id': uuid.uuid4().hex})
+        except DriveAuthError as exc:
+            self.drive_auth = {'phase': 'error', 'url': '', 'error': str(exc)}
+        finally:
+            self.drive_setup = None
+            self.publish()
 
     def replay(self, ids):
         from copy_registry import resolve

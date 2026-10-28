@@ -12,11 +12,11 @@ LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama�
 
 ## 启动
 
-`notebook.py` 提供一个 cell 的 Git 启动入口。每次执行更新 `main` 分支，随后加载 MOSS、MiniMax H3 和 Pi 面板。Notebook 的持久缓存保存页面配置，Secrets 保存 Drive 授权配置。
+`notebook.py` 的启动单元格保留 6 行：加载 GitHub 的启动模块并显示工作台。Git 更新和初始化放在 `studio_entry.py`，每次执行更新 `main` 后加载 MOSS、MiniMax H3 和 Pi 面板。Notebook 的持久缓存保存页面配置，Secrets 保存 Drive 授权配置。
 
 模型存放在 `model_dir/LLM/`。公开模型目录记录下载仓库、固定版本与文件大小；notebook 的 `workspace_store` 中可保存自己的 Drive 模型清单，运行时优先使用该清单恢复权重。公开仓库保存工作流源码和前端资源。
 
-Molab 工作区通过 `persistent_drive_auth.connect_from_secrets()` 读取本 Notebook Secrets 中的 `MOLAB_DRIVE_AUTH_JSON` 并连接 Google Drive。首次授权通过 `persistent_drive_auth.complete_user_setup()` 完成。
+首次使用时，在“文件与传输”点击“连接 Google Drive”，打开 Google 授权页，将返回的一次性授权码填入工作台并点击“完成连接”。授权保存在本 Notebook 的 Secrets 中。后续启动通过 `persistent_drive_auth.connect_from_secrets()` 自动连接，授权失效时从页面重新连接。
 
 ## 内容存储
 

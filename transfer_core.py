@@ -433,11 +433,11 @@ class TransferController:
             try:
                 self.provider = self.provider_factory()
             except Exception:
-                raise TransferError('Drive 连接暂不可用，完成已有安全连接后点击刷新') from None
+                raise TransferError('Drive 连接待更新，请点击“连接 Google Drive”重新授权。') from None
             with self.lock:
                 self.state['connected'] = self.provider is not None
         if self.provider is None:
-            raise TransferError('Drive 尚未连接，请先完成已有的安全连接')
+            raise TransferError('点击“连接 Google Drive”完成首次授权。')
 
     def _resolve_bookmark(self, entry):
         if entry.pane != 'drive' or entry.chain:
