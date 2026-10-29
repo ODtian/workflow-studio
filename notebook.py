@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "marimo>=0.25.1",
+#     "workflow-studio @ git+https://github.com/ODtian/workflow-studio.git@main",
+# ]
+# ///
+
 import marimo
 
 __generated_with = "0.25.1"
@@ -6,13 +14,11 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
-    import marimo as _studio_mo
-    from urllib.request import urlopen as _studio_open
-    _studio_entry = {}
-    exec(_studio_open('https://raw.githubusercontent.com/ODtian/workflow-studio/main/studio_entry.py').read(), _studio_entry)
-    studio_panel = _studio_entry['load_studio']()
-    _studio_mo.ui.anywidget(studio_panel)
-    return
+    import marimo as mo
+    from studio_entry import load_studio
+    studio_panel = load_studio()
+    mo.ui.anywidget(studio_panel)
+    return (studio_panel,)
 
 
 if __name__ == "__main__":

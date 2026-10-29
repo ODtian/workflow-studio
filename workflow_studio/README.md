@@ -81,6 +81,8 @@ Comfy 运行库与 llama.cpp 绑定各自在本次内核中准备一次。MOSS �
 
 ## 运行
 
+当前 GitHub 入口使用 `workflow-studio` 启动包：在 Notebook 包管理器添加 `workflow-studio @ git+https://github.com/ODtian/workflow-studio.git@main`，随后通过 `from studio_entry import load_studio` 导入。`notebook.py` 的脚本依赖已包含这一配置，启动单元格调用 `load_studio()` 并显示 widget，源码更新和临时运行目录由启动模块准备。
+
 molab：上传标准源码包 `workflow_studio.zip`、`studio_bootstrap.py`、`studio_config.json` 到 notebook 工作目录（当前实例为 `/marimo`），再将 `molab_cell.py` 放入一个 Python 单元格运行。ZIP 采用二进制文件上传；也可先上传 Google Drive，再使用现有文件复制工具复制到 `/marimo`。入口优先解压 ZIP 中的源文件和资源，配置文件与可编辑工作流沿用现有内容。
 
 更新时覆盖同名 `workflow_studio.zip`，重新运行启动单元格。增量包沿用相同目录结构，只放入需要更新的文件；入口将其覆盖到对应目录。开发机通过 `python work/make_bundle.py workflow_studio/llama_runner.py` 构建单文件更新包，通过 `python work/make_bundle.py` 构建完整包。Python 改动只传 Python 文件；前端改动传编译后的 `assets/view.js` 与 `assets/components.css`。

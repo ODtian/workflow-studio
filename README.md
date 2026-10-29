@@ -16,7 +16,16 @@ MOSS 默认启用 Spectrum 自适应特征预测，高级设置提供预热步�
 
 ## 启动
 
-`notebook.py` 的启动单元格保留 6 行：加载 GitHub 的启动模块并显示工作台。Git 更新和初始化放在 `studio_entry.py`，每次执行更新 `main` 后加载 MOSS、MiniMax H3 和 Pi 面板。Notebook 的持久缓存保存页面配置，Secrets 保存 Drive 授权配置。
+`notebook.py` 在脚本依赖中声明 GitHub 上的 `workflow-studio` 启动包，由 Notebook 包管理器安装。包中提供现有的 `studio_entry.load_studio()`，启动单元格保留 4 行普通 Python：
+
+```python
+import marimo as mo
+from studio_entry import load_studio
+studio_panel = load_studio()
+mo.ui.anywidget(studio_panel)
+```
+
+Git 更新和初始化由 `studio_entry.py` 执行，每次调用更新临时目录中的 `main` 源码后加载 MOSS、MiniMax H3 和 Pi 面板。Notebook 的持久缓存保存页面配置，Secrets 保存 Drive 授权配置。
 
 模型存放在 `model_dir/LLM/`。公开模型目录记录下载仓库、固定版本与文件大小；notebook 的 `workspace_store` 中可保存自己的 Drive 模型清单，运行时优先使用该清单恢复权重。公开仓库保存工作流源码和前端资源。
 

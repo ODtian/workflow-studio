@@ -11,3 +11,5 @@ node_modules/
 .venv/
 models/
 outputs/
+build/
+*.egg-info/
