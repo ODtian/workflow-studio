@@ -456,9 +456,12 @@ def run_h3(params, ctx):
         clips[0].replace(output)
     else:
         from comfy_api.latest import InputImpl, Types
-        video = InputImpl.VideoFromList([InputImpl.VideoFromFile(str(path)) for path in clips])
-        video.save_to(str(output), format=Types.VideoContainer.MP4, codec=Types.VideoCodec.H264,
+        video = InputImpl.VideoFromList([InputImpl.VideoFromFile(io.BytesIO(read_bytes(path))) for path in clips])
+        destination = io.BytesIO() if enabled() else str(output)
+        video.save_to(destination, format=Types.VideoContainer.MP4, codec=Types.VideoCodec.H264,
                       crf=18, preset="fast")
+        if enabled():
+            write_bytes(output, destination.getvalue())
         for path in clips:
             path.unlink()
     ctx.metadata(采样秒=round(sample_seconds, 3), 解码秒=round(decode_seconds, 3),
