@@ -29,9 +29,12 @@ def fields():
     return [dict(area='advanced', section='SelfLift', **field) for field in [
         {'key':'selflift_enabled','label':'启用 SelfLift','type':'boolean','default':False},
         {'key':'selflift_mode','label':'升分辨率方式','type':'select','default':'zero','when':enabled,
+         'hint':'H3 实验适配。VAE 校正可能平滑运动细节；本地 latent upscaler 使用 H3 专用放大模型。',
          'options':[{'label':'SelfLift-zero · VAE 校正','value':'zero'}, {'label':'本地 latent upscaler','value':'learned'}]},
-        {'key':'selflift_scale','label':'低分辨率比例','type':'number','default':.5,'min':.25,'max':1,'step':.05,'when':enabled},
-        {'key':'selflift_low_steps','label':'低分辨率步数占比','type':'number','default':.75,'min':.05,'max':.95,'step':.05,'when':enabled},
+        {'key':'selflift_scale','label':'低分辨率比例','type':'number','default':.5,'min':.25,'max':1,'step':.05,'when':enabled,
+         'hint':'宽高分别乘此比例。提高比例可保留更多运动细节，同时增加前段计算量。'},
+        {'key':'selflift_low_steps','label':'低分辨率步数占比','type':'number','default':.75,'min':.05,'max':.95,'step':.05,'when':enabled,
+         'hint':'降低占比可为最终分辨率保留更多恢复步数，同时增加总计算量。'},
         {'key':'selflift_rho','label':'校正区域比例 ρ','type':'number','default':.6,'min':.05,'max':1,'step':.05,'when':zero},
         {'key':'selflift_w_min','label':'最小校正强度','type':'number','default':1,'min':0,'max':1,'step':.05,'when':zero},
         {'key':'selflift_w_max','label':'最大校正强度','type':'number','default':1,'min':0,'max':1,'step':.05,'when':zero},
@@ -86,9 +89,38 @@ def sample(model, positive, negative, vae, latent, params, seed, callback, ctx):
     if learned:
         lifter = lambda value,size: nodes.h3_upscaler.learned_latent_lift(
             value,size,params['selflift_upscaler'],force_unload=bool(params.get('selflift_upscaler_unload',False)))
+    high_model = None
+    from h3_spark import apply as apply_spark, supported as spark_supported
+    attention = params.get('attention', 'auto')
+    if attention == 'spark' or (attention == 'auto' and spark_supported()):
+        # Each Comfy sample cleans up Spark's controller. Repatch the high stage
+        # with only the warmup evaluations left in the complete schedule.
+        high_model = apply_spark(model, params, ctx, start_step=transition)
+
+    stage_labels = {'low_resolution':'SelfLift低分辨率', 'transition':'SelfLift升分辨率',
+                    'high_resolution':'SelfLift高分辨率'}
+
+    class StageTimer(nodes._StageTimer):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.durations = []
+
+        def mark(self, label):
+            previous = self.previous
+            super().mark(label)
+            self.durations.append(round(self.previous-previous, 3))
+
+        def finish(self):
+            super().finish()
+            label = stage_labels[self.stage]
+            ctx.metadata(**{label+'秒':round(self._now()-self.started, 3)})
+            if self.stage == 'high_resolution':
+                ctx.metadata(**{label+'每步秒':self.durations})
+
     # Give this invocation its own callback factory; Comfy's module stays shared.
     original = nodes.progressive_sample
-    scope = {**original.__globals__, 'latent_preview':SimpleNamespace(prepare_callback=lambda *_:callback)}
+    scope = {**original.__globals__, '_StageTimer':StageTimer,
+             'latent_preview':SimpleNamespace(prepare_callback=lambda *_:callback)}
     progressive = FunctionType(original.__code__,scope,original.__name__,original.__defaults__,original.__closure__)
     video = latent['samples'].tensors[0] if latent['samples'].is_nested else latent['samples']
     height,width = video.shape[-2:]
@@ -97,7 +129,7 @@ def sample(model, positive, negative, vae, latent, params, seed, callback, ctx):
         SelfLift分辨率=f'{max(2,round(width*scale/2)*2)*16}×{max(2,round(height*scale/2)*2)*16} → {width*16}×{height*16}')
     result = progressive(model,positive,negative,vae,latent,comfy.samplers.sampler_object('euler'),sigmas,seed,
         float(params['cfg']),transition,scale,rho,float(params.get('selflift_w_min',1)),float(params.get('selflift_w_max',1)),
-        'nearest',latent_lifter=lifter)
+        'nearest',latent_lifter=lifter,model_hires=high_model)
     return result['samples']
 
 

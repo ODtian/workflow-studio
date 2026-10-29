@@ -1,5 +1,6 @@
 """Apply the official Spark-H3 Comfy patch in the notebook process."""
 import importlib.util
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -71,7 +72,7 @@ def prepare_backend(ctx):
     _backend_ready = True
 
 
-def apply(model, params, ctx):
+def apply(model, params, ctx, *, start_step=0):
     import torch
     if not supported():
         raise ValueError('Spark-H3 使用 CUDA 13 的 SM86、SM89 或 SM120 GPU。')
@@ -87,12 +88,16 @@ def apply(model, params, ctx):
     warmup = {'fidelity': 0.2, 'speed': 0.0}.get(mode, float(params.get('spark_warmup_ratio', 0.2)))
     topk = float(params.get('spark_topk_ratio', 0.2))
     scope = params.get('spark_sparse_scope', 'target-video')
+    steps = int(params['steps'])
+    warmup_steps = max(0, math.ceil(steps * warmup) - start_step)
     patched = nodes.NODE_CLASS_MAPPINGS['MiniMaxH3SparkAttention' + architecture]().patch(
-        model=model, mode=mode, steps=int(params['steps']), warmup_mode='warmup_ratio',
-        warmup_ratio=warmup, warmup_steps=0, topk_ratio=topk, dense_layers=0,
+        model=model, mode=mode, steps=steps-start_step, warmup_mode='warmup_steps',
+        warmup_ratio=warmup, warmup_steps=warmup_steps, topk_ratio=topk, dense_layers=0,
         min_tokens=12288, strict=True, sparse_scope=scope,
         producer_chunk=int(params.get('spark_producer_chunk', 16384)),
     )[0]
     ctx.metadata(Attention='Spark-H3 · ' + architecture, Spark模式=mode,
                  Spark预热比例=warmup, Spark精确比例=topk, Spark稀疏范围=scope)
+    if start_step:
+        ctx.metadata(Spark高分辨率预热步数=warmup_steps)
     return patched
