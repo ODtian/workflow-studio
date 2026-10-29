@@ -11,6 +11,7 @@ REVISION = '2eb2dc1be261490f86a57c93904551a5bf456af7'
 PACKAGE = 'workflow_spark_h3'
 SOURCE = Path(os.environ.get('WORKFLOW_WORKSPACE', '.')) / '.cache/workflow-studio/spark-h3'
 ARCHITECTURES = {(8, 6): 'SM86', (8, 9): 'SM89', (12, 0): 'SM120'}
+_backend_ready = False
 
 
 def fields():
@@ -46,7 +47,8 @@ def supported():
 
 def prepare_backend(ctx):
     """Install the shared kitchen backend before Comfy imports its CUDA extension."""
-    if not supported():
+    global _backend_ready
+    if _backend_ready or not supported():
         return
     if not (SOURCE / 'comfyui_nodes.py').is_file():
         ctx.status('准备 Spark-H3 推理代码…')
@@ -57,8 +59,16 @@ def prepare_backend(ctx):
         subprocess.run(['git', '-C', str(SOURCE), 'checkout', '--detach', 'FETCH_HEAD'],
                        check=True, capture_output=True, text=True)
     ctx.status('准备 Spark-H3 CUDA 内核…')
-    subprocess.run([sys.executable, str(SOURCE / 'comfyui/install.py'), '--skip-dependencies'],
-                   check=True)
+    environment = dict(os.environ)
+    environment['PYTHONPATH'] = str(SOURCE) + os.pathsep + environment.get('PYTHONPATH', '')
+    result = subprocess.run([sys.executable, '-m', 'comfyui.install', '--skip-dependencies'],
+                            cwd=SOURCE, env=environment, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, text=True)
+    (SOURCE.parent / 'spark-h3-install.log').write_text(result.stdout, encoding='utf-8')
+    if result.returncode:
+        ctx.metadata(Spark安装日志=result.stdout[-4000:])
+        raise RuntimeError('Spark-H3 安装失败：' + result.stdout.strip().splitlines()[-1])
+    _backend_ready = True
 
 
 def apply(model, params, ctx):

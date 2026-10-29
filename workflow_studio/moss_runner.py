@@ -41,10 +41,13 @@ def preferred(files, *words):
     return next((f for f in files if all(w in f.lower() for w in words)), files[0] if files else "")
 
 
-def prepare_core(ctx):
+def prepare_core(ctx, *, spark=False):
     from packaging.requirements import Requirement
     global _core_ready
     if _core_ready:
+        if spark:
+            from h3_spark import prepare_backend
+            prepare_backend(ctx)
         return
     if not (CORE / "comfy/sd.py").exists():
         ctx.status("准备模型加载模块…")
@@ -69,8 +72,9 @@ def prepare_core(ctx):
         ctx.status("准备模型加载依赖…")
         installer = ["uv", "pip", "install", "--python", sys.executable] if shutil.which("uv") else [sys.executable, "-m", "pip", "install"]
         subprocess.run([*installer, "--no-deps", *missing], check=True)
-    from h3_spark import prepare_backend
-    prepare_backend(ctx)
+    if spark:
+        from h3_spark import prepare_backend
+        prepare_backend(ctx)
     if str(CORE) not in sys.path:
         sys.path.insert(0, str(CORE))
     import folder_paths

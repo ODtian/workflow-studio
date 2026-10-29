@@ -34,7 +34,7 @@ def ensure_weights(params, ctx):
 
 def load_models(params, ctx):
     ensure_weights(params, ctx)
-    prepare_core(ctx)
+    prepare_core(ctx, spark=params.get('attention', 'auto') in {'auto', 'spark'})
     import comfy.sd
     import comfy.utils
 

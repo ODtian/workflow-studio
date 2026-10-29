@@ -55,7 +55,7 @@ MOSS 工作流复用 Comfy 的 `load_diffusion_model`、`load_clip`、`VAE` 和�
 
 共享核心固定为 Comfy 0.42.0。MOSS 默认启用 Spectrum Adaptive，预热步数、误差容忍度和特征缓存设备可在高级设置调整；采样结束后运行信息显示实际计算和特征预测次数。
 
-H3 的注意力选择提供 Spark-H3，自动模式在 CUDA 13 的 SM86、SM89、SM120 GPU 上优先使用。`h3_spark.py` 在 Comfy 首次导入前调用上游安装器准备匹配的内核，在 LoRA、Sigma Shift 之后调用上游原生模型补丁，沿用当前图片、视频和分段采样路径。保真模式使用 20% 预热，速度模式使用 0% 预热，自定义模式读取页面预热比例；精确计算比例默认 20%，可选仅生成视频或参考视频与生成视频联合稀疏。短序列沿用上游的精确计算路径。源码、内核及运行缓存使用临时目录，控制参数通过 Notebook gzip 配置保存。
+H3 的注意力选择提供 Spark-H3，自动模式在 CUDA 13 的 SM86、SM89、SM120 GPU 上优先使用。选择自动或 Spark-H3 时，`h3_spark.py` 在 Comfy 首次导入前调用上游安装器准备匹配的内核；安装器以 `python -m comfyui.install` 运行，显式指定源码导入路径，沿用 Molab 的安全导入设置。安装日志保存在临时运行目录，错误原因进入运行信息。LoRA、Sigma Shift 之后调用上游原生模型补丁，沿用当前图片、视频和分段采样路径。保真模式使用 20% 预热，速度模式使用 0% 预热，自定义模式读取页面预热比例；精确计算比例默认 20%，可选仅生成视频或参考视频与生成视频联合稀疏。短序列沿用上游的精确计算路径。源码、内核及运行缓存使用临时目录，控制参数通过 Notebook gzip 配置保存。
 
 MOSS 的 Base / SFT、BF16、INT8 ConvRot，以及 Qwen3.5-9B 的 BF16、INT8 ConvRot、W4A8 GPTQ 使用这些原生加载器。预览使用采样中的 Latent2RGB；最终结果由所选 FLUX.2 VAE 解码。默认采用 50 步、CFG 3、Euler / simple、Shift 5 和负分支跳过第 22 层。
 

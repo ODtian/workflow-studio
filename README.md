@@ -12,7 +12,7 @@ LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama�
 
 MOSS 默认启用 Spectrum 自适应特征预测，高级设置提供预热步数、误差容忍度与特征缓存设备。H3 的注意力选择提供 Spark-H3；自动模式在 CUDA 13 的 SM86、SM89、SM120 GPU 上优先使用 Spark-H3，可调整保真／速度／自定义预热、精确计算比例、参考视频稀疏范围和 QKV 分块。页面配置继续使用 Notebook 的 gzip 存储。
 
-共享 Comfy 核心固定为 0.42.0，首次加载前使用 [Spark-H3 官方安装器](https://github.com/zechengtang/Spark-H3/blob/main/comfyui/install.py)准备对应 GPU 的 comfy-kitchen CUDA 内核。Spark-H3 源码固定在 `2eb2dc1be261490f86a57c93904551a5bf456af7`，源码与推理缓存位于临时运行目录。H3 每个分段的 LoRA 和 Sigma Shift 应用后，经 Spark 模型补丁进入现有采样器，结果仍由原有 VAE 与媒体输出流程处理。
+共享 Comfy 核心固定为 0.42.0。H3 选择自动或 Spark-H3 时，在首次加载前使用 [Spark-H3 官方安装器](https://github.com/zechengtang/Spark-H3/blob/main/comfyui/install.py)准备对应 GPU 的 comfy-kitchen CUDA 内核。安装器以 Python 模块方式运行，并显式添加源码导入路径，沿用 Molab 的安全导入设置。Spark-H3 源码固定在 `2eb2dc1be261490f86a57c93904551a5bf456af7`，源码与推理缓存位于临时运行目录。H3 每个分段的 LoRA 和 Sigma Shift 应用后，经 Spark 模型补丁进入现有采样器，结果仍由原有 VAE 与媒体输出流程处理。
 
 ## 启动
 
