@@ -49,5 +49,6 @@ marimo 输出缓存与会话快照交由平台正常管理。
 - `studio_workflows/`：工作区使用的默认工作流。
 - `workflow_studio/frontend/`：Svelte 前端；`workflow_studio/assets/` 包含已构建资源。
 - `transfer_core.py`：Google Drive 传输队列。
+- `drive_parallel_download.py`：传输队列调用的三路分段下载；各线程读取 Drive Range，按原顺序写入临时文件并更新进度。
 
 完整界面和工作流说明见 [workflow_studio/README.md](workflow_studio/README.md)。第三方组件许可见 [THIRD_PARTY_LICENSES.txt](workflow_studio/THIRD_PARTY_LICENSES.txt)。
