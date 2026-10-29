@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 from types import FunctionType, SimpleNamespace
 
 from moss_runner import MODELS
@@ -104,6 +105,8 @@ def sample(model, positive, negative, vae, latent, params, seed, callback, ctx):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.durations = []
+            if self.stage == 'transition':
+                ctx.status('SelfLift 升分辨率 · 构建 VAE 校正锚点…')
 
         def mark(self, label):
             previous = self.previous
@@ -117,9 +120,35 @@ def sample(model, positive, negative, vae, latent, params, seed, callback, ctx):
             if self.stage == 'high_resolution':
                 ctx.metadata(**{label+'每步秒':self.durations})
 
+    def paired_lifts(value, video_vae, *args, **kwargs):
+        decoded_at = 0
+
+        def decode(value):
+            nonlocal decoded_at
+            ctx.status('SelfLift 升分辨率 1/3 · VAE 解码…')
+            started = time.monotonic()
+            result = video_vae.decode(value)
+            decoded_at = time.monotonic()
+            ctx.metadata(SelfLiftVAE解码秒=round(decoded_at-started, 3))
+            ctx.status('SelfLift 升分辨率 2/3 · 像素放大…')
+            return result
+
+        def encode(value):
+            ctx.metadata(SelfLift像素放大秒=round(time.monotonic()-decoded_at, 3))
+            ctx.status('SelfLift 升分辨率 3/3 · VAE 重编码…')
+            started = time.monotonic()
+            result = video_vae.encode(value)
+            ctx.metadata(SelfLiftVAE编码秒=round(time.monotonic()-started, 3))
+            return result
+
+        timed_vae = SimpleNamespace(decode=decode, encode=encode,
+                                   device=video_vae.device, vae_dtype=video_vae.vae_dtype)
+        return nodes.selflift.paired_lifts(value, timed_vae, *args, **kwargs)
+
     # Give this invocation its own callback factory; Comfy's module stays shared.
     original = nodes.progressive_sample
     scope = {**original.__globals__, '_StageTimer':StageTimer,
+             'selflift':SimpleNamespace(**{**vars(nodes.selflift), 'paired_lifts':paired_lifts}),
              'latent_preview':SimpleNamespace(prepare_callback=lambda *_:callback)}
     progressive = FunctionType(original.__code__,scope,original.__name__,original.__defaults__,original.__closure__)
     video = latent['samples'].tensors[0] if latent['samples'].is_nested else latent['samples']

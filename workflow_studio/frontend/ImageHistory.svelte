@@ -3,7 +3,7 @@
   import {Badge} from '$lib/components/ui/badge';
   import {Download, Info, Maximize2, X, ArrowLeftRight, ChevronLeft, ChevronRight, Play} from '@lucide/svelte';
   import ImageComparison from './ImageComparison.svelte';
-  let {history = [], loadPreview, loadThumbnail, loadOriginal, download} = $props();
+  let {history = [], playback=$bindable({volume:0.25,muted:false}), loadPreview, loadThumbnail, loadOriginal, download} = $props();
   let selectedA = $state('');
   let selectedB = $state('');
   let mode = $state('side');
@@ -47,7 +47,7 @@
     {#if comparing}<div class="segmented"><Button size="sm" variant={mode==='side'?'secondary':'ghost'} onclick={()=>mode='side'}>并排</Button><Button size="sm" variant={mode==='mask'?'secondary':'ghost'} onclick={()=>mode='mask'}>遮罩</Button><Button size="sm" variant="ghost" onclick={()=>{selectedA='';selectedB='';}}>图片墙</Button></div>{/if}
     <Button variant="ghost" size="icon-sm" aria-label={expanded?'收起对比':'展开对比'} onclick={()=>expanded=!expanded}>{#if expanded}<X size={15}/>{:else}<Maximize2 size={15}/>{/if}</Button>
   </div>
-  {#if videoURL}<div class="history-video"><video src={videoURL} controls playsinline preload="metadata" aria-label={'历史视频 '+videoName}></video><Button size="icon-sm" variant="ghost" aria-label="关闭历史视频" onclick={()=>{videoURL='';videoName='';}}><X size={15}/></Button></div>{/if}
+  {#if videoURL}<div class="history-video"><video src={videoURL} bind:volume={playback.volume} bind:muted={playback.muted} controls playsinline preload="metadata" aria-label={'历史视频 '+videoName}></video><Button size="icon-sm" variant="ghost" aria-label="关闭历史视频" onclick={()=>{videoURL='';videoName='';}}><X size={15}/></Button></div>{/if}
   {#if comparing}<div class="comparison-slot"><ImageComparison {a} {b} {mode} {loadPreview} {expanded} thumbnailA={thumbnails[a.name]||''} thumbnailB={thumbnails[b.name]||''}/></div>{/if}
   <div class="image-gallery" class:filmstrip={comparing}>{#each visible as entry}
     <article class="gallery-record" class:chosen={entry.name===selectedA||entry.name===selectedB}>

@@ -334,9 +334,10 @@ class WorkflowPanel(anywidget.AnyWidget):
             saved = json.loads(self.settings_path.read_text(encoding="utf-8")) if self.settings_path.exists() else {}
         self.settings_writer = SettingsWriter(self.settings_path, self.settings_backup, self.settings_saved)
         self.model_bindings = saved.get("model_bindings", {})
+        self.playback = saved.get("playback", {"volume": 0.25, "muted": False})
         self._modules = {}
         self.sessions = {}
-        self.state = {"workflows": [], "panels": [], "message": "", "active": saved.get("active", ""), "model_bindings": self.model_bindings}
+        self.state = {"workflows": [], "panels": [], "message": "", "active": saved.get("active", ""), "model_bindings": self.model_bindings, "playback": self.playback}
         self.on_msg(self._message)
         self.refresh()
         available = {item["id"] for item in self.state["workflows"]}
@@ -353,9 +354,11 @@ class WorkflowPanel(anywidget.AnyWidget):
             from files_bridge import FilesBridge
             self.files_bridge = FilesBridge(self)
 
-    def save_settings(self, panels=None, active=None, model_bindings=None, request=None):
+    def save_settings(self, panels=None, active=None, model_bindings=None, request=None, playback=None):
         if model_bindings is not None:
             self.model_bindings = model_bindings
+        if playback is not None:
+            self.playback = playback
         for item in panels or []:
             session = self.sessions[item["id"]]
             session.params = {**session.params, **item["params"]}
@@ -366,8 +369,8 @@ class WorkflowPanel(anywidget.AnyWidget):
             keys = session.state["spec"].get("model_binding_fields")
             if keys and session.params.get("model"):
                 self.model_bindings[session.params["model"]] = {key: session.params.get(key, "") for key in keys}
-        self.state = {**self.state, "model_bindings": self.model_bindings}
-        saved = {"active": self.state["active"], "model_bindings": self.model_bindings, "panels": [
+        self.state = {**self.state, "model_bindings": self.model_bindings, "playback": self.playback}
+        saved = {"active": self.state["active"], "model_bindings": self.model_bindings, "playback": self.playback, "panels": [
             {"id": session.id, "workflow": session.state["selected"],
              "params": configuration_parameters(session.state['spec']['fields'], session.params)}
             for session in self.sessions.values()]}
@@ -464,7 +467,7 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.files_bridge.receive(content["command"])
                 return
             if action == "settings":
-                self.save_settings(content["panels"], content["active"], content.get("model_bindings"), content.get("request"))
+                self.save_settings(content["panels"], content["active"], content.get("model_bindings"), content.get("request"), playback=content.get("playback"))
                 return
             if action == "chat_visibility":
                 for item in content["panels"]:

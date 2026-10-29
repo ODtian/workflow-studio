@@ -3,7 +3,7 @@ import {Button} from '$lib/components/ui/button';import {Badge} from '$lib/compo
 import {Play,Square,Download,Image,History,SlidersHorizontal,ChevronDown,RefreshCw,Copy,Maximize2} from '@lucide/svelte';
 import Field from './Field.svelte';import ResolutionControls from './ResolutionControls.svelte';import ZoomPreview from './ZoomPreview.svelte';import ImageHistory from './ImageHistory.svelte';
 import H3Timeline from './H3Timeline.svelte';
-let {panel,values=$bindable(),preview='',previewInfo={},text='',results=[],send,history=[],loadThumbnail,loadPreview,targets=[],onTransfer,loadOriginal,mode='full'}=$props();
+let {panel,values=$bindable(),playback=$bindable({volume:0.25,muted:false}),preview='',previewInfo={},text='',results=[],send,history=[],loadThumbnail,loadPreview,targets=[],onTransfer,loadOriginal,mode='full'}=$props();
 let tab=$state('preview'),imageIndex=$state(0),modelsOpen=$state(false),displayMs=$state(0);
 let mobileView=$state('settings');
 let requestedRun=$state(''),pendingRun=$state(''),totalMs=$state(0),elapsedMs=$state(0);
@@ -46,9 +46,9 @@ let timingLabel=$derived(requestedRun&&!totalMs&&!['error','cancelled'].includes
 {#snippet output()}
   <section class="generation-output">
     <div class="output-toolbar"><div class="segmented"><Button variant={tab==='preview'?'secondary':'ghost'} size="sm" onclick={()=>tab='preview'}><Image size={14}/>预览</Button><Button variant={tab==='history'?'secondary':'ghost'} size="sm" onclick={()=>tab='history'}><History size={14}/>历史 <span class="count">{history.length}</span></Button></div><div class="row">{#if activeResult}<Badge variant="outline">{activeResult.width} × {activeResult.height}{activeResult.kind==='video'?` · ${activeResult.duration.toFixed(1)} s`:''}</Badge>{/if}<Button variant="outline" size="sm" disabled={!activeResult} onclick={()=>act('download',{name:activeResult.name})}><Download size={14}/>{activeResult?.kind==='video'?'下载视频':'下载原图'}</Button></div></div>
-    {#if tab==='history'}<div class="history-content"><ImageHistory {history} {loadThumbnail} {loadPreview} {loadOriginal} download={r=>act('download',{name:r.name})}/></div>
+    {#if tab==='history'}<div class="history-content"><ImageHistory bind:playback {history} {loadThumbnail} {loadPreview} {loadOriginal} download={r=>act('download',{name:r.name})}/></div>
     {:else}<div class="generation-canvas" class:working={panel.busy}>
-      {#if isText}<Textarea value={text} readonly rows={20} aria-label="文本结果"/>{:else if isVideo}<video bind:this={videoElement} class="video-result" src={shownPreview} controls playsinline preload="auto" onloadeddata={loaded} ontimeupdate={()=>playhead=videoElement.currentTime} aria-label="生成视频"></video>{:else}<ZoomPreview preview={shownPreview} result={activeResult} {loadOriginal} onload={loaded}/>{/if}
+      {#if isText}<Textarea value={text} readonly rows={20} aria-label="文本结果"/>{:else if isVideo}<video bind:this={videoElement} bind:volume={playback.volume} bind:muted={playback.muted} class="video-result" src={shownPreview} controls playsinline preload="auto" onloadeddata={loaded} ontimeupdate={()=>playhead=videoElement.currentTime} aria-label="生成视频"></video>{:else}<ZoomPreview preview={shownPreview} result={activeResult} {loadOriginal} onload={loaded}/>{/if}
     </div>
     <div class="generation-bottom"><Progress value={panel.step} max={panel.total||1} aria-label="执行进度"/><div class="output-status"><div class="row"><i class="status-dot" class:pulse={panel.busy}></i><span role="status">{requestedRun&&requestedRun!==panel.run_id?'提交任务…':panel.message}{panel.busy&&panel.total?` · ${panel.step}/${panel.total}`:''}</span></div><span title="点击生成至最终图片显示">{timingLabel}</span></div>
     {#if results.length>1}<div class="row">{#each results as result,index}<Button size="sm" variant={imageIndex===index?'secondary':'ghost'} onclick={()=>{imageIndex=index;act('show_result',{name:result.name});}}>图片 {index+1}</Button>{/each}</div>{/if}

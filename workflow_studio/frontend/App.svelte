@@ -34,6 +34,7 @@
   let drafts = $state({});
   let specs = {};
   let modelBindings = $state(state.model_bindings || {});
+  let playback = $state({volume:0.25, muted:false});
   const bindingModels = new Map();
   let addWorkflow = $state('');
   let expanded = $state(initialExpanded);
@@ -82,7 +83,7 @@
   let tabs = $derived([{label:'文件',id:'__files__',elem_id:undefined,visible:true,interactive:true,scale:0,component_id:0},
     ...state.panels.map((panel, index) => ({label:tabLabel(panel), id:panel.id,
       elem_id:undefined, visible:true, interactive:true, scale:0, component_id:index+1}))]);
-  let settingsSnapshot = $derived(JSON.stringify({active:activeId, model_bindings:modelBindings, panels:state.panels.map(panel => ({
+  let settingsSnapshot = $derived(JSON.stringify({active:activeId, model_bindings:modelBindings, playback, panels:state.panels.map(panel => ({
     id:panel.id, params:Object.fromEntries(panel.spec.fields
       .filter(field => !['image','media_list','keyframe_list'].includes(field.type))
       .map(field => [field.key,drafts[panel.id]?.[field.key] ?? field.default ?? '']))
@@ -255,6 +256,7 @@
       if (msg.type === 'runtime_state') runtimeHandlers[msg.name](msg.value);
       if (msg.type === 'runtime_snapshot') {
         modelBindings = msg.values.state.model_bindings;
+        playback = msg.values.state.playback || {volume:0.25, muted:false};
         for (const [name,value] of Object.entries(msg.values)) runtimeHandlers[name](value);
         submittedSettingsSnapshot = settingsSnapshot;
         settingsReady = true;
@@ -374,7 +376,7 @@
           {#if panel.spec.chat}
             <ChatView {panel} {mobile} active={activeId===panel.id && pageVisible} bind:values={drafts[panel.id]} pi={pi[panel.id] || {messages:[]}} {send} targets={targetsFor(panel)} onTransfer={transfer}/>
           {:else}
-            <WorkflowView {panel} bind:values={drafts[panel.id]} preview={previews[panel.id]||''} previewInfo={previewInfo[panel.id]||{}} text={texts[panel.id]||''} results={results[panel.id]||[]} {send} history={histories[panel.selected]||[]} loadThumbnail={r=>loadThumbnail(panel.id,r)} loadPreview={r=>loadPreview(panel.id,r)} targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={r=>loadOriginal(panel.id,r)}/>
+            <WorkflowView {panel} bind:values={drafts[panel.id]} bind:playback preview={previews[panel.id]||''} previewInfo={previewInfo[panel.id]||{}} text={texts[panel.id]||''} results={results[panel.id]||[]} {send} history={histories[panel.selected]||[]} loadThumbnail={r=>loadThumbnail(panel.id,r)} loadPreview={r=>loadPreview(panel.id,r)} targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={r=>loadOriginal(panel.id,r)}/>
           {/if}
         </section>
       {/each}

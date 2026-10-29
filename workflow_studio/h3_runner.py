@@ -386,15 +386,17 @@ def run_h3(params, ctx):
                 _conditioning[negative_key] = clip.encode_from_tokens_scheduled(
                     clip.tokenize(negative_key[1]))
             noise = None
+            low_steps = max(1, min(steps-1, int(steps*float(params.get('selflift_low_steps', .75))+.5)))
 
             def callback(step, x0, x, count):
                 preview = None
                 if time.monotonic() - ctx.last_preview >= 0.5 or step+1 == count:
                     video = x0.tensors[0] if x0.is_nested else x0
                     preview = previewer.decode_latent_to_preview(video[:, :, -1:])
+                stage = ('低分辨率采样' if step < low_steps else '高分辨率采样') if params.get('selflift_enabled') else '采样'
                 ctx.progress(number * steps + step + 1, total_steps,
                              preview=preview,
-                             message=f"第 {number+1}/{len(segments)} 段 · 采样 {step+1}/{count}")
+                             message=f"第 {number+1}/{len(segments)} 段 · {stage} {step+1}/{count}")
 
             started = time.monotonic()
             if params.get('selflift_enabled'):
