@@ -3,12 +3,13 @@ import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import {createAssistantMessageEventStream, getCurrentSystemPrompt, getCurrentTools} from '@earendil-works/pi-ai';
 import {createAgentSession, DefaultResourceLoader, ModelRuntime, SessionManager, SettingsManager, parseSkillBlock} from '@earendil-works/pi-coding-agent';
 import {PiSessionStore} from './session_store.mjs';
+import {createWorkflowTools, WORKFLOW_TOOL_NAMES} from './workflow_tools.mjs';
 const send=value=>process.stdout.write(JSON.stringify(value)+'\n');
 const cwd=process.cwd(), agentDir=process.env.WORKFLOW_PI_DIR;
 const storage=new PiSessionStore(cwd),sessionRoot=process.env.WORKFLOW_PI_SESSIONS||join(agentDir,'sessions');
 await mkdir(agentDir,{recursive:true});
 const runtime=await ModelRuntime.create({authPath:join(agentDir,'auth.json'),modelsPath:null,refreshOnCreate:false});
-const pending=new Map(), sessions=new Map();let sequence=0;
+const pending=new Map(), workflowPending=new Map(), sessions=new Map();let sequence=0;
 const usage=()=>({input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}});
 function displayText(text){const skill=parseSkillBlock(text);return skill?`/skill:${skill.name}${skill.userMessage?' '+skill.userMessage:''}`:text;}
 function displayMessage(message){
@@ -51,12 +52,20 @@ function nativeStream(model,context) {
   send({type:'model_request',id,messages:nativeMessages(context),tools:getCurrentTools(context.messages).map(t=>({type:'function',function:{name:t.name,description:t.description,parameters:t.parameters}}))});return stream;
 }
 function register(config){runtime.registerProvider('notebook',{name:'Notebook llama.cpp',baseUrl:'stdio://notebook',apiKey:'notebook-local',api:'notebook-llama',streamSimple:nativeStream,models:[{id:config.model,name:config.model,reasoning:true,input:['text','image'],contextWindow:Number(config.n_ctx),maxTokens:Number(config.max_tokens),cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});return runtime.getModel('notebook',config.model);}
+function workflowRequest(panel,name,args){
+  const id=++sequence;
+  return new Promise((resolve,reject)=>{
+    workflowPending.set(id,{resolve,reject});
+    send({type:'workflow_request',id,panel,name,arguments:args});
+  });
+}
 async function create(panel,config,manager){
   const settings=SettingsManager.inMemory({retry:{enabled:false}});
   const loader=new DefaultResourceLoader({cwd,agentDir,settingsManager:settings,appendSystemPrompt:[config.system_prompt||'']});await loader.reload();
-  const {session}=await createAgentSession({cwd,agentDir,model:register(config),modelRuntime:runtime,thinkingLevel:config.thinking==='on'?'medium':'off',tools:['read','bash','edit','write','grep','find','ls'],sessionManager:manager,resourceLoader:loader,settingsManager:settings});
+  const customTools=createWorkflowTools(config.workflow_context||{},(name,args)=>workflowRequest(panel,name,args));
+  const {session}=await createAgentSession({cwd,agentDir,model:register(config),modelRuntime:runtime,thinkingLevel:config.thinking==='on'?'medium':'off',tools:['read','bash','edit','write','grep','find','ls',...WORKFLOW_TOOL_NAMES],customTools,sessionManager:manager,resourceLoader:loader,settingsManager:settings});
   await session.bindExtensions({});
-  if(config.saved_tools)session.setActiveToolsByName(config.saved_tools);
+  if(config.saved_tools)session.setActiveToolsByName(config.workflow_tools_version?config.saved_tools:[...new Set([...config.saved_tools,...WORKFLOW_TOOL_NAMES])]);
   const item={session,manager,config,dir:join(sessionRoot,panel)};
   session.subscribe(event=>{if(storage.compressed&&event.type==='message_end')storage.save(manager,item.dir).catch(error=>{item.saveError=error;});});
   sessions.set(panel,item);return item;
@@ -65,7 +74,7 @@ async function ensure(request){
   let item=sessions.get(request.panel);
   if(!item){const dir=join(sessionRoot,request.panel);item=await create(request.panel,request.config,await storage.recent(dir));}
   if(JSON.stringify(item.config)!==JSON.stringify(request.config)){
-    if(item.config.system_prompt!==request.config.system_prompt){item.session.dispose();return create(request.panel,request.config,item.manager);}
+    if(item.config.system_prompt!==request.config.system_prompt||JSON.stringify(item.config.workflow_context)!==JSON.stringify(request.config.workflow_context)){item.session.dispose();return create(request.panel,request.config,item.manager);}
     await item.session.setModel(register(request.config));item.session.setThinkingLevel(request.config.thinking==='on'?'medium':'off');item.config=request.config;
   }return item;
 }
@@ -110,5 +119,8 @@ async function command(request){
 }
 let buffer='';process.stdin.setEncoding('utf8');process.stdin.on('data',chunk=>{
   buffer+=chunk;let end;while((end=buffer.indexOf('\n'))!==-1){const line=buffer.slice(0,end);buffer=buffer.slice(end+1);if(!line)continue;const record=JSON.parse(line);
-    if(record.type.startsWith('model_'))pending.get(record.id)?.(record);else command(record).catch(async error=>{const item=sessions.get(record.panel);send({type:'result',request:record.request,error:error.stack||String(error),...(item?{snapshot:await snapshot(item)}:{})});});}
+    if(record.type==='workflow_result'){
+      const call=workflowPending.get(record.id);workflowPending.delete(record.id);
+      if(record.error)call.reject(new Error(record.error));else call.resolve(record.result);
+    }else if(record.type.startsWith('model_'))pending.get(record.id)?.(record);else command(record).catch(async error=>{const item=sessions.get(record.panel);send({type:'result',request:record.request,error:error.stack||String(error),...(item?{snapshot:await snapshot(item)}:{})});});}
 });process.stdin.on('end',()=>process.exit());send({type:'ready',version:'1.4.0'});

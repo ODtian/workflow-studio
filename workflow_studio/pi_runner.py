@@ -13,6 +13,7 @@ import uuid
 import llama_runner
 import workspace_store
 from content_store import enabled
+from workflow_tools import apply_workflow_tool, workflow_catalog
 
 ROOT = Path(__file__).parent / "pi_bridge"
 _client = None
@@ -39,7 +40,7 @@ class PiClient:
     def read(self):
         for line in self.process.stdout:
             record = json.loads(line)
-            target = self.model_events if record["type"] == "model_request" else self.pending.get(record.get("request"))
+            target = self.model_events if record["type"] in ("model_request", "workflow_request") else self.pending.get(record.get("request"))
             if target is not None:
                 target.put(record)
         for target in list(self.pending.values()):
@@ -61,6 +62,7 @@ class PiClient:
             self.model_events = events
         config = {k:v for k,v in params.items() if k not in ("messages", "pi_request")}
         config.update(workspace_store.read().get("pi_preferences", {}).get(panel.id, {}))
+        config['workflow_context'] = workflow_catalog(panel.owner)
         self.send({"type":"command", "panel":panel.id, "config":config,
                    "request":request, **command})
         return request, events
@@ -82,7 +84,7 @@ def apply_record(panel, record):
     if record["type"] == "result" and record.get("snapshot"):
         snapshot = record["snapshot"]
         workspace_store.edit(lambda state: state.setdefault("pi_preferences", {}).update({
-            panel.id: {"saved_tools": snapshot["activeTools"]}}))
+            panel.id: {"saved_tools": snapshot["activeTools"], "workflow_tools_version": 1}}))
         panel.update(pi=record["snapshot"])
     elif record["type"] in ("skill", "export"):
         panel.owner.send({**record, "type":"pi_" + record["type"], "id":panel.id})
@@ -159,6 +161,12 @@ def run_pi(params, ctx):
                 import marimo as mo
                 worker = mo.Thread(target=generate, args=(record,), daemon=True)
                 worker.start()
+            elif record["type"] == "workflow_request":
+                try:
+                    result = apply_workflow_tool(ctx.panel.owner, record['name'], record['arguments'])
+                    client.send({'type': 'workflow_result', 'id': record['id'], 'result': result})
+                except Exception as exc:
+                    client.send({'type': 'workflow_result', 'id': record['id'], 'error': str(exc)})
             elif record["type"] == "event":
                 event = record["event"]
                 ctx.panel.owner.send({"type":"pi_event", "id":ctx.panel.id, "event":event})

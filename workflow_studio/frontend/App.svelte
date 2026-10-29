@@ -264,6 +264,9 @@
       if (msg.type === 'settings_saved' && msg.request === settingsRequest) {
         settingsNotice = msg.error ? '设置保存失败' : '设置已保存';
       }
+      if (msg.type === 'workflow_parameters') {
+        drafts[msg.id] = {...drafts[msg.id], ...msg.params};
+      }
       if (msg.type === 'preview_reset') {
         if (previewURLs.get(msg.id)?.startsWith('blob:')) URL.revokeObjectURL(previewURLs.get(msg.id));
         previewURLs.delete(msg.id);previewData.delete(msg.id);customPreviewIds.delete(msg.id);

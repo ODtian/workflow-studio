@@ -24,6 +24,47 @@ LLM 对话通过 llama-cpp-python 在 notebook 进程内直接调用 libllama。
 
 对话层使用 Pi coding agent SDK 1.4.0，通过 JSONL 标准输入输出管道调用 notebook 内驻留的 llama.cpp。Pi SessionManager 接收当前聊天分支，管理上下文并发布流式事件。前端显示会话、生成状态、Thinking、完整对话链路首字时间及模型生成速度。
 
+## Pi 工作流工具
+
+Pi 提供两个填写页面参数的工具，调用完成后可继续在对应工作流编辑并点击生成。
+
+- `set_image_workflow(workflow, prompt, aspect_ratio)`：按面板 ID 或唯一的工作流文件名选择生图工作流，填写提示词与画面比例。比例采用 `16:9`、`1:1` 等格式；宽高沿用页面的像素总量与对齐步长，采样设置继续使用页面当前值。
+- `set_h3_timeline(segments, workflow?)`：按 `segments` 数组重建 H3 片段。每段时长读取 H3 页面“自动分段时长”对应的 `segment_seconds`，总时长自动更新为片段数乘每段时长。存在多个 H3 面板时使用 `workflow` 指定面板 ID。
+
+每个 H3 片段以 `prompt` 指定提示词，可设置 `name`、`references`、`loras`、`anchors`、`audio` 与衔接参数 `method`、`context_frames`、`audio_context_frames`、`blend_frames`。参考素材使用已有素材 `id`，或提供本地临时文件的 `path`、`kind`（`image`、`video`、`audio`）。LoRA 使用文件列表中的 `name` 和 `strength`。锚点由片段内的相对秒数 `time` 与素材 `source` 组成，工具将其换算为整条时间轴的时间。片段省略参考、LoRA 或锚点时，对应作用范围为空；已有素材池、LoRA 列表和时间轴布局继续保留。
+
+以下为调用示例；示例中的面板、素材 ID 和 LoRA 名称由实际页面目录替换：
+
+```json
+{
+  "workflow": "image-panel-id",
+  "prompt": "清晨的山间湖泊，柔和自然光",
+  "aspect_ratio": "16:9"
+}
+```
+
+```json
+{
+  "workflow": "h3-panel-id",
+  "segments": [
+    {
+      "prompt": "一位成年人走进咖啡店",
+      "references": [{"id": "reference-id"}],
+      "loras": [{"name": "style.safetensors", "strength": 0.6}],
+      "anchors": [{"time": 0, "source": {"id": "reference-id"}}]
+    },
+    {
+      "prompt": "镜头转向窗边的咖啡杯",
+      "anchors": [{"time": 1, "source": {"path": "/tmp/window.png", "kind": "image"}}]
+    }
+  ]
+}
+```
+
+此 H3 示例在页面每段设为 5 秒时得到两个 5 秒片段，总长 10 秒；第二段锚点位于整条时间轴第 6 秒。
+
+调用链：`worker.mjs` 注册工具与当前工作流目录 → 通过现有 JSONL 管道发出 `workflow_request` → `pi_runner.py` 调用 `workflow_tools.py` → 复用 `save_settings`、`publish` 保存并发布参数 → 前端收到 `workflow_parameters` 后更新对应工作流的表单。H3 资源作用范围沿用 `h3_timeline.plan_timeline` 的数据结构和校验。提示词与参数通过已有配置保存链路写入 gzip；素材继续使用临时引用。
+
 ## 文件传输
 
 “文件”标签页使用 Gradio 的下拉框、多选框、文本框和按钮，同时展示 Google Drive 与 Molab 两栏。文件夹直接列在列表中，点击进入；可多选文件，复制到另一栏当前目录。两栏分别浏览、刷新和显示复制进度，手机端也保持两栏。原有 `transfer_core` 队列继续处理文件；`files_bridge.py` 将队列和持久复制清单接入工作台。
