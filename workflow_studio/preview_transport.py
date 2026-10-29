@@ -1,6 +1,5 @@
-"""Compress previews off the inference thread and send each frame once."""
+"""Prepare previews off the inference thread and send each frame once."""
 from collections import deque
-from fractions import Fraction
 import io
 from pathlib import Path
 import threading
@@ -8,7 +7,7 @@ import time
 
 import anywidget
 from PIL import Image
-from content_store import enabled, open_image, read_bytes
+from content_store import open_image, read_bytes
 
 
 def jpeg(image, *, final=False):
@@ -19,42 +18,6 @@ def jpeg(image, *, final=False):
     buffer = io.BytesIO()
     image.save(buffer, 'JPEG', quality=80 if final else 60, optimize=True)
     return memoryview(buffer.getvalue())
-
-
-def video_proxy(path):
-    import av
-
-    path = Path(path)
-    target = path.with_name(path.stem + '-preview.mp4')
-    if not enabled() and target.exists():
-        return target
-    buffer = io.BytesIO() if enabled() else target
-    with av.open(io.BytesIO(read_bytes(path))) as source, av.open(buffer, 'w', format='mp4', options={'movflags': '+frag_keyframe+empty_moov'}) as output:
-        video = source.streams.video[0]
-        scale = min(1, 640 / max(video.width, video.height))
-        encoded = output.add_stream('libx264', rate=video.average_rate)
-        encoded.width = max(2, int(video.width * scale) // 2 * 2)
-        encoded.height = max(2, int(video.height * scale) // 2 * 2)
-        encoded.pix_fmt = 'yuv420p'
-        encoded.options = {'preset': 'ultrafast', 'crf': '30', 'threads': '1'}
-        frame_time = Fraction(video.average_rate.denominator, video.average_rate.numerator)
-        frame_index = 0
-        audio = output.add_stream_from_template(source.streams.audio[0]) if source.streams.audio else None
-        for packet in source.demux():
-            if packet.stream.type == 'video':
-                for frame in packet.decode():
-                    frame = frame.reformat(width=encoded.width, height=encoded.height, format='yuv420p')
-                    frame.pts = frame_index
-                    frame.time_base = frame_time
-                    frame_index += 1
-                    for ready in encoded.encode(frame):
-                        output.mux(ready)
-            elif audio is not None and packet.stream.type == 'audio' and packet.dts is not None:
-                packet.stream = audio
-                output.mux(packet)
-        for ready in encoded.encode():
-            output.mux(ready)
-    return buffer.getvalue() if enabled() else target
 
 
 class WidgetTransport:
@@ -114,8 +77,7 @@ class WidgetTransport:
                 if session is None or run_id and session.state.get('run_id') != run_id:
                     continue
                 try:
-                    proxy = video_proxy(source) if video else None
-                    data = memoryview(proxy if isinstance(proxy, bytes) else proxy.read_bytes()) if video else jpeg(source, final=final)
+                    data = memoryview(read_bytes(source)) if video else jpeg(source, final=final)
                 except Exception as error:
                     self.last_error = str(error)
                     continue
