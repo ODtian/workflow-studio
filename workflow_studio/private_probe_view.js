@@ -35,11 +35,18 @@ export async function render({model, el}) {
   if (setup) form.append(confirmationLabel);
   form.append(button, notice);
   el.append(form);
-  let client, sessionKey, dispose, importer;
+  let client, sessionKey, dispose, importer, securityTools, passwordDialog;
+  let passwordRequest, passwordStatus, passwordChangeNotice, savePassword;
   let outgoing = Promise.resolve();
   let incoming = Promise.resolve();
   const listeners = new Set();
   const aad = direction => enc.encode(model.get('protocol') + ':' + client + ':' + direction);
+  const derivePasswordKey = async (password, salt) => {
+    const material = await crypto.subtle.importKey('raw', enc.encode(password),
+      'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits(
+      {name: 'PBKDF2', salt, iterations: model.get('password_iterations'), hash: 'SHA-256'}, material, 256));
+  };
   const adapter = {
     on: (name, fn) => listeners.add(fn),
     off: (name, fn) => listeners.delete(fn),
@@ -74,8 +81,79 @@ export async function render({model, el}) {
         const studio = await import(url);
         URL.revokeObjectURL(url);
         dispose = studio.render({model: adapter, el});
+        securityTools = document.createElement('div');
+        securityTools.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2001;display:flex;gap:8px;align-items:flex-end';
+        passwordStatus = document.createElement('span');
+        passwordStatus.setAttribute('role', 'status');
+        const changePassword = document.createElement('button');
+        changePassword.textContent = '修改密码';
+        changePassword.style.cssText = 'padding:10px;border:1px solid #ccc;border-radius:8px;background:white;color:#202830;cursor:pointer';
+        passwordDialog = document.createElement('dialog');
+        passwordDialog.style.cssText = 'margin:auto;width:380px;max-width:90vw;padding:24px;border:1px solid #d8dee7;border-radius:12px;background:#fff;color:#202830';
+        const passwordForm = document.createElement('form');
+        passwordForm.style.cssText = 'display:grid;gap:14px';
+        const title = document.createElement('h3');
+        title.textContent = '修改工作台密码';
+        const makePasswordField = (name, autocomplete) => {
+          const fieldLabel = document.createElement('label');
+          fieldLabel.textContent = name;
+          const field = document.createElement('input');
+          field.type = 'password';
+          field.autocomplete = autocomplete;
+          field.required = true;
+          field.setAttribute('aria-label', name);
+          field.style.cssText = 'display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:10px;border:1px solid #b8c1ce;border-radius:6px;background:#fff;color:#202830';
+          fieldLabel.append(field);
+          passwordForm.append(fieldLabel);
+          return field;
+        };
+        passwordForm.append(title);
+        const currentPassword = makePasswordField('当前密码', 'current-password');
+        const newPassword = makePasswordField('新密码', 'new-password');
+        const confirmPassword = makePasswordField('确认新密码', 'new-password');
+        passwordChangeNotice = document.createElement('p');
+        passwordChangeNotice.setAttribute('role', 'status');
+        savePassword = document.createElement('button');
+        savePassword.type = 'submit';
+        savePassword.textContent = '保存新密码';
+        savePassword.style.cssText = button.style.cssText;
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.textContent = '取消';
+        cancel.onclick = () => passwordDialog.close();
+        passwordDialog.onclose = () => {
+          for (const field of [currentPassword, newPassword, confirmPassword]) field.value = '';
+        };
+        changePassword.onclick = () => {
+          passwordChangeNotice.textContent = '';
+          savePassword.disabled = false;
+          passwordDialog.showModal();
+        };
+        passwordForm.onsubmit = async event => {
+          event.preventDefault();
+          if (newPassword.value !== confirmPassword.value) {
+            passwordChangeNotice.textContent = '请再次输入相同的新密码';
+            return;
+          }
+          savePassword.disabled = true;
+          passwordChangeNotice.textContent = '正在更新密码…';
+          const replacementSalt = crypto.getRandomValues(new Uint8Array(16));
+          const [currentKey, replacementKey] = await Promise.all([
+            derivePasswordKey(currentPassword.value, decode(model.get('password_salt'))),
+            derivePasswordKey(newPassword.value, replacementSalt),
+          ]);
+          passwordRequest = crypto.randomUUID();
+          adapter.send({action: 'change_password', request: passwordRequest,
+            current_key: encode(currentKey), replacement_key: encode(replacementKey),
+            replacement_salt: encode(replacementSalt)});
+          currentKey.fill(0);
+          replacementKey.fill(0);
+        };
+        passwordForm.append(passwordChangeNotice, savePassword, cancel);
+        passwordDialog.append(passwordForm);
+        document.body.append(passwordDialog);
         importer = document.createElement('details');
-        importer.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2001;background:white;color:#202830;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:90vw';
+        importer.style.cssText = 'background:white;color:#202830;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:90vw';
         const summary = document.createElement('summary');
         summary.textContent = '导入私密工作流';
         const filename = document.createElement('input');
@@ -92,7 +170,16 @@ export async function render({model, el}) {
           importer.open = false;
         };
         importer.append(summary, filename, source, submit);
-        document.body.append(importer);
+        securityTools.append(passwordStatus, changePassword, importer);
+        document.body.append(securityTools);
+      } else if (message.content.type === 'password_change_result' && message.content.request === passwordRequest) {
+        savePassword.disabled = false;
+        if (message.content.ok) {
+          passwordStatus.textContent = message.content.message;
+          passwordDialog.close();
+        } else {
+          passwordChangeNotice.textContent = message.content.message;
+        }
       } else {
         const buffers = message.buffers.map(value => decode(value).buffer);
         for (const callback of listeners) callback(message.content, buffers);
@@ -109,11 +196,7 @@ export async function render({model, el}) {
     button.disabled = true;
     notice.textContent = '正在解锁…';
     client = crypto.randomUUID();
-    const passwordMaterial = await crypto.subtle.importKey('raw', enc.encode(passwordField.value),
-      'PBKDF2', false, ['deriveBits']);
-    const passwordKey = new Uint8Array(await crypto.subtle.deriveBits(
-      {name: 'PBKDF2', salt: decode(model.get('password_salt')),
-       iterations: model.get('password_iterations'), hash: 'SHA-256'}, passwordMaterial, 256));
+    const passwordKey = await derivePasswordKey(passwordField.value, decode(model.get('password_salt')));
     const transportKey = crypto.getRandomValues(new Uint8Array(32));
     sessionKey = await crypto.subtle.importKey('raw', transportKey, 'AES-GCM', false, ['encrypt', 'decrypt']);
     const publicKey = await crypto.subtle.importKey('spki', decode(model.get('public_key')),
@@ -127,7 +210,7 @@ export async function render({model, el}) {
     transportKey.fill(0);
     model.send({type: 'unlock', client, wrapped: encode(wrapped)});
   };
-  return () => {dispose?.(); importer?.remove(); model.off('msg:custom', receive); form.remove();};
+  return () => {dispose?.(); securityTools?.remove(); passwordDialog?.remove(); model.off('msg:custom', receive); form.remove();};
 }
 
 export default {render};

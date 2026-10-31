@@ -19,9 +19,9 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from private_probe import EncryptedStore, PrivateStudioProbe, PROTOCOL, b64
 
 
-def password_key(widget, password):
+def password_key(widget, password, salt=None):
     return PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
-        salt=base64.b64decode(widget.password_salt),
+        salt=salt if salt is not None else base64.b64decode(widget.password_salt),
         iterations=widget.password_iterations).derive(password.encode())
 
 
@@ -107,6 +107,53 @@ class PrivateProbeTest(unittest.TestCase):
                 visible = b''.join(path.read_bytes() for path in Path(directory).rglob('*') if path.is_file())
                 self.assertNotIn(password.encode(), visible)
                 self.assertNotIn(legacy_key, visible)
+                reopened.close()
+
+    def test_password_change_keeps_data_and_updates_the_unlock_password(self):
+        with tempfile.TemporaryDirectory() as directory:
+            packets = []
+            with patch('anywidget.AnyWidget.send', side_effect=lambda owner, value, **kw: packets.append(value)):
+                widget = PrivateStudioProbe(directory)
+                original = 'original-' + secrets.token_hex(12)
+                replacement = 'replacement-' + secrets.token_hex(12)
+                transport = secrets.token_bytes(32)
+                unlock(widget, 'owner', original, transport)
+                widget.store.write('result.bin', b'private result retained across password update')
+                result_file = Path(directory) / 'result.bin'
+                original_result = result_file.read_bytes()
+                original_config = (Path(directory) / 'password.json').read_bytes()
+                salt = secrets.token_bytes(16)
+                new_key = password_key(widget, replacement, salt)
+
+                def change(current):
+                    nonce = secrets.token_bytes(12)
+                    content = {'action': 'change_password', 'request': 'change-test',
+                        'current_key': b64(password_key(widget, current)),
+                        'replacement_key': b64(new_key), 'replacement_salt': b64(salt)}
+                    ciphertext = AESGCM(transport).encrypt(nonce, json.dumps(content).encode(),
+                        PROTOCOL + b':owner:c2s')
+                    widget._receive(widget, {'type': 'sealed', 'client': 'owner',
+                        'nonce': b64(nonce), 'data': b64(ciphertext)}, [])
+                    packet = packets[-1]
+                    decoded = AESGCM(transport).decrypt(base64.b64decode(packet['nonce']),
+                        base64.b64decode(packet['data']), PROTOCOL + b':owner:s2c')
+                    return json.loads(decoded)['content']
+
+                self.assertFalse(change('incorrect-current-password')['ok'])
+                self.assertEqual((Path(directory) / 'password.json').read_bytes(), original_config)
+                self.assertTrue(change(original)['ok'])
+                self.assertEqual(result_file.read_bytes(), original_result)
+                self.assertEqual(widget.store.read('result.bin'), b'private result retained across password update')
+                unlock(widget, 'old-password-visitor', original, secrets.token_bytes(32))
+                self.assertNotIn('old-password-visitor', widget.clients)
+                widget.close()
+                reopened = PrivateStudioProbe(directory)
+                unlock(reopened, 'new-password-owner', replacement, secrets.token_bytes(32))
+                self.assertIn('new-password-owner', reopened.clients)
+                visible = b''.join(path.read_bytes() for path in Path(directory).rglob('*') if path.is_file())
+                self.assertNotIn(original.encode(), visible)
+                self.assertNotIn(replacement.encode(), visible)
+                self.assertNotIn(new_key, visible)
                 reopened.close()
 
 

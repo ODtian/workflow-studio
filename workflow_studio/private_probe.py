@@ -186,7 +186,7 @@ class PrivateStudioProbe(anywidget.AnyWidget):
             raw = AESGCM(self.clients[client]).decrypt(base64.b64decode(packet["nonce"]),
                     base64.b64decode(packet["data"]), aad)
             try:
-                self._dispatch(json.loads(raw))
+                self._dispatch(json.loads(raw), client=client)
             except Exception as error:
                 self.state['message'] = f'{type(error).__name__}: {error}'
                 self.publish()
@@ -233,9 +233,26 @@ class PrivateStudioProbe(anywidget.AnyWidget):
                 for s in self.sessions.values()]}
             self.store.write("state.wfs", json.dumps(saved, ensure_ascii=False).encode())
 
-    def _dispatch(self, content):
+    def _change_password(self, content, client):
+        try:
+            content_key = AESGCM(base64.b64decode(content['current_key'])).decrypt(
+                base64.b64decode(self._password_config['nonce']),
+                base64.b64decode(self._password_config['wrapped_key']), PROTOCOL + b':content-key')
+        except InvalidTag:
+            self._emit(self._packet(client, {'type': 'password_change_result',
+                'request': content['request'], 'ok': False, 'message': '请输入正确的当前密码'}))
+            return
+        self._password_config['salt'] = content['replacement_salt']
+        self._save_password_config(base64.b64decode(content['replacement_key']), content_key)
+        self.password_salt = self._password_config['salt']
+        self._emit(self._packet(client, {'type': 'password_change_result',
+            'request': content['request'], 'ok': True, 'message': '密码已更新'}))
+
+    def _dispatch(self, content, client=None):
         action = content["action"]
-        if action == "sync":
+        if action == 'change_password':
+            self._change_password(content, client)
+        elif action == "sync":
             self.publish()
             self.send({"type": "runtime_snapshot", "values": {name: getattr(self, name)
                 for name in ("state", "previews", "texts", "results", "chats", "files", "histories")}})
