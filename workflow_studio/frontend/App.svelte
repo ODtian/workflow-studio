@@ -363,7 +363,7 @@
         <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}>文件</button>
         <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}>管理</button>
       </nav>
-      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}{#if state.password_protected}<Button size="sm" variant="outline" onclick={()=>send('open_password_dialog')}>修改密码</Button>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
+      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
     </header>
     {#if !settingsReady}<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
@@ -372,6 +372,7 @@
         <section class="management page-padding">
           <div class="surface management-add"><Dropdown label="可用工作流" show_label={false} bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button><Button variant="outline" disabled={state.panels.some(p=>p.busy||p.initializing)} onclick={()=>send('unload_models')}>卸载全部模型</Button></div>
           <div class="workflow-list">{#each state.panels as panel}<div class="surface workflow-row"><div class="workflow-name"><h3 title={panel.selected}>{panel.spec.name}</h3></div>{#if panel.busy}<Badge variant="secondary">运行中</Badge>{/if}<Button variant="outline" onclick={()=>send('export',{id:panel.id})}>导出</Button><Button variant="ghost" disabled={panel.busy} onclick={()=>send('remove',{id:panel.id})}>移除</Button></div>{/each}</div>
+          {#if state.password_protected}<details class="surface workspace-settings"><summary>安全设置</summary><div class="row"><Button variant="outline" onclick={()=>send('open_password_dialog')}>修改密码</Button></div></details>{/if}
         </section>
       {/if}
       {#each state.panels as panel (panel.id)}
