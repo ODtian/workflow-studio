@@ -15,7 +15,21 @@ sys.path[:0] = [str(ROOT / 'workflow_studio'), str(ROOT)]
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from private_probe import PrivateStudioProbe, PROTOCOL, b64
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from private_probe import EncryptedStore, PrivateStudioProbe, PROTOCOL, b64
+
+
+def password_key(widget, password):
+    return PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
+        salt=base64.b64decode(widget.password_salt),
+        iterations=widget.password_iterations).derive(password.encode())
+
+
+def unlock(widget, client, password, transport):
+    public = serialization.load_der_public_key(base64.b64decode(widget.public_key))
+    wrapped = public.encrypt(password_key(widget, password) + transport, padding.OAEP(
+        mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+    widget._receive(widget, {'type': 'unlock', 'client': client, 'wrapped': b64(wrapped)}, [])
 
 
 class PrivateProbeTest(unittest.TestCase):
@@ -24,13 +38,8 @@ class PrivateProbeTest(unittest.TestCase):
             packets = []
             with patch('anywidget.AnyWidget.send', side_effect=lambda owner, value, **kw: packets.append(value)):
                 widget = PrivateStudioProbe(directory)
-                key, transport = secrets.token_bytes(32), secrets.token_bytes(32)
-                public = serialization.load_der_public_key(base64.b64decode(widget.public_key))
-
-                def unlock(client, vault_key, session_key):
-                    wrapped = public.encrypt(vault_key + session_key, padding.OAEP(
-                        mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
-                    widget._receive(widget, {'type': 'unlock', 'client': client, 'wrapped': b64(wrapped)}, [])
+                password = 'studio-test-' + secrets.token_hex(12)
+                transport = secrets.token_bytes(32)
 
                 def request(content):
                     nonce = secrets.token_bytes(12)
@@ -39,7 +48,8 @@ class PrivateProbeTest(unittest.TestCase):
                     widget._receive(widget, {'type': 'sealed', 'client': 'owner',
                         'nonce': b64(nonce), 'data': b64(cipher)}, [])
 
-                unlock('owner', key, transport)
+                unlock(widget, 'owner', password, transport)
+                self.assertFalse(widget.password_setup)
                 markers = {name: name + '-' + secrets.token_hex(16)
                            for name in ('source', 'prompt', 'input', 'result', 'log')}
                 source = "\n".join([
@@ -67,10 +77,37 @@ class PrivateProbeTest(unittest.TestCase):
                 visible += b''.join(path.read_bytes() for path in Path(directory).rglob('*') if path.is_file())
                 for marker in markers.values():
                     self.assertNotIn(marker.encode(), visible)
-                unlock('visitor', secrets.token_bytes(32), secrets.token_bytes(32))
+                self.assertNotIn(password.encode(), visible)
+                self.assertNotIn(widget._key, visible)
+                self.assertNotIn(password_key(widget, password), visible)
+                unlock(widget, 'returning-owner', password, secrets.token_bytes(32))
+                self.assertIn('returning-owner', widget.clients)
+                unlock(widget, 'visitor', 'wrong-password', secrets.token_bytes(32))
                 self.assertNotIn('visitor', widget.clients)
                 self.assertEqual(packets[-1]['type'], 'locked')
                 widget.close()
+
+    def test_password_setup_preserves_an_existing_encrypted_workflow(self):
+        with tempfile.TemporaryDirectory() as directory:
+            legacy_key = secrets.token_bytes(32)
+            source = "SPEC = {'name':'Existing private workflow','fields':[]}"
+            saved = {'workflows': {'existing.py': source}, 'panels': [], 'active': ''}
+            EncryptedStore(directory, legacy_key).write('state.wfs', json.dumps(saved).encode())
+            password = 'migration-test-' + secrets.token_hex(12)
+            with patch('anywidget.AnyWidget.send'):
+                widget = PrivateStudioProbe(directory, legacy_key=legacy_key)
+                unlock(widget, 'setup-owner', password, secrets.token_bytes(32))
+                self.assertEqual(widget._key, legacy_key)
+                self.assertEqual(widget._sources['existing.py'], source)
+                widget.close()
+                reopened = PrivateStudioProbe(directory)
+                self.assertFalse(reopened.password_setup)
+                unlock(reopened, 'owner', password, secrets.token_bytes(32))
+                self.assertEqual(reopened._sources['existing.py'], source)
+                visible = b''.join(path.read_bytes() for path in Path(directory).rglob('*') if path.is_file())
+                self.assertNotIn(password.encode(), visible)
+                self.assertNotIn(legacy_key, visible)
+                reopened.close()
 
 
 if __name__ == '__main__':

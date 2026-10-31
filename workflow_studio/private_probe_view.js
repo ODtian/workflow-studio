@@ -6,25 +6,34 @@ const decode = data => Uint8Array.from(atob(data), x => x.charCodeAt(0));
 export async function render({model, el}) {
   const form = document.createElement('form');
   const label = document.createElement('label');
-  label.textContent = 'Workflow Studio · 私密验证密钥（64 位十六进制）';
-  const keyField = document.createElement('input');
-  keyField.type = 'password';
-  keyField.autocomplete = 'off';
-  keyField.setAttribute('aria-label', '私密验证密钥');
-  const keyFile = document.createElement('input');
-  keyFile.type = 'file';
-  keyFile.accept = '.key,.txt';
-  keyFile.setAttribute('aria-label', '选择本机密钥文件');
-  keyFile.onchange = async () => {
-    keyField.value = (await keyFile.files[0].text()).trim();
-    keyFile.value = '';
-  };
+  const setup = model.get('password_setup');
+  label.textContent = setup ? '设置工作台密码' : '工作台密码';
+  const passwordField = document.createElement('input');
+  passwordField.type = 'password';
+  passwordField.autocomplete = setup ? 'new-password' : 'current-password';
+  passwordField.required = true;
+  passwordField.setAttribute('aria-label', setup ? '设置工作台密码' : '工作台密码');
+  const confirmation = document.createElement('input');
+  confirmation.type = 'password';
+  confirmation.autocomplete = 'new-password';
+  confirmation.required = setup;
+  confirmation.setAttribute('aria-label', '确认密码');
+  const confirmationLabel = document.createElement('label');
+  confirmationLabel.textContent = '确认密码';
+  confirmationLabel.append(confirmation);
   const button = document.createElement('button');
-  button.textContent = '解锁工作台';
+  button.textContent = setup ? '设置密码并打开' : '解锁工作台';
   const notice = document.createElement('p');
   notice.setAttribute('role', 'status');
-  label.append(document.createElement('br'), keyField);
-  form.append(label, keyFile, button, notice);
+  form.style.cssText = 'display:grid;gap:14px;max-width:440px;margin:24px;padding:24px;border:1px solid #d8dee7;border-radius:12px;background:#fff;color:#202830';
+  for (const field of [passwordField, confirmation]) {
+    field.style.cssText = 'display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:10px;border:1px solid #b8c1ce;border-radius:6px;background:#fff;color:#202830';
+  }
+  button.style.cssText = 'padding:10px 16px;border:0;border-radius:6px;background:#397453;color:#fff;cursor:pointer';
+  label.append(passwordField);
+  form.append(label);
+  if (setup) form.append(confirmationLabel);
+  form.append(button, notice);
   el.append(form);
   let client, sessionKey, dispose, importer;
   let outgoing = Promise.resolve();
@@ -58,7 +67,8 @@ export async function render({model, el}) {
         sessionKey, decode(packet.data));
       const message = JSON.parse(dec.decode(plaintext));
       if (message.content.type === 'unlocked') {
-        keyField.value = '';
+        passwordField.value = '';
+        confirmation.value = '';
         form.remove();
         const url = URL.createObjectURL(new Blob([STUDIO_SOURCE], {type: 'text/javascript'}));
         const studio = await import(url);
@@ -92,24 +102,28 @@ export async function render({model, el}) {
   model.on('msg:custom', receive);
   form.onsubmit = async event => {
     event.preventDefault();
-    if (!/^[0-9a-f]{64}$/i.test(keyField.value.trim())) {
-      notice.textContent = '请输入 64 位十六进制密钥';
+    if (setup && passwordField.value !== confirmation.value) {
+      notice.textContent = '请再次输入相同密码';
       return;
     }
     button.disabled = true;
     notice.textContent = '正在解锁…';
     client = crypto.randomUUID();
-    const vaultKey = Uint8Array.from(keyField.value.trim().match(/../g), x => parseInt(x, 16));
+    const passwordMaterial = await crypto.subtle.importKey('raw', enc.encode(passwordField.value),
+      'PBKDF2', false, ['deriveBits']);
+    const passwordKey = new Uint8Array(await crypto.subtle.deriveBits(
+      {name: 'PBKDF2', salt: decode(model.get('password_salt')),
+       iterations: model.get('password_iterations'), hash: 'SHA-256'}, passwordMaterial, 256));
     const transportKey = crypto.getRandomValues(new Uint8Array(32));
     sessionKey = await crypto.subtle.importKey('raw', transportKey, 'AES-GCM', false, ['encrypt', 'decrypt']);
     const publicKey = await crypto.subtle.importKey('spki', decode(model.get('public_key')),
       {name: 'RSA-OAEP', hash: 'SHA-256'}, false, ['encrypt']);
     const keys = new Uint8Array(64);
-    keys.set(vaultKey);
+    keys.set(passwordKey);
     keys.set(transportKey, 32);
     const wrapped = await crypto.subtle.encrypt({name: 'RSA-OAEP'}, publicKey, keys);
     keys.fill(0);
-    vaultKey.fill(0);
+    passwordKey.fill(0);
     transportKey.fill(0);
     model.send({type: 'unlock', client, wrapped: encode(wrapped)});
   };

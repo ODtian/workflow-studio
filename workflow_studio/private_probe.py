@@ -27,6 +27,7 @@ from panel import ROOT, WorkflowSession
 
 PROTOCOL = b"workflow-studio/private-probe/v1"
 MAGIC = b"WFS1"
+PASSWORD_ITERATIONS = 600_000
 
 
 def b64(value):
@@ -65,15 +66,23 @@ class PrivateWorkflowSession(WorkflowSession):
 class PrivateStudioProbe(anywidget.AnyWidget):
     public_key = traitlets.Unicode().tag(sync=True)
     protocol = traitlets.Unicode(PROTOCOL.decode()).tag(sync=True)
+    password_salt = traitlets.Unicode().tag(sync=True)
+    password_iterations = traitlets.Int(PASSWORD_ITERATIONS).tag(sync=True)
+    password_setup = traitlets.Bool().tag(sync=True)
 
-    def __init__(self, directory, cache=None):
+    def __init__(self, directory, cache=None, legacy_key=None):
         self.directory = Path(directory).resolve()
         self.directory.mkdir(parents=True, exist_ok=True)
         self.cache = cache
         if cache is not None:
-            saved = cache.get('workflow-studio/private-probe/state.wfs')
-            if saved is not None:
-                (self.directory / 'state.wfs').write_bytes(saved)
+            for name in ('state.wfs', 'password.json'):
+                saved = cache.get('workflow-studio/private-probe/' + name)
+                if saved is not None:
+                    (self.directory / name).write_bytes(saved)
+        password_path = self.directory / 'password.json'
+        self._password_config = json.loads(password_path.read_text()) if password_path.exists() else {
+            'salt': b64(secrets.token_bytes(16)), 'iterations': PASSWORD_ITERATIONS}
+        self._legacy_key = legacy_key
         self._rsa = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         self.clients = {}
         self._key = None
@@ -95,7 +104,20 @@ class PrivateStudioProbe(anywidget.AnyWidget):
         super().__init__(_esm="const STUDIO_SOURCE = " + json.dumps(studio_source) + ";\n" + adapter)
         self.public_key = b64(self._rsa.public_key().public_bytes(
             serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo))
+        self.password_salt = self._password_config['salt']
+        self.password_iterations = self._password_config['iterations']
+        self.password_setup = 'wrapped_key' not in self._password_config
         self.on_msg(self._receive)
+
+    def _save_password_config(self, password_key, content_key):
+        nonce = secrets.token_bytes(12)
+        self._password_config.update(nonce=b64(nonce), wrapped_key=b64(
+            AESGCM(password_key).encrypt(nonce, content_key, PROTOCOL + b':content-key')))
+        blob = json.dumps(self._password_config).encode()
+        (self.directory / 'password.json').write_bytes(blob)
+        if self.cache is not None:
+            self.cache.put('workflow-studio/private-probe/password.json', blob)
+        self.password_setup = False
 
     def _record_wire(self, packet):
         with self._lock:
@@ -122,13 +144,22 @@ class PrivateStudioProbe(anywidget.AnyWidget):
         client = packet["client"]
         keys = self._rsa.decrypt(base64.b64decode(packet["wrapped"]), padding.OAEP(
             mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
-        vault_key, session_key = keys[:32], keys[32:]
+        password_key, session_key = keys[:32], keys[32:]
+        if self.password_setup:
+            vault_key = self._legacy_key or secrets.token_bytes(32)
+        else:
+            vault_key = AESGCM(password_key).decrypt(
+                base64.b64decode(self._password_config['nonce']),
+                base64.b64decode(self._password_config['wrapped_key']), PROTOCOL + b':content-key')
         store = EncryptedStore(self.directory, vault_key, self.cache)
         if (self.directory / "state.wfs").exists():
             saved = json.loads(store.read("state.wfs"))
         else:
             saved = {"workflows": {}, "panels": [], "active": ""}
             store.write("state.wfs", json.dumps(saved).encode())
+        if self.password_setup:
+            self._save_password_config(password_key, vault_key)
+            self._legacy_key = None
         self.clients[client] = session_key
         if self._key is None:
             self._key, self.store = vault_key, store
@@ -160,7 +191,7 @@ class PrivateStudioProbe(anywidget.AnyWidget):
                 self.publish()
         except (InvalidTag, ValueError, KeyError):
             self._emit({"type": "locked", "client": packet.get("client"),
-                        "message": "密钥校验失败"})
+                        "message": "请输入正确密码"})
 
     def _load_source(self, name, source):
         module = ModuleType("private_workflow")
