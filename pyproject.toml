@@ -7,6 +7,10 @@ name = "workflow-studio"
 version = "0.1.0"
 description = "Workflow Studio notebook launcher"
 requires-python = ">=3.10"
+dependencies = [
+    "anywidget>=0.9.18", "cryptography", "Pillow>=10", "Jinja2", "python-dotenv",
+    "google-api-python-client", "google-auth-oauthlib", "pydata-google-auth",
+]
 
 [tool.setuptools]
 py-modules = ["studio_entry"]

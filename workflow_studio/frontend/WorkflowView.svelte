@@ -25,7 +25,7 @@ function generate(){
 }
 $effect(()=>{if(pendingRun===panel.run_id)pendingRun='';});
 $effect(()=>{
-  if(!requestedRun||totalMs||['error','cancelled'].includes(panel.phase))return;
+  if(!requestedRun||totalMs||['complete','error','cancelled'].includes(panel.phase))return;
   const timer=setInterval(()=>elapsedMs=performance.now()-requestStartedAt,100);
   return()=>clearInterval(timer);
 });
@@ -38,7 +38,7 @@ async function loaded(event){
   displayMs=Math.round(performance.now()-receivedAt);totalMs=Math.round(performance.now()-requestStartedAt);
   act('displayed',{run_id:frame.run_id,ms:displayMs,end_to_end_ms:totalMs,server_ms:frame.server_ms});
 }
-let timingLabel=$derived(requestedRun&&!totalMs&&!['error','cancelled'].includes(panel.phase)
+let timingLabel=$derived(requestedRun&&!totalMs&&!['complete','error','cancelled'].includes(panel.phase)
   ? `${(elapsedMs/1000).toFixed(1)} s`
   : totalMs||panel.end_to_end_ms ? `总 ${((totalMs||panel.end_to_end_ms)/1000).toFixed(1)} s`
   : panel.elapsed ? `后端 ${panel.elapsed.toFixed(1)} s` : '');

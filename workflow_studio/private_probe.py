@@ -89,6 +89,7 @@ class PrivateStudioProbe(anywidget.AnyWidget):
         self._key = None
         self._sources = {}
         self._modules = {}
+        self.runtime = None
         self.sessions = {}
         self.model_bindings = {}
         self.state = {"workflows": [], "panels": [], "message": "", "active": "",
@@ -167,10 +168,10 @@ class PrivateStudioProbe(anywidget.AnyWidget):
             self._sources = saved["workflows"]
             for name, source in self._sources.items():
                 self._load_source(name, source)
-            self._refresh()
-            for item in saved["panels"]:
-                self._add(item["workflow"], item.get("params"), item["id"])
-            self.state["active"] = saved["active"] or self.state["active"]
+            from private_runtime import open_runtime
+            self.runtime = open_runtime(self, saved)
+            self.sessions = self.runtime.sessions
+            self.output_dir = self.runtime.output_dir
         self._emit(self._packet(client, {"type": "unlocked"}))
 
     def _receive(self, widget, packet, buffers):
@@ -188,8 +189,8 @@ class PrivateStudioProbe(anywidget.AnyWidget):
             try:
                 self._dispatch(json.loads(raw), client=client)
             except Exception as error:
-                self.state['message'] = f'{type(error).__name__}: {error}'
-                self.publish()
+                self.runtime.state = {**self.runtime.state, 'message': f'{type(error).__name__}: {error}'}
+                self.runtime.publish()
         except (InvalidTag, ValueError, KeyError):
             self._emit({"type": "locked", "client": packet.get("client"),
                         "message": "请输入正确密码"})
@@ -202,36 +203,20 @@ class PrivateStudioProbe(anywidget.AnyWidget):
     def load(self, name):
         return self._modules[name]
 
-    def _refresh(self):
-        self.state["workflows"] = [{"id": name, "name": module.SPEC["name"],
-            "description": module.SPEC.get("description", "")}
-            for name, module in self._modules.items()]
-
-    def _add(self, name, params=None, session_id=None):
-        session = PrivateWorkflowSession(self, name, params, session_id)
-        self.sessions[session.id] = session
-        self.state["active"] = session.id
-        self.publish()
-        return session
-
-    def publish(self):
-        self.state["panels"] = [session.state for session in self.sessions.values()]
-        self.send({"type": "runtime_state", "name": "state", "value": self.state})
-
-    def set_payload(self, name, panel_id, value):
-        values = {**getattr(self, name), panel_id: value}
-        setattr(self, name, values)
-        self.send({"type": "runtime_state", "name": name, "value": values})
-
-    def write_text_result(self, path, text):
-        self.store.write(path.relative_to(self.directory).as_posix(), text.encode())
+    def _save_workflow_vault(self, runtime):
+        from settings_writer import configuration_parameters
+        with self._lock:
+            saved = {"workflows": self._sources, 'full_studio': True,
+                "active": runtime.state["active"], "panels": [
+                {"id": s.id, "workflow": s.state["selected"], "params": s.params}
+                for s in runtime.sessions.values()]}
+            for item in saved['panels']:
+                session = runtime.sessions[item['id']]
+                item['params'] = configuration_parameters(session.state['spec']['fields'], session.params)
+            self.store.write("state.wfs", json.dumps(saved, ensure_ascii=False).encode())
 
     def save_settings(self):
-        with self._lock:
-            saved = {"workflows": self._sources, "active": self.state["active"], "panels": [
-                {"id": s.id, "workflow": s.state["selected"], "params": s.params}
-                for s in self.sessions.values()]}
-            self.store.write("state.wfs", json.dumps(saved, ensure_ascii=False).encode())
+        self.runtime.save_settings()
 
     def _change_password(self, content, client):
         try:
@@ -252,49 +237,13 @@ class PrivateStudioProbe(anywidget.AnyWidget):
         action = content["action"]
         if action == 'change_password':
             self._change_password(content, client)
-        elif action == "sync":
-            self.publish()
-            self.send({"type": "runtime_snapshot", "values": {name: getattr(self, name)
-                for name in ("state", "previews", "texts", "results", "chats", "files", "histories")}})
-        elif action == "import":
-            name = Path(content["name"]).name
-            self._load_source(name, content["source"])
-            self._sources[name] = content["source"]
-            self._refresh()
-            self._add(name)
-            self.save_settings()
-        elif action == "add":
-            self._add(content["workflow"])
-            self.save_settings()
-        elif action == "settings":
-            for item in content["panels"]:
-                session = self.sessions[item["id"]]
-                session.params.update(item["params"])
-                session.state["params"] = dict(session.params)
-            self.state["active"] = content["active"]
-            self.save_settings()
-            self.send({"type": "settings_saved", "request": content.get("request"), "error": ""})
-        elif action == "run":
-            session = self.sessions[content["id"]]
-            if not session.state["busy"]:
-                session.start(content["params"], run_id=content.get("run_id"))
-        elif action == "cancel":
-            self.sessions[content["id"]].cancel.set()
-        elif action == "export":
-            name = self.sessions[content["id"]].state["selected"]
-            self.send({"type": "workflow", "name": name, "source": self._sources[name]})
-        elif action == "download":
-            name = Path(content["name"]).name
-            self.send({"type": "download", "name": name, "mime": "text/plain"},
-                      [self.store.read("results/" + name)])
-        elif action == "remove":
-            self.sessions.pop(content["id"])
-            self.state["active"] = next(iter(self.sessions), "")
-            self.publish()
-            self.save_settings()
-        elif action == "refresh":
-            self._refresh()
-            self.publish()
+        else:
+            self.runtime.receive(content)
+
+    def close(self):
+        if self.runtime is not None:
+            self.runtime.close()
+        super().close()
 
 
 def get_private_studio(workspace=None):

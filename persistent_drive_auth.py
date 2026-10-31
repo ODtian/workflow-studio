@@ -274,8 +274,9 @@ class NotebookSecretsCache:
 class DriveAuthorization:
     """Split the SDK's console OAuth flow into page actions."""
 
-    def __init__(self):
+    def __init__(self, cache=None):
         self.flow = None
+        self.cache = cache
 
     def begin(self):
         from google_auth_oauthlib.flow import InstalledAppFlow
@@ -295,7 +296,8 @@ class DriveAuthorization:
     def complete(self, code):
         try:
             self.flow.fetch_token(code=code.strip())
-            NotebookSecretsCache(user_setup=True).save(self.flow.credentials)
+            cache = self.cache if self.cache is not None else NotebookSecretsCache(user_setup=True)
+            cache.save(self.flow.credentials)
             return True
         except DriveAuthError:
             raise

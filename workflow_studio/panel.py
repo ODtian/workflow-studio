@@ -20,7 +20,7 @@ from chat_tree import ChatTree
 from image_history import ImageHistory
 from preview_transport import WidgetTransport, jpeg
 from settings_writer import SettingsWriter, configuration_parameters
-from content_store import enabled, read_bytes, write_text, open_image, save_image
+from content_store import enabled, read_bytes, read_text, write_text, open_image, save_image
 
 ROOT = Path(__file__).parent
 INFERENCE_LOCK = threading.Lock()
@@ -331,7 +331,7 @@ class WorkflowPanel(anywidget.AnyWidget):
             from workspace_store import read
             saved = read().get('studio_settings', {})
         else:
-            saved = json.loads(self.settings_path.read_text(encoding="utf-8")) if self.settings_path.exists() else {}
+            saved = json.loads(read_text(self.settings_path)) if self.settings_path.exists() else {}
         self.settings_writer = SettingsWriter(self.settings_path, self.settings_backup, self.settings_saved)
         self.model_bindings = saved.get("model_bindings", {})
         self.playback = saved.get("playback", {"volume": 0.25, "muted": False})
@@ -351,8 +351,14 @@ class WorkflowPanel(anywidget.AnyWidget):
             self.add(item["workflow"], item.get("params"), session_id=item.get("id"), activate=False)
         self.files_bridge = None
         if importlib.util.find_spec("transfer_core") is not None:
-            from files_bridge import FilesBridge
-            self.files_bridge = FilesBridge(self)
+            self.files_bridge = self.create_files_bridge()
+
+    def create_files_bridge(self):
+        from files_bridge import FilesBridge
+        return FilesBridge(self)
+
+    def _send_widget_message(self, content, buffers=None):
+        anywidget.AnyWidget.send(self, content, buffers=buffers)
 
     def save_settings(self, panels=None, active=None, model_bindings=None, request=None, playback=None):
         if model_bindings is not None:

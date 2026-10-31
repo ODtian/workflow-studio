@@ -2,7 +2,7 @@
 from copy import deepcopy
 import json
 import threading
-from content_store import enabled
+from content_store import enabled, write_text
 
 
 def configuration_parameters(fields, params):
@@ -45,7 +45,7 @@ class SettingsWriter:
             error = ''
             try:
                 if not enabled():
-                    self.path.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding='utf-8')
+                    write_text(self.path, json.dumps(settings, ensure_ascii=False, indent=2))
                 if self.backup:
                     self.backup(settings)
             except Exception as exc:
@@ -56,3 +56,4 @@ class SettingsWriter:
         with self.condition:
             self.closed = True
             self.condition.notify()
+        self.thread.join()

@@ -11,7 +11,7 @@ import tempfile
 SOURCE = Path(__file__).parent
 
 
-def get_studio(workspace=None):
+def get_studio(workspace=None, panel_factory=None):
     from dotenv import load_dotenv
     workspace = Path(workspace or Path.cwd()).resolve()
     load_dotenv(workspace / '.env')
@@ -47,4 +47,5 @@ def get_studio(workspace=None):
         workspace_store.edit(lambda state: state.update(studio_settings=value))
 
     from panel import get_panel
-    return get_panel(workflow_dir=workflows, output_dir=output, settings_backup=save_settings)
+    factory = panel_factory or get_panel
+    return factory(workflow_dir=workflows, output_dir=output, settings_backup=save_settings)

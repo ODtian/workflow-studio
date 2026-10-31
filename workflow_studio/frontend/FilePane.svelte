@@ -12,7 +12,7 @@ function toggle(entry,checked){selected=checked?[...selected,entry.id]:selected.
   <div class="file-pane-heading"><div class="row">{#if name==='drive'}<Cloud size={17}/>{:else}<HardDrive size={17}/>{/if}<h2>{name==='drive'?'Google Drive':'Molab'}</h2>{#if name==='drive'}<i class="status-dot" class:disconnected={!connected} title={connected?'Drive 已连接':'Drive 连接待就绪'} aria-label={connected?'Drive 已连接':'Drive 连接待就绪'}></i>{/if}</div>{#if name==='drive'}<Button variant="outline" size="sm" disabled={auth.phase==='working'} onclick={()=>send({action:'drive_connect'})}>{connected?'重新连接':'连接 Google Drive'}</Button>{/if}</div>
   {#if name==='drive'&&(!connected||auth.phase==='pending'||auth.phase==='working'||auth.error)}
     <section class="drive-authorization" aria-label="Google Drive 连接">
-      <p>首次授权保存在本 Notebook 的 Secrets，后续打开自动重连。</p>
+      <p>{auth.storage_description || '首次授权保存在本 Notebook 的 Secrets，后续打开自动重连。'}</p>
       {#if auth.url}
         <a class="drive-authorization-link" href={auth.url} target="_blank" rel="noopener noreferrer">打开 Google 授权页 ↗</a>
         <p>在 Google 页面允许此 Notebook 管理 Drive 文件，将返回的一次性授权码粘贴到这里。</p>

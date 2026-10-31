@@ -363,7 +363,7 @@
         <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}>文件</button>
         <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}>管理</button>
       </nav>
-      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
+      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}{#if state.password_protected}<Button size="sm" variant="outline" onclick={()=>send('open_password_dialog')}>修改密码</Button>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
     </header>
     {#if !settingsReady}<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}

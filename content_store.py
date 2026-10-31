@@ -2,9 +2,17 @@
 import gzip
 import io
 import os
+import secrets
 from pathlib import Path
 
 GZIP_MAGIC = b'\x1f\x8b'
+ENCRYPTED_MAGIC = b'WFC1'
+_encryption_key = None
+
+
+def use_encryption(key):
+    global _encryption_key
+    _encryption_key = key
 
 
 def enabled():
@@ -12,10 +20,18 @@ def enabled():
 
 
 def pack(data):
-    return gzip.compress(data, compresslevel=6, mtime=0) if enabled() else data
+    data = gzip.compress(data, compresslevel=6, mtime=0) if enabled() else data
+    if _encryption_key is not None:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        nonce = secrets.token_bytes(12)
+        return ENCRYPTED_MAGIC + nonce + AESGCM(_encryption_key).encrypt(nonce, data, ENCRYPTED_MAGIC)
+    return data
 
 
 def unpack(data):
+    if data.startswith(ENCRYPTED_MAGIC):
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        data = AESGCM(_encryption_key).decrypt(data[4:16], data[16:], ENCRYPTED_MAGIC)
     if data.startswith(GZIP_MAGIC):
         return gzip.decompress(data)
     return data

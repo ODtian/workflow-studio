@@ -35,7 +35,7 @@ export async function render({model, el}) {
   if (setup) form.append(confirmationLabel);
   form.append(button, notice);
   el.append(form);
-  let client, sessionKey, dispose, importer, securityTools, passwordDialog;
+  let client, sessionKey, dispose, securityTools, passwordDialog, openPasswordDialog;
   let passwordRequest, passwordStatus, passwordChangeNotice, savePassword;
   let outgoing = Promise.resolve();
   let incoming = Promise.resolve();
@@ -51,6 +51,10 @@ export async function render({model, el}) {
     on: (name, fn) => listeners.add(fn),
     off: (name, fn) => listeners.delete(fn),
     send(content) {
+      if (content.action === 'open_password_dialog') {
+        openPasswordDialog();
+        return;
+      }
       outgoing = outgoing.then(async () => {
         const nonce = crypto.getRandomValues(new Uint8Array(12));
         const data = await crypto.subtle.encrypt(
@@ -85,9 +89,6 @@ export async function render({model, el}) {
         securityTools.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2001;display:flex;gap:8px;align-items:flex-end';
         passwordStatus = document.createElement('span');
         passwordStatus.setAttribute('role', 'status');
-        const changePassword = document.createElement('button');
-        changePassword.textContent = '修改密码';
-        changePassword.style.cssText = 'padding:10px;border:1px solid #ccc;border-radius:8px;background:white;color:#202830;cursor:pointer';
         passwordDialog = document.createElement('dialog');
         passwordDialog.style.cssText = 'margin:auto;width:380px;max-width:90vw;padding:24px;border:1px solid #d8dee7;border-radius:12px;background:#fff;color:#202830';
         const passwordForm = document.createElement('form');
@@ -124,7 +125,7 @@ export async function render({model, el}) {
         passwordDialog.onclose = () => {
           for (const field of [currentPassword, newPassword, confirmPassword]) field.value = '';
         };
-        changePassword.onclick = () => {
+        openPasswordDialog = () => {
           passwordChangeNotice.textContent = '';
           savePassword.disabled = false;
           passwordDialog.showModal();
@@ -152,25 +153,7 @@ export async function render({model, el}) {
         passwordForm.append(passwordChangeNotice, savePassword, cancel);
         passwordDialog.append(passwordForm);
         document.body.append(passwordDialog);
-        importer = document.createElement('details');
-        importer.style.cssText = 'background:white;color:#202830;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:90vw';
-        const summary = document.createElement('summary');
-        summary.textContent = '导入私密工作流';
-        const filename = document.createElement('input');
-        filename.value = 'private_workflow.py';
-        filename.setAttribute('aria-label', '私密工作流文件名');
-        const source = document.createElement('textarea');
-        source.setAttribute('aria-label', '私密工作流源码');
-        source.style.cssText = 'display:block;width:480px;max-width:80vw;height:240px';
-        const submit = document.createElement('button');
-        submit.textContent = '加密导入';
-        submit.onclick = () => {
-          adapter.send({action: 'import', name: filename.value, source: source.value});
-          source.value = '';
-          importer.open = false;
-        };
-        importer.append(summary, filename, source, submit);
-        securityTools.append(passwordStatus, changePassword, importer);
+        securityTools.append(passwordStatus);
         document.body.append(securityTools);
       } else if (message.content.type === 'password_change_result' && message.content.request === passwordRequest) {
         savePassword.disabled = false;

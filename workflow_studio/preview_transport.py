@@ -112,7 +112,7 @@ class WidgetTransport:
             for name, value in grouped.items():
                 setattr(self.owner, name, value)
             for content, buffers in [*messages, *latest.values(), *frames.values()]:
-                anywidget.AnyWidget.send(self.owner, content, buffers=buffers)
+                self.owner._send_widget_message(content, buffers=buffers)
                 if content.get('type') == 'preview_frame':
                     self.sent_frames += 1
                     self.sent_preview_bytes += sum(len(buffer) for buffer in buffers)

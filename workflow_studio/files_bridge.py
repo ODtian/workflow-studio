@@ -24,7 +24,7 @@ def connect_drive():
 
 
 class FilesBridge:
-    def __init__(self, owner, controller=None, store=None):
+    def __init__(self, owner, controller=None, store=None, provider_factory=None, authorization_factory=None):
         self.owner = owner
         if store is None:
             import workspace_store as store
@@ -36,8 +36,9 @@ class FilesBridge:
             if controller is None:
                 from transfer_core import LOCAL_ROOTS
                 roots = {**LOCAL_ROOTS, 'output':Path(os.environ['WORKFLOW_OUTPUT_DIR'])} if enabled() else None
-                controller = TransferController(None, local_roots=roots, provider_factory=connect_drive)
+                controller = TransferController(None, local_roots=roots, provider_factory=provider_factory or connect_drive)
         self.controller = controller
+        self.authorization_factory = authorization_factory
         self.hidden_tasks = getattr(controller, "studio_hidden_tasks", set())
         self.undo = getattr(controller, "studio_undo", [])
         controller.studio_hidden_tasks = self.hidden_tasks
@@ -57,6 +58,8 @@ class FilesBridge:
         saved = self.store.read()
         value.update(recipes=saved["copies"], message=self.message, drive_auth=dict(self.drive_auth),
                      can_undo=bool(self.undo or saved.get("copy_trash")))
+        value['drive_auth']['storage_description'] = getattr(self.owner, 'authorization_storage',
+            '首次授权保存在本 Notebook 的 Secrets，后续打开自动重连。')
         value["tasks"] = [task for task in value["tasks"] if task["id"] not in self.hidden_tasks]
         self.owner.files = value
 
@@ -65,7 +68,7 @@ class FilesBridge:
         action = command["action"]
         if action == 'drive_connect':
             from persistent_drive_auth import DriveAuthorization
-            self.drive_setup = DriveAuthorization()
+            self.drive_setup = (self.authorization_factory or DriveAuthorization)()
             self.drive_auth = {'phase': 'pending', 'url': self.drive_setup.begin(), 'error': ''}
         elif action == 'drive_authorize':
             self.drive_auth = {'phase': 'working', 'url': '', 'error': ''}
