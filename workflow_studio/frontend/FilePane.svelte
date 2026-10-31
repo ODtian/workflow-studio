@@ -9,16 +9,16 @@ $effect(()=>{if(directory!==pane.directory_id){directory=pane.directory_id;selec
 function toggle(entry,checked){selected=checked?[...selected,entry.id]:selected.filter(id=>id!==entry.id);}
 </script>
 <section class="file-pane" aria-label={name==='drive'?'Drive 文件':'Molab 文件'}>
-  <div class="file-pane-heading"><div class="row">{#if name==='drive'}<Cloud size={17}/>{:else}<HardDrive size={17}/>{/if}<h2>{name==='drive'?'Google Drive':'Molab'}</h2>{#if name==='drive'}<i class="status-dot" class:disconnected={!connected} title={connected?'Drive 已连接':'Drive 连接待就绪'} aria-label={connected?'Drive 已连接':'Drive 连接待就绪'}></i>{/if}</div>{#if name==='drive'}<Button variant="outline" size="sm" disabled={auth.phase==='working'} onclick={()=>send({action:'drive_connect'})}>{connected?'重新连接':'连接 Google Drive'}</Button>{/if}</div>
+  <div class="file-pane-heading"><div class="row">{#if name==='drive'}<Cloud size={17}/>{:else}<HardDrive size={17}/>{/if}<h2>{name==='drive'?'Google Drive':'Molab'}</h2>{#if name==='drive'}<i class="status-dot" class:disconnected={!connected} title={connected?'Drive 已连接':'Drive 连接待就绪'} aria-label={connected?'Drive 已连接':'Drive 连接待就绪'}></i>{/if}</div>{#if name==='drive'}<Button variant="outline" size="sm" disabled={auth.phase==='working'} onclick={()=>send({action:'drive_connect'})}>{connected?'重新连接':auth.url?'重新获取授权链接':'连接 Google Drive'}</Button>{/if}</div>
   {#if name==='drive'&&(!connected||auth.phase==='pending'||auth.phase==='working'||auth.error)}
     <section class="drive-authorization" aria-label="Google Drive 连接">
       <p>{auth.storage_description || '首次授权保存在本 Notebook 的 Secrets，后续打开自动重连。'}</p>
       {#if auth.url}
-        <a class="drive-authorization-link" href={auth.url} target="_blank" rel="noopener noreferrer">打开 Google 授权页 ↗</a>
-        <p>在 Google 页面允许此 Notebook 管理 Drive 文件，将返回的一次性授权码粘贴到这里。</p>
+        <a class="drive-authorization-link" href={auth.url} target="_blank" rel="noopener noreferrer">1. 前往 Google 授权 ↗</a>
+        <p>完成 Google 授权后，按下面的顺序继续。</p>
         <form onsubmit={event=>{event.preventDefault();const code=authorizationCode;authorizationCode='';send({action:'drive_authorize',code});}}>
-          <Input type="password" autocomplete="off" aria-label="Google Drive 一次性授权码" placeholder="一次性授权码" bind:value={authorizationCode}/>
-          <Button type="submit" disabled={!authorizationCode.trim()||auth.phase==='working'}>完成连接</Button>
+          <Input type="password" autocomplete="off" aria-label="Google Drive 一次性授权码" placeholder="2. 粘贴 Google 返回的一次性授权码" bind:value={authorizationCode}/>
+          <Button type="submit" disabled={!authorizationCode.trim()||auth.phase==='working'}>3. 完成连接</Button>
         </form>
       {/if}
       {#if auth.phase==='working'}<p role="status">正在验证授权并保存连接…</p>{/if}
@@ -36,5 +36,5 @@ function toggle(entry,checked){selected=checked?[...selected,entry.id]:selected.
   <div class="file-pane-footer"><div class="file-selection"><span>{selected.length?`已选 ${selected.length} / ${entries.length} 项`:`${entries.length} 项`}</span><p title={targetPath}>目标 · {targetPath||'选择目标目录'}</p></div><Button class="copy-button" title={targetPath} disabled={!selected.length||!connected||!target.canReceive||pane.loading||target.loading} onclick={()=>{send({action:'transfer',entry_ids:[...selected],target_id:target.directory_id});selected=[];}}>复制到 {name==='drive'?'Molab':'Drive'} <ArrowRight size={14}/></Button></div>
 </section>
 <style>
-.drive-authorization{padding:12px 14px;border-bottom:1px solid var(--border);display:grid;gap:10px;font-size:13px;line-height:1.5}.drive-authorization p{margin:0}.drive-authorization-link{color:var(--primary);font-weight:500;text-decoration:underline}.drive-authorization form{display:flex;gap:8px}.drive-authorization form :global(input){min-width:0;flex:1}
+.drive-authorization{padding:12px 14px;border-bottom:1px solid var(--border);display:grid;gap:10px;font-size:13px;line-height:1.5}.drive-authorization p{margin:0}.drive-authorization-link{color:var(--primary-foreground);background:var(--primary);border-radius:6px;padding:8px 12px;font-weight:500;text-decoration:none;justify-self:start}.drive-authorization form{display:flex;gap:8px}.drive-authorization form :global(input){min-width:0;flex:1}
 </style>

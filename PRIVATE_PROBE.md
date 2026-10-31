@@ -32,6 +32,14 @@ Notebook 的脚本依赖声明负责安装本分支的启动包。源码更新�
 
 私密工作流使用 `SPEC` 和 `run(params, ctx)` 这一现有接口。图片通过 `ctx.image` 从内存读取，文本结果通过返回值交给运行器加密保存。GPU 运算在原有 notebook 内核中执行。
 
+## 明文与密文所在位置
+
+输入和提示词在浏览器内加密发送，在 molab 的 Python 进程内存中解密后供 GPU 使用。Pi 的 Node 进程也在内存中处理明文对话。结果在服务器加密发送，由浏览器解密显示。
+
+Python 内容存储及 Pi 会话 JSONL 使用相同的 AES-GCM 文件封装。Pi 的运行期存储密钥通过标准输入内存管道交给 Node 进程，历史文件由 Node 在内存中解密、保存前加密。启动 Pi 运行器时，已有 gzip 会话文件迁移到同一加密格式。外部脚本、Pi 工具自行创建的工作文件仍按各自的文件读写接口处理。
+
+Drive 授权按三步显示：前往 Google 授权、粘贴 Google 返回的授权码、完成连接。顶部的“重新获取授权链接”用于重新开始授权流程。
+
 ## 验证入口
 
 `python -m unittest discover -s tests -p test_private_probe.py -v`

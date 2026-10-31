@@ -15,6 +15,10 @@ def use_encryption(key):
     _encryption_key = key
 
 
+def encryption_key():
+    return _encryption_key
+
+
 def enabled():
     return os.environ.get('WORKFLOW_GZIP_CONTENT', '1' if Path('/marimo').is_dir() else '0') == '1'
 

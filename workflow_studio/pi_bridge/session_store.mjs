@@ -1,7 +1,7 @@
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {mkdir,readFile,writeFile,readdir,stat} from 'node:fs/promises';
-import {gzipSync,gunzipSync} from 'node:zlib';
+import {packContent,unpackContent} from './content_codec.mjs';
 import {SessionManager} from '@earendil-works/pi-coding-agent';
 
 export class PiSessionStore {
@@ -14,7 +14,7 @@ export class PiSessionStore {
   }
   source(manager){return [manager.getHeader(),...manager.getEntries()].map(entry=>JSON.stringify(entry)).join('\n')+'\n';}
   async entries(file){
-    const data=gunzipSync(await readFile(file));
+    const data=unpackContent(await readFile(file));
     return data.toString('utf8').trim().split('\n').map(line=>JSON.parse(line));
   }
   async open(file,dir){
@@ -34,7 +34,7 @@ export class PiSessionStore {
     if(!this.compressed)return Promise.resolve();
     const pending=(this.pending.get(manager)||Promise.resolve()).then(async()=>{
       await mkdir(dir,{recursive:true});
-      await writeFile(this.file(manager,dir),gzipSync(this.source(manager)));
+      await writeFile(this.file(manager,dir),packContent(this.source(manager)));
     });this.pending.set(manager,pending);return pending;
   }
   async list(dir){

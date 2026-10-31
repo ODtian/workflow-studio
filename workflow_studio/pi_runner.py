@@ -1,5 +1,6 @@
 """Pi tools, resources and sessions over pipes to the resident native model."""
 import atexit
+import base64
 import json
 import io
 import os
@@ -12,7 +13,7 @@ import time
 import uuid
 import llama_runner
 import workspace_store
-from content_store import enabled
+from content_store import enabled, encryption_key, pack, unpack, GZIP_MAGIC
 from workflow_tools import apply_workflow_tool, workflow_catalog
 
 ROOT = Path(__file__).parent / "pi_bridge"
@@ -26,6 +27,12 @@ class PiClient:
             ctx.status("安装 Pi 运行库…")
             subprocess.run([shutil.which("npm"), "install", "--prefix", str(ROOT), "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"], check=True, capture_output=True, text=True)
         workspace = Path(os.environ.get("WORKFLOW_WORKSPACE", os.getcwd()))
+        key = encryption_key()
+        if key is not None:
+            for path in Path(os.environ['WORKFLOW_PI_SESSIONS']).rglob('*.jsonl'):
+                data = path.read_bytes()
+                if data.startswith(GZIP_MAGIC):
+                    path.write_bytes(pack(unpack(data)))
         self.log = io.StringIO()
         self.process = subprocess.Popen([shutil.which("node"), str(ROOT / "worker.mjs")], cwd=workspace,
             env={**os.environ, "PI_OFFLINE":"1", "WORKFLOW_PI_DIR":str(workspace / ".pi" / "agent")},
@@ -34,6 +41,8 @@ class PiClient:
         self.pending = {}
         self.write_lock = threading.Lock()
         self.model_events = None
+        if key is not None:
+            self.send({'type': 'storage_key', 'key': base64.b64encode(key).decode()})
         threading.Thread(target=self.read, daemon=True).start()
         atexit.register(self.close)
 

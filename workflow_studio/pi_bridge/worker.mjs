@@ -3,6 +3,7 @@ import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import {createAssistantMessageEventStream, getCurrentSystemPrompt, getCurrentTools} from '@earendil-works/pi-ai';
 import {createAgentSession, DefaultResourceLoader, ModelRuntime, SessionManager, SettingsManager, parseSkillBlock} from '@earendil-works/pi-coding-agent';
 import {PiSessionStore} from './session_store.mjs';
+import {setContentKey} from './content_codec.mjs';
 import {createWorkflowTools, WORKFLOW_TOOL_NAMES} from './workflow_tools.mjs';
 const send=value=>process.stdout.write(JSON.stringify(value)+'\n');
 const cwd=process.cwd(), agentDir=process.env.WORKFLOW_PI_DIR;
@@ -119,6 +120,7 @@ async function command(request){
 }
 let buffer='';process.stdin.setEncoding('utf8');process.stdin.on('data',chunk=>{
   buffer+=chunk;let end;while((end=buffer.indexOf('\n'))!==-1){const line=buffer.slice(0,end);buffer=buffer.slice(end+1);if(!line)continue;const record=JSON.parse(line);
+    if(record.type==='storage_key'){setContentKey(Buffer.from(record.key,'base64'));continue;}
     if(record.type==='workflow_result'){
       const call=workflowPending.get(record.id);workflowPending.delete(record.id);
       if(record.error)call.reject(new Error(record.error));else call.resolve(record.result);
