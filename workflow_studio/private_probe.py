@@ -153,7 +153,11 @@ class PrivateStudioProbe(anywidget.AnyWidget):
             aad = PROTOCOL + b":" + client.encode() + b":c2s"
             raw = AESGCM(self.clients[client]).decrypt(base64.b64decode(packet["nonce"]),
                     base64.b64decode(packet["data"]), aad)
-            self._dispatch(json.loads(raw))
+            try:
+                self._dispatch(json.loads(raw))
+            except Exception as error:
+                self.state['message'] = f'{type(error).__name__}: {error}'
+                self.publish()
         except (InvalidTag, ValueError, KeyError):
             self._emit({"type": "locked", "client": packet.get("client"),
                         "message": "密钥校验失败"})
