@@ -34,16 +34,20 @@ def b64(value):
 
 
 class EncryptedStore:
-    def __init__(self, root, key):
+    def __init__(self, root, key, cache=None):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self._cipher = AESGCM(key)
+        self.cache = cache
 
     def write(self, name, value):
         nonce = secrets.token_bytes(12)
         path = self.root / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(MAGIC + nonce + self._cipher.encrypt(nonce, value, name.encode()))
+        blob = MAGIC + nonce + self._cipher.encrypt(nonce, value, name.encode())
+        path.write_bytes(blob)
+        if self.cache is not None:
+            self.cache.put('workflow-studio/private-probe/' + name, blob)
 
     def read(self, name):
         data = (self.root / name).read_bytes()
@@ -62,9 +66,14 @@ class PrivateStudioProbe(anywidget.AnyWidget):
     public_key = traitlets.Unicode().tag(sync=True)
     protocol = traitlets.Unicode(PROTOCOL.decode()).tag(sync=True)
 
-    def __init__(self, directory):
+    def __init__(self, directory, cache=None):
         self.directory = Path(directory).resolve()
         self.directory.mkdir(parents=True, exist_ok=True)
+        self.cache = cache
+        if cache is not None:
+            saved = cache.get('workflow-studio/private-probe/state.wfs')
+            if saved is not None:
+                (self.directory / 'state.wfs').write_bytes(saved)
         self._rsa = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         self.clients = {}
         self._key = None
@@ -114,7 +123,7 @@ class PrivateStudioProbe(anywidget.AnyWidget):
         keys = self._rsa.decrypt(base64.b64decode(packet["wrapped"]), padding.OAEP(
             mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
         vault_key, session_key = keys[:32], keys[32:]
-        store = EncryptedStore(self.directory, vault_key)
+        store = EncryptedStore(self.directory, vault_key, self.cache)
         if (self.directory / "state.wfs").exists():
             saved = json.loads(store.read("state.wfs"))
         else:

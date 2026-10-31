@@ -23,7 +23,8 @@ def _():
             str(_source)], check=True, capture_output=True)
     sys.path[:0] = [str(_source / 'workflow_studio'), str(_source)]
     from private_probe import PrivateStudioProbe
-    _probe = PrivateStudioProbe(Path.cwd() / '.workflow-private-probe')
+    from marimo._runtime.context import get_context
+    _probe = PrivateStudioProbe(Path.cwd() / '.workflow-private-probe', cache=get_context().cache.store)
     mo.ui.anywidget(_probe)
     return
 
