@@ -18,7 +18,14 @@ def _():
     from studio_entry import load_studio
     studio_panel = load_studio(privacy_probe=True)
     mo.ui.anywidget(studio_panel)
-    return (studio_panel,)
+    return mo, studio_panel
+
+
+@app.cell
+def _(mo):
+    from studio_link import StudioLink
+    mo.ui.anywidget(StudioLink())
+    return
 
 
 if __name__ == '__main__':

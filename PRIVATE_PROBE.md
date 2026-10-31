@@ -26,6 +26,13 @@ mo.ui.anywidget(studio_panel)
 
 Notebook 的脚本依赖声明负责安装本分支的启动包。源码更新、密码派生配置和已有存储衔接均由仓库代码处理。
 
+入口下方的独立代码块直接显示当前 GPU 的 `.run` 工作台链接。`StudioLink` 通过当前 notebook 页面所在的 sandbox 域名生成地址，点击输出链接即可打开。
+
+```python
+from studio_link import StudioLink
+mo.ui.anywidget(StudioLink())
+```
+
 解锁后，通过“工作流管理 → 安全设置 → 修改密码”更新密码，工作流导入沿用原有“工作流管理”。输入当前密码、新密码并确认后，浏览器为新密码生成随机盐并派生新的封装密钥，通过已有加密 widget 通道提交。服务端验证当前密码后，更新内容密钥的加密封装与持久缓存，已有工作流和结果继续沿用原来的内容密钥。后续解锁使用新密码。
 
 `EncryptedWorkflowPanel` 继承原有后端并把命令交回 `WorkflowPanel._message`。原来的预览队列、生成器、文件队列和 OAuth 流程继续使用；widget 的消息出口经外层加密。Drive 授权使用原有 `DriveAuthorization` / `connect_from_secrets` 的缓存接口，凭据存入密码保护的 notebook 缓存。OAuth 同意和授权码提交由用户在原页面完成。
