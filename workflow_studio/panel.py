@@ -228,7 +228,7 @@ class WorkflowSession:
                 if not module.SPEC.get("chat"):
                     filename = time.strftime("%Y%m%d-%H%M%S") + f"-{self.id}.txt"
                     path = self.owner.output_dir / filename
-                    write_text(path, result)
+                    self.owner.write_text_result(path, result)
                     self.owner.set_payload("results", self.id,
                                            [{"name": filename, "kind": "text", "bytes": path.stat().st_size}])
                 self.update(phase="complete", message="文本生成完成", step=self.state["total"])
@@ -387,6 +387,9 @@ class WorkflowPanel(anywidget.AnyWidget):
 
     def set_payload(self, name, panel_id, value):
         self.transport.payload(name, panel_id, value)
+
+    def write_text_result(self, path, text):
+        write_text(path, text)
 
     def unload_models(self, panel_id=None):
         from model_residency import release, workflow_group
