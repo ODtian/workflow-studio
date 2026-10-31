@@ -1,0 +1,28 @@
+# Workflow Studio 私密工作流最小验证
+
+入口为 `privacy_probe_notebook.py`，验证分支为 `codex/private-notebook-probe`。
+
+验证范围是运行时导入的单文件 Python 文本工作流、提示词、一张图片输入、Python 标准输出与错误输出、文本结果。公开仓库中的界面与运行框架作为公共基座。验证以只读查看项目文件、持久缓存、widget 状态和 notebook 快照为观察范围。
+
+## 调用与数据链路
+
+1. Notebook 创建 `PrivateStudioProbe`，通过原有 `mo.ui.anywidget` 显示入口。浏览器解锁后，继续加载已有 `assets/view.js` 的 Studio 界面。
+2. 用户在浏览器输入本机保存的 256 位密钥。浏览器生成独立的消息密钥，以 RSA-OAEP 封装这两把密钥，再通过现有 widget 自定义消息发送。RSA 私钥、内容密钥和消息密钥驻留运行内存。
+3. 浏览器适配器以 AES-256-GCM 加密工作流源码、参数、图片和控件操作，继续使用原来的 widget 通道。服务端解密后用 `compile` / `exec` 加载单文件模块，通过原有 `WorkflowSession` / `RunContext` 执行。
+4. `PrivateStudioProbe.send` 加密界面状态和结果，浏览器解密后交给原来的 Studio 组件。同步到 notebook 的 widget 属性为公开资源、协议名称和公钥。
+5. `EncryptedStore.write(name, value)` 为每次写入生成独立随机 nonce，并将相对路径作为认证数据。源码、参数、日志和结果以密文写入验证目录；持久缓存保存相同的密文字节。
+6. 文本结果保存继续走原有 `WorkflowSession.execute`，其写入点委托 `owner.write_text_result`。普通 Studio 的实现沿用原有内容存储，私密验证实现使用 `EncryptedStore`。
+
+## 运行
+
+在 molab 导入本分支的 `privacy_probe_notebook.py`。运行单元格，在浏览器的解锁入口填写一份本机生成并保留的 64 位十六进制密钥。通过“导入私密工作流”提交源码，再在原有参数控件中填写输入并交互执行。
+
+私密工作流使用 `SPEC` 和 `run(params, ctx)` 这一现有接口。图片通过 `ctx.image` 从内存读取，文本结果通过返回值交给运行器加密保存。GPU 运算在原有 notebook 内核中执行。
+
+## 验证入口
+
+`python -m unittest discover -s tests -p test_private_probe.py -v`
+
+该检查实际导入并执行带随机探针的私密工作流，检查 widget 状态、传输记录及生成文件，同时确认正确密钥能读回结果、错误密钥保持锁定。
+
+GPU 验证以 `torch.cuda` 的实际运算结果为依据。图片/视频生成器、Pi 子进程会话和 Drive 凭据的完整迁移，分别需要接入同一加密边界。
