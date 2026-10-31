@@ -6,7 +6,7 @@
 
 ## 调用与数据链路
 
-1. Notebook 创建 `PrivateStudioProbe`，通过原有 `mo.ui.anywidget` 显示入口。浏览器解锁后，继续加载已有 `assets/view.js` 的 Studio 界面。
+1. Notebook 保留四行入口，调用现有 `studio_entry.load_studio(privacy_probe=True)`；启动包更新公开源码后，仓库中的 `get_private_studio` 创建密码界面并衔接原有加密数据。界面继续由 `mo.ui.anywidget` 承载，浏览器解锁后加载已有 `assets/view.js` 的 Studio 界面。
 2. 用户首次在浏览器设置密码，之后输入密码解锁。浏览器以随机盐和 600,000 次 PBKDF2-HMAC-SHA256 派生密码密钥，生成独立的消息密钥，以 RSA-OAEP 封装后通过现有 widget 自定义消息发送。密码保留在浏览器内存；实际内容密钥以密码密钥加密封装，公开元数据保存盐、迭代次数及封装密文。
 3. 浏览器适配器以 AES-256-GCM 加密工作流源码、参数、图片和控件操作，继续使用原来的 widget 通道。服务端解密后用 `compile` / `exec` 加载单文件模块，通过原有 `WorkflowSession` / `RunContext` 执行。
 4. `PrivateStudioProbe.send` 加密界面状态和结果，浏览器解密后交给原来的 Studio 组件。同步到 notebook 的 widget 属性为公开资源、协议名称和公钥。
@@ -16,6 +16,15 @@
 ## 运行
 
 在 molab 导入本分支的 `privacy_probe_notebook.py`。运行单元格，首次在浏览器填写并确认工作台密码，之后使用同一密码解锁。通过“导入私密工作流”提交源码，再在原有参数控件中填写输入并交互执行。
+
+```python
+import marimo as mo
+from studio_entry import load_studio
+studio_panel = load_studio(privacy_probe=True)
+mo.ui.anywidget(studio_panel)
+```
+
+Notebook 的脚本依赖声明负责安装本分支的启动包。源码更新、密码派生配置和已有存储衔接均由仓库代码处理。
 
 私密工作流使用 `SPEC` 和 `run(params, ctx)` 这一现有接口。图片通过 `ctx.image` 从内存读取，文本结果通过返回值交给运行器加密保存。GPU 运算在原有 notebook 内核中执行。
 

@@ -1,6 +1,9 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["marimo>=0.25.1", "anywidget>=0.9.18", "cryptography", "Pillow"]
+# dependencies = [
+#     "marimo>=0.25.1", "anywidget>=0.9.18", "cryptography", "Pillow",
+#     "workflow-studio @ git+https://github.com/ODtian/workflow-studio.git@codex/private-notebook-probe",
+# ]
 # ///
 """Minimal private text-workflow validation inside the native Studio widget."""
 import marimo
@@ -12,21 +15,10 @@ app = marimo.App(width="full")
 @app.cell
 def _():
     import marimo as mo
-    from pathlib import Path
-    import subprocess
-    import sys
-
-    _source = Path('/tmp/workflow-studio-private-probe-source')
-    if not _source.exists():
-        subprocess.run(['git', 'clone', '--depth', '1', '--branch',
-            'codex/private-notebook-probe', 'https://github.com/ODtian/workflow-studio.git',
-            str(_source)], check=True, capture_output=True)
-    sys.path[:0] = [str(_source / 'workflow_studio'), str(_source)]
-    from private_probe import PrivateStudioProbe
-    from marimo._runtime.context import get_context
-    _probe = PrivateStudioProbe(Path.cwd() / '.workflow-private-probe', cache=get_context().cache.store)
-    mo.ui.anywidget(_probe)
-    return
+    from studio_entry import load_studio
+    studio_panel = load_studio(privacy_probe=True)
+    mo.ui.anywidget(studio_panel)
+    return (studio_panel,)
 
 
 if __name__ == '__main__':

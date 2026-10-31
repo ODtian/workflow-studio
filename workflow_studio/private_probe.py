@@ -7,6 +7,7 @@ envelopes. Keys and decrypted workflow modules stay in the kernel's memory.
 from __future__ import annotations
 
 import base64
+import gc
 from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
@@ -277,4 +278,19 @@ class PrivateStudioProbe(anywidget.AnyWidget):
         elif action == "refresh":
             self._refresh()
             self.publish()
+
+
+def get_private_studio(workspace=None):
+    """Open the password UI, carrying an unlocked legacy vault through migration."""
+    from marimo._runtime.context import get_context
+
+    directory = (Path(workspace or Path.cwd()) / '.workflow-private-probe').resolve()
+    previous = next((value for value in gc.get_objects()
+        if type(value).__name__ == 'PrivateStudioProbe' and value.directory == directory
+        and (value._key is not None or getattr(value, '_legacy_key', None) is not None)), None)
+    legacy_key = (previous._key or getattr(previous, '_legacy_key', None)) if previous is not None else None
+    panel = PrivateStudioProbe(directory, cache=get_context().cache.store, legacy_key=legacy_key)
+    if previous is not None:
+        previous.close()
+    return panel
 
