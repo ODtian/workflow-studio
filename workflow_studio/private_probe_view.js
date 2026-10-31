@@ -11,12 +11,20 @@ export async function render({model, el}) {
   keyField.type = 'password';
   keyField.autocomplete = 'off';
   keyField.setAttribute('aria-label', '私密验证密钥');
+  const keyFile = document.createElement('input');
+  keyFile.type = 'file';
+  keyFile.accept = '.key,.txt';
+  keyFile.setAttribute('aria-label', '选择本机密钥文件');
+  keyFile.onchange = async () => {
+    keyField.value = (await keyFile.files[0].text()).trim();
+    keyFile.value = '';
+  };
   const button = document.createElement('button');
   button.textContent = '解锁工作台';
   const notice = document.createElement('p');
   notice.setAttribute('role', 'status');
   label.append(document.createElement('br'), keyField);
-  form.append(label, button, notice);
+  form.append(label, keyFile, button, notice);
   el.append(form);
   let client, sessionKey, dispose;
   let outgoing = Promise.resolve();
