@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import base64
 import gc
-from contextlib import redirect_stderr, redirect_stdout
-import io
 import json
 from pathlib import Path
 import secrets
@@ -58,8 +56,8 @@ class EncryptedStore:
 
 class PrivateWorkflowSession(WorkflowSession):
     def execute(self, module, params, cancel):
-        output = io.StringIO()
-        with redirect_stdout(output), redirect_stderr(output):
+        from private_console import capture_output
+        with capture_output() as output:
             super().execute(module, params, cancel)
         self.owner.store.write("logs.bin", output.getvalue().encode())
 
