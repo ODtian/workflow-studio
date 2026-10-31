@@ -26,7 +26,7 @@ export async function render({model, el}) {
   label.append(document.createElement('br'), keyField);
   form.append(label, keyFile, button, notice);
   el.append(form);
-  let client, sessionKey, dispose;
+  let client, sessionKey, dispose, importer;
   let outgoing = Promise.resolve();
   let incoming = Promise.resolve();
   const listeners = new Set();
@@ -64,6 +64,25 @@ export async function render({model, el}) {
         const studio = await import(url);
         URL.revokeObjectURL(url);
         dispose = studio.render({model: adapter, el});
+        importer = document.createElement('details');
+        importer.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2001;background:white;color:#202830;border:1px solid #ccc;border-radius:8px;padding:10px;max-width:90vw';
+        const summary = document.createElement('summary');
+        summary.textContent = '导入私密工作流';
+        const filename = document.createElement('input');
+        filename.value = 'private_workflow.py';
+        filename.setAttribute('aria-label', '私密工作流文件名');
+        const source = document.createElement('textarea');
+        source.setAttribute('aria-label', '私密工作流源码');
+        source.style.cssText = 'display:block;width:480px;max-width:80vw;height:240px';
+        const submit = document.createElement('button');
+        submit.textContent = '加密导入';
+        submit.onclick = () => {
+          adapter.send({action: 'import', name: filename.value, source: source.value});
+          source.value = '';
+          importer.open = false;
+        };
+        importer.append(summary, filename, source, submit);
+        document.body.append(importer);
       } else {
         const buffers = message.buffers.map(value => decode(value).buffer);
         for (const callback of listeners) callback(message.content, buffers);
@@ -94,7 +113,7 @@ export async function render({model, el}) {
     transportKey.fill(0);
     model.send({type: 'unlock', client, wrapped: encode(wrapped)});
   };
-  return () => {dispose?.(); model.off('msg:custom', receive); form.remove();};
+  return () => {dispose?.(); importer?.remove(); model.off('msg:custom', receive); form.remove();};
 }
 
 export default {render};
