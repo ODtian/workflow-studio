@@ -65,7 +65,16 @@ class EncryptedWorkflowPanel(WorkflowPanel):
             return self.private_owner.load(name)
         return super().load(name)
 
+    def model_entries(self):
+        roots = {Path(module.SPEC['model_root']) for module in self.private_owner._modules.values()
+                 if module.SPEC.get('model_root')}
+        private = {str(path) for root in roots for path in root.rglob('*')
+                   if path.is_file() and path.suffix.lower() in ('.safetensors', '.gguf', '.pth')}
+        return sorted(set(super().model_entries()) | private)
+
     def refresh(self):
+        for name, source in self.private_owner._sources.items():
+            self.private_owner._load_source(name, source)
         super().refresh()
         available = {item['id'] for item in self.state['workflows']}
         private = [{'id': name, 'name': self.load(name).SPEC['name'],

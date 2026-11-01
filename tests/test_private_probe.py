@@ -120,6 +120,31 @@ class PrivateProbeTest(unittest.TestCase):
                 self.assertEqual(packets[-1]['type'], 'locked')
                 widget.close()
 
+    def test_private_workflow_model_options_follow_model_scan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            models = Path(directory) / 'models'
+            models.mkdir()
+            source = "\n".join([
+                "from pathlib import Path",
+                f"models = Path({str(models)!r})",
+                "files = sorted(path.name for path in models.glob('*.safetensors'))",
+                "SPEC = {'name': 'Model refresh', 'model_root': str(models), 'fields': [",
+                "{'key': 'model', 'type': 'select', 'area': 'models',",
+                "'options': files, 'default': files[0] if files else ''}]}",
+            ])
+            with patch('anywidget.AnyWidget.send'):
+                widget = PrivateStudioProbe(directory)
+                self.addCleanup(widget.close)
+                unlock(widget, 'owner', 'model-refresh-test', secrets.token_bytes(32))
+                widget.runtime.receive({'action': 'import', 'name': 'private_models.py', 'source': source})
+                session = next(s for s in widget.sessions.values()
+                               if s.state['selected'] == 'private_models.py')
+                self.assertEqual(session.state['spec']['fields'][0]['options'], [])
+                (models / 'fixture.safetensors').write_bytes(b'model fixture')
+                widget.runtime.receive({'action': 'scan_models'})
+                self.assertEqual(session.state['spec']['fields'][0]['options'], ['fixture.safetensors'])
+                self.assertEqual(session.params['model'], 'fixture.safetensors')
+
     def test_password_setup_preserves_an_existing_encrypted_workflow(self):
         with tempfile.TemporaryDirectory() as directory:
             legacy_key = secrets.token_bytes(32)
