@@ -5,13 +5,14 @@
   import ImageComparison from './ImageComparison.svelte';
   import ZoomPreview from './ZoomPreview.svelte';
   let {history=[],playback=$bindable({volume:0.25,muted:false}),loadPreview,loadThumbnail,loadOriginal,download}=$props();
-  let selectedNames=$state([]),comparing=$state(false),expanded=$state(false),page=$state(0),thumbnails=$state({}),infoName=$state('');
+  let selectedNames=$state([]),expanded=$state(false),page=$state(0),thumbnails=$state({}),infoName=$state('');
   let parameterDialog;
   let videoURL=$state(''),videoName=$state('');
   const pageSize=16;
   let pageCount=$derived(Math.max(1,Math.ceil(history.length/pageSize)));
   let visible=$derived(history.slice(page*pageSize,(page+1)*pageSize));
   let selected=$derived(selectedNames.map(name=>history.find(entry=>entry.name===name)).filter(Boolean));
+  let comparing=$derived(selected.length>1);
   let info=$derived(history.find(entry=>entry.name===infoName));
   const dateLabel=entry=>new Date(entry.created_at).toLocaleString('zh-CN',{hour12:false});
   const imageTitle=entry=>dateLabel(entry)+' · '+entry.width+' × '+entry.height+' · Seed '+(entry.params.seed??'—');
@@ -28,9 +29,7 @@
 <section class="history" class:expanded aria-label="历史生成记录">
   <div class="gallery-toolbar"><h3>生成历史 <Badge variant="secondary">{history.length}</Badge></h3>
     <span class="selection-count" role="status">已选 {selected.length} 张</span>
-    <Button variant="outline" size="sm" disabled={selected.length<2} onclick={()=>comparing=true}>对比所选 {selected.length?selected.length+' 张':''}</Button>
-    {#if selected.length}<Button variant="ghost" size="sm" onclick={()=>{selectedNames=[];comparing=false;}}>清空选择</Button>{/if}
-    {#if comparing}<Button variant="ghost" size="sm" onclick={()=>comparing=false}>返回图片墙</Button>{/if}
+    {#if selected.length}<Button variant="ghost" size="sm" onclick={()=>{selectedNames=[];}}>清空选择</Button>{/if}
     <Button variant="ghost" size="icon-sm" aria-label={expanded?'收起历史':'全屏历史'} onclick={()=>expanded=!expanded}>{#if expanded}<X size={15}/>{:else}<Maximize2 size={15}/>{/if}</Button>
   </div>
   {#if videoURL}<div class="history-video"><video src={videoURL} bind:volume={playback.volume} bind:muted={playback.muted} controls playsinline preload="metadata" aria-label={'历史视频 '+videoName}></video><Button size="icon-sm" variant="ghost" aria-label="关闭历史视频" onclick={()=>{videoURL='';videoName='';}}><X size={15}/></Button></div>{/if}

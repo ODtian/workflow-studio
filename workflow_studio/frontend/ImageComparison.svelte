@@ -8,7 +8,7 @@
   import ComparisonPane from './ComparisonPane.svelte';
   let {entries=[],loadOriginal,loadPreview,thumbnails={},expanded=false}=$props();
   let sources=$state({}),shared=$state({zoom:1,x:0,y:0}),views=$state({}),synchronized=$state(true),columns=$state(2);
-  let mode=$state('side'),cuts=$state([]);
+  let mode=$state('mask'),cuts=$state([]);
   let maskStage=$state(null);let dragging=-1;
   $effect(()=>{cuts=entries.slice(1).map((_,index)=>(index+1)*100/entries.length);});
   let layoutColumns=$derived(Math.min(columns,entries.length));
