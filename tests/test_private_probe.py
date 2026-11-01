@@ -99,7 +99,7 @@ class PrivateProbeTest(unittest.TestCase):
                 session.params.update(params)
                 widget.save_settings()
                 session.started_at = time.monotonic()
-                session.execute(widget.load('private.py'), params, threading.Event())
+                session.execute(widget.runtime.load('private.py'), params, threading.Event())
                 request({'action': 'sync'})
                 result_path = next((Path(directory) / 'results').glob('*.txt'))
                 from content_store import read_text
@@ -120,7 +120,7 @@ class PrivateProbeTest(unittest.TestCase):
                 self.assertEqual(packets[-1]['type'], 'locked')
                 widget.close()
 
-    def test_private_workflow_model_options_follow_model_scan(self):
+    def test_workflows_share_model_refresh_import_export_and_restore(self):
         with tempfile.TemporaryDirectory() as directory:
             models = Path(directory) / 'models'
             models.mkdir()
@@ -132,18 +132,34 @@ class PrivateProbeTest(unittest.TestCase):
                 "{'key': 'model', 'type': 'select', 'area': 'models',",
                 "'options': files, 'default': files[0] if files else ''}]}",
             ])
+            workflows = Path(directory) / 'public-workflows'
+            workflows.mkdir()
+            (workflows / 'catalog_models.py').write_text(source)
             with patch('anywidget.AnyWidget.send'):
                 widget = PrivateStudioProbe(directory)
-                self.addCleanup(widget.close)
                 unlock(widget, 'owner', 'model-refresh-test', secrets.token_bytes(32))
-                widget.runtime.receive({'action': 'import', 'name': 'private_models.py', 'source': source})
-                session = next(s for s in widget.sessions.values()
-                               if s.state['selected'] == 'private_models.py')
-                self.assertEqual(session.state['spec']['fields'][0]['options'], [])
+                catalog = widget.runtime.add('catalog_models.py')
+                widget.runtime.receive({'action': 'import', 'name': 'imported_models.py', 'source': source})
+                imported = next(s for s in widget.sessions.values()
+                                if s.state['selected'] == 'imported_models.py')
                 (models / 'fixture.safetensors').write_bytes(b'model fixture')
                 widget.runtime.receive({'action': 'scan_models'})
-                self.assertEqual(session.state['spec']['fields'][0]['options'], ['fixture.safetensors'])
-                self.assertEqual(session.params['model'], 'fixture.safetensors')
+                for session in (catalog, imported):
+                    self.assertEqual(session.state['spec']['fields'][0]['options'], ['fixture.safetensors'])
+                    self.assertEqual(session.params['model'], 'fixture.safetensors')
+                    with patch.object(widget.runtime, 'send') as send:
+                        widget.runtime.receive({'action': 'export', 'id': session.id})
+                        send.assert_called_once_with({'type': 'workflow',
+                            'name': session.state['selected'], 'source': source})
+                widget.save_settings()
+                widget.close()
+                reopened = PrivateStudioProbe(directory)
+                unlock(reopened, 'owner', 'model-refresh-test', secrets.token_bytes(32))
+                for name in ('catalog_models.py', 'imported_models.py'):
+                    self.assertEqual(reopened.runtime.workflow_sources[name], source)
+                    field = reopened.runtime.load(name).SPEC['fields'][0]
+                    self.assertEqual(field['options'], ['fixture.safetensors'])
+                reopened.close()
 
     def test_password_setup_preserves_an_existing_encrypted_workflow(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -156,12 +172,12 @@ class PrivateProbeTest(unittest.TestCase):
                 widget = PrivateStudioProbe(directory, legacy_key=legacy_key)
                 unlock(widget, 'setup-owner', password, secrets.token_bytes(32))
                 self.assertEqual(widget._key, legacy_key)
-                self.assertEqual(widget._sources['existing.py'], source)
+                self.assertEqual(widget.runtime.workflow_sources['existing.py'], source)
                 widget.close()
                 reopened = PrivateStudioProbe(directory)
                 self.assertFalse(reopened.password_setup)
                 unlock(reopened, 'owner', password, secrets.token_bytes(32))
-                self.assertEqual(reopened._sources['existing.py'], source)
+                self.assertEqual(reopened.runtime.workflow_sources['existing.py'], source)
                 visible = b''.join(path.read_bytes() for path in Path(directory).rglob('*') if path.is_file())
                 self.assertNotIn(password.encode(), visible)
                 self.assertNotIn(legacy_key, visible)

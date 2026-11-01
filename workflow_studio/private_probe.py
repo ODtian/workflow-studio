@@ -13,7 +13,6 @@ from pathlib import Path
 import secrets
 import threading
 import traceback
-from types import ModuleType
 
 import anywidget
 import traitlets
@@ -86,8 +85,6 @@ class PrivateStudioProbe(anywidget.AnyWidget):
         self._rsa = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         self.clients = {}
         self._key = None
-        self._sources = {}
-        self._modules = {}
         self.runtime = None
         self.sessions = {}
         self.model_bindings = {}
@@ -165,15 +162,10 @@ class PrivateStudioProbe(anywidget.AnyWidget):
                 if self.password_setup:
                     self._save_password_config(password_key, vault_key)
                     self._legacy_key = None
-                self._sources = saved["workflows"]
-                self._modules.clear()
-                for name, source in self._sources.items():
-                    self._load_source(name, source)
                 from private_runtime import open_runtime
                 runtime = open_runtime(self, saved)
             except Exception:
                 self._key = None
-                self._modules.clear()
                 del self.clients[client]
                 store.write("initialization-error.bin", traceback.format_exc().encode())
                 self._emit({"type": "locked", "client": client,
@@ -205,18 +197,10 @@ class PrivateStudioProbe(anywidget.AnyWidget):
             self._emit({"type": "locked", "client": packet.get("client"),
                         "message": "请输入正确密码"})
 
-    def _load_source(self, name, source):
-        module = ModuleType("private_workflow")
-        exec(compile(source, "<private-workflow>", "exec"), module.__dict__)
-        self._modules[name] = module
-
-    def load(self, name):
-        return self._modules[name]
-
     def _save_workflow_vault(self, runtime):
         from settings_writer import configuration_parameters
         with self._lock:
-            saved = {"workflows": self._sources, 'full_studio': True,
+            saved = {"workflows": runtime.workflow_sources, 'full_studio': True,
                 "active": runtime.state["active"], "panels": [
                 {"id": s.id, "workflow": s.state["selected"], "params": s.params}
                 for s in runtime.sessions.values()]}

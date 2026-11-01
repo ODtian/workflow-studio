@@ -15,7 +15,7 @@
 
 ## 运行
 
-在 molab 导入本分支的 `privacy_probe_notebook.py`。运行单元格，首次在浏览器填写并确认工作台密码，之后使用同一密码解锁。通过“导入私密工作流”提交源码，再在原有参数控件中填写输入并交互执行。
+在 molab 导入本分支的 `privacy_probe_notebook.py`。运行单元格，首次在浏览器填写并确认工作台密码，之后使用同一密码解锁。通过“导入 Python”提交源码，再在原有参数控件中填写输入并交互执行。
 
 ```python
 import marimo as mo
@@ -34,6 +34,8 @@ mo.ui.anywidget(StudioLink())
 ```
 
 解锁后，通过“工作流管理 → 安全设置 → 修改密码”更新密码，工作流导入沿用原有“工作流管理”。输入当前密码、新密码并确认后，浏览器为新密码生成随机盐并派生新的封装密钥，通过已有加密 widget 通道提交。服务端验证当前密码后，更新内容密钥的加密封装与持久缓存，已有工作流和结果继续沿用原来的内容密钥。后续解锁使用新密码。
+
+所有工作流统一由 `WorkflowPanel.workflow_sources` 保存运行期源码，由 `WorkflowPanel.load` 编译并使用同一份模块缓存。初始化时以仓库模板填充集合，再恢复密码保护存储中的源码。导入、导出、模型扫描和刷新均使用这个集合，完整集合随工作台状态加密保存。密码层负责解锁、加密存储和消息传输。
 
 `EncryptedWorkflowPanel` 继承原有后端并把命令交回 `WorkflowPanel._message`。原来的预览队列、生成器、文件队列和 OAuth 流程继续使用；widget 的消息出口经外层加密。Drive 授权使用原有 `DriveAuthorization` / `connect_from_secrets` 的缓存接口，凭据存入密码保护的 notebook 缓存。OAuth 同意和授权码提交由用户在原页面完成。
 

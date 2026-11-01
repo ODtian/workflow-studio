@@ -1,6 +1,4 @@
 """Run the original Studio backend behind the encrypted widget boundary."""
-from pathlib import Path
-
 from panel import WorkflowPanel
 from persistent_drive_auth import (
     DriveAuthorization, _credentials_from_info, _validated_info, connect_from_secrets,
@@ -41,7 +39,7 @@ class EncryptedWorkflowPanel(WorkflowPanel):
         # The outer encrypted widget already owns the frontend. An empty ESM
         # keeps this internal backend from allocating a second frontend asset
         # while handling the unlock message outside a notebook cell execution.
-        super().__init__(initial=initial, widget_source="", **options)
+        super().__init__(initial=initial, widget_source="", workflow_sources=saved["workflows"], **options)
         self.state = {**self.state, 'password_protected': True}
 
     def _message(self, widget, content, buffers):
@@ -60,29 +58,6 @@ class EncryptedWorkflowPanel(WorkflowPanel):
         return FilesBridge(self, provider_factory=connect_private_drive,
             authorization_factory=lambda: DriveAuthorization(cache=WorkspaceDriveCache()))
 
-    def load(self, name):
-        if name in self.private_owner._sources:
-            return self.private_owner.load(name)
-        return super().load(name)
-
-    def model_entries(self):
-        roots = {Path(module.SPEC['model_root']) for module in self.private_owner._modules.values()
-                 if module.SPEC.get('model_root')}
-        private = {str(path) for root in roots for path in root.rglob('*')
-                   if path.is_file() and path.suffix.lower() in ('.safetensors', '.gguf', '.pth')}
-        return sorted(set(super().model_entries()) | private)
-
-    def refresh(self):
-        for name, source in self.private_owner._sources.items():
-            self.private_owner._load_source(name, source)
-        super().refresh()
-        available = {item['id'] for item in self.state['workflows']}
-        private = [{'id': name, 'name': self.load(name).SPEC['name'],
-                    'description': self.load(name).SPEC.get('description', '')}
-                   for name in self.private_owner._sources if name not in available]
-        self.state = {**self.state, 'workflows': self.state['workflows'] + private}
-        self.publish()
-
     def add(self, workflow_id, params=None, session_id=None, activate=True):
         from private_probe import PrivateWorkflowSession
         session = PrivateWorkflowSession(self, workflow_id, params, session_id=session_id)
@@ -98,18 +73,7 @@ class EncryptedWorkflowPanel(WorkflowPanel):
         self.private_owner._save_workflow_vault(self)
 
     def receive(self, content, buffers=()):
-        action = content['action']
-        if action == 'import':
-            name = Path(content['name']).name
-            self.private_owner._load_source(name, content['source'])
-            self.private_owner._sources[name] = content['source']
-            self.refresh()
-            self.add(name)
-        elif action == 'export' and self.sessions[content['id']].state['selected'] in self.private_owner._sources:
-            name = self.sessions[content['id']].state['selected']
-            self.send({'type': 'workflow', 'name': name, 'source': self.private_owner._sources[name]})
-        else:
-            WorkflowPanel._message(self, self, content, buffers)
+        WorkflowPanel._message(self, self, content, buffers)
 
 
 def open_runtime(private_owner, saved):

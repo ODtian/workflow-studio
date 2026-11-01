@@ -315,7 +315,7 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.send({'type': 'runtime_state', 'name': change['name'], 'value': change['new']})
 
     def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None,
-                 *, widget_source=None):
+                 *, widget_source=None, workflow_sources=None):
         if widget_source is None:
             widget_source = ("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
                              + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8"))
@@ -324,6 +324,10 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.workflow_dir = Path(workflow_dir or ROOT / "workflows").resolve()
         self.output_dir = Path(output_dir or ROOT / "generated").resolve()
         self.workflow_dir.mkdir(parents=True, exist_ok=True)
+        self.workflow_sources = {path.name: read_text(path)
+                                 for path in sorted(self.workflow_dir.glob("*.py"))
+                                 if not path.name.startswith("_")}
+        self.workflow_sources.update(workflow_sources or {})
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.history_store = ImageHistory(self.output_dir if enabled() else self.workflow_dir.parent / "studio_history")
         self.history_store.import_directory(self.output_dir)
@@ -418,14 +422,14 @@ class WorkflowPanel(anywidget.AnyWidget):
 
     def load(self, workflow_id):
         path = self.workflow_dir / workflow_id
-        stamp = path.stat().st_mtime_ns
+        source = self.workflow_sources[workflow_id]
         cached = self._modules.get(path)
-        if cached and cached[0] == stamp:
+        if cached and cached[0] == source:
             return cached[1]
         module_spec = importlib.util.spec_from_file_location("studio_flow_" + path.stem, path)
         module = importlib.util.module_from_spec(module_spec)
-        module_spec.loader.exec_module(module)
-        self._modules[path] = stamp, module
+        exec(compile(source, str(path), "exec"), module.__dict__)
+        self._modules[path] = source, module
         return module
 
     def model_entries(self):
@@ -441,11 +445,9 @@ class WorkflowPanel(anywidget.AnyWidget):
     def refresh(self):
         self._modules.clear()
         workflows = []
-        for path in sorted(self.workflow_dir.glob("*.py")):
-            if path.name.startswith("_"):
-                continue
-            spec = self.load(path.name).SPEC
-            workflows.append({"id": path.name, "name": spec["name"], "description": spec.get("description", "")})
+        for name in sorted(self.workflow_sources):
+            spec = self.load(name).SPEC
+            workflows.append({"id": name, "name": spec["name"], "description": spec.get("description", "")})
         self.state = {**self.state, "workflows": workflows}
         for session in self.sessions.values():
             spec = self.load(session.state["selected"]).SPEC
@@ -506,7 +508,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                 path = self.workflow_dir / Path(content["name"]).name
                 if path.suffix != ".py":
                     raise ValueError("请选择 Python 工作流文件（.py）。")
-                path.write_text(content["source"], encoding="utf-8")
+                write_text(path, content["source"])
+                self.workflow_sources[path.name] = content["source"]
                 self.refresh()
                 self.add(path.name)
                 return
@@ -576,7 +579,7 @@ class WorkflowPanel(anywidget.AnyWidget):
                                        run_id=session.state.get('run_id'))
             elif action == "export":
                 path = self.workflow_dir / session.state["selected"]
-                self.send({"type": "workflow", "name": path.name, "source": path.read_text(encoding="utf-8")})
+                self.send({"type": "workflow", "name": path.name, "source": self.workflow_sources[path.name]})
         except Exception as exc:
             self.state = {**self.state, "message": str(exc)}
             if content.get("action") == "settings":
