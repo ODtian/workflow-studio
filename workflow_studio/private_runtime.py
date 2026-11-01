@@ -38,7 +38,10 @@ class EncryptedWorkflowPanel(WorkflowPanel):
             selected = {item['workflow'] for item in initial}
             initial = [{'workflow': name} for name in ('moss_image.py', 'minimax_h3.py', 'llama_cpp.py')
                        if name not in selected] + initial
-        super().__init__(initial=initial, **options)
+        # The outer encrypted widget already owns the frontend. An empty ESM
+        # keeps this internal backend from allocating a second frontend asset
+        # while handling the unlock message outside a notebook cell execution.
+        super().__init__(initial=initial, widget_source="", **options)
         self.state = {**self.state, 'password_protected': True}
 
     def _message(self, widget, content, buffers):

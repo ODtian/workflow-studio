@@ -314,9 +314,12 @@ class WorkflowPanel(anywidget.AnyWidget):
     def runtime_changed(self, change):
         self.send({'type': 'runtime_state', 'name': change['name'], 'value': change['new']})
 
-    def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None):
-        super().__init__(_esm=("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
-                             + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8")))
+    def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None,
+                 *, widget_source=None):
+        if widget_source is None:
+            widget_source = ("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
+                             + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8"))
+        super().__init__(_esm=widget_source)
         self.transport = WidgetTransport(self)
         self.workflow_dir = Path(workflow_dir or ROOT / "workflows").resolve()
         self.output_dir = Path(output_dir or ROOT / "generated").resolve()
