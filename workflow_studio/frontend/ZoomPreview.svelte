@@ -6,7 +6,7 @@
   import 'photoswipe/style.css';
   import {i18n} from './bridge.js';
 
-  let {preview = '', result, loadOriginal, onload} = $props();
+  let {preview = '', result, loadOriginal, onload, compact = false, label = '放大生成图片'} = $props();
   let container;
   let viewer;
   let fullscreen = $state(false);
@@ -43,8 +43,8 @@
   onDestroy(() => viewer?.destroy());
 </script>
 
-<div class="image-preview" bind:this={container}>
-  {#if preview}<button class="preview-image" aria-label="放大生成图片" onclick={open}><img src={preview} alt="工作流图片" {onload}/></button><Button class="preview-expand" variant="secondary" size="icon" aria-label="全屏预览" onclick={open}><Maximize2 size={17}/></Button>
+<div class="image-preview" class:compact bind:this={container}>
+  {#if preview}<button class="preview-image" aria-label={label} onclick={open}><img src={preview} alt={label} {onload}/></button>{#if !compact}<Button class="preview-expand" variant="secondary" size="icon" aria-label="全屏预览" onclick={open}><Maximize2 size={17}/></Button>{/if}
   {:else}<div class="preview-empty"><p>暂无预览</p></div>{/if}
 </div>
 
@@ -52,6 +52,7 @@
   .image-preview{position:relative;height:100%;width:100%;}
   .preview-image{display:block;border:0;background:transparent;padding:20px;width:100%;height:100%;cursor:zoom-in;}
   .preview-image img{width:100%;height:100%;object-fit:contain;}
+  .compact .preview-image{padding:0}.compact .preview-image img{object-fit:cover}
   .image-preview :global(.preview-expand){position:absolute;right:16px;top:16px;}
   .preview-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted-foreground);gap:12px;}
   .preview-empty>div{border:1px solid var(--border);background:var(--background);padding:22px;border-radius:18px;margin-bottom:4px;}

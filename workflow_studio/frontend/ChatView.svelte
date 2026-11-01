@@ -1,13 +1,17 @@
 <script>
-import {onMount} from 'svelte';
+import {onMount,onDestroy,tick} from 'svelte';
 import {Button} from '$lib/components/ui/button';import {Badge} from '$lib/components/ui/badge';import {Input} from '$lib/components/ui/input';import {Textarea} from '$lib/components/ui/textarea';import {Switch} from '$lib/components/ui/switch';
 import {Plus,ArrowUp,Square,Paperclip,Settings2,Wrench,Sparkles,History,GitBranch,Copy,Download,RefreshCw,X,MessageSquare,ChevronDown,Check,Terminal,FileText} from '@lucide/svelte';
-import Field from './Field.svelte';import Markdown from './Markdown.svelte';import {readFile,copyText} from './bridge.js';import {followTail} from './followTail.js';
+import Field from './Field.svelte';import Markdown from './Markdown.svelte';import {copyText} from './bridge.js';import {followTail} from './followTail.js';
 import {parameterFields} from './modelBindings.js';
-let {panel,active=true,mobile=false,values=$bindable(),pi={messages:[]},send,targets=[],onTransfer}=$props();
+let {panel,active=true,mobile=false,values=$bindable(),pi={messages:[]},send,uploadImage,targets=[],onTransfer}=$props();
 let input=$state(''),drawer=$state(''),attachments=$state([]),name=$state(''),skillName=$state(''),skillSource=$state(''),copied=$state(''),queue=$state([]),following=$state(true);
 let skillEditorOpen=$state(false),skillSaving=$state(false),skillNotice=$state(''),skillSaveError=$state(false);
 let scrollRequest=$state(0);
+let pendingMessages=$state([]);
+let sending=$derived(panel.busy||pendingMessages.some(message=>message.action==='prompt'&&!message.error));
+let deliveryQueue=Promise.resolve();
+const attachmentURLs=new Set();
 let imageInput,scrollPane;
 let messages=$derived(pi.messages||[]);
 let fields=$derived(parameterFields(panel.spec,values.model).filter(field=>!field.hidden));
@@ -18,31 +22,73 @@ let stats=$derived(pi.stats||{});
 let context=$derived(stats.contextUsage);
 let skillVersion='';
 let editorVersion;
-$effect(()=>{const editor=pi.editor;if(editor&&editor!==editorVersion){editorVersion=editor;input=editor.text;attachments=editor.images.map((image,index)=>({name:`图片 ${index+1}`,url:`data:${image.mimeType};base64,${image.data}`}));drawer='';scrollRequest++;}});
+$effect(()=>{const editor=pi.editor;if(editor&&editor!==editorVersion){editorVersion=editor;input=editor.text;attachments=editor.images.map((image,index)=>{const value={name:`图片 ${index+1}`,url:`data:${image.mimeType};base64,${image.data}`};return {...value,id:crypto.randomUUID(),status:'uploaded',ready:Promise.resolve(value)};});drawer='';scrollRequest++;}});
 $effect(()=>{if(pi.editingSkill && pi.editingSkill.source!==skillVersion){skillVersion=pi.editingSkill.source;skillSource=pi.editingSkill.source;skillName=pi.editingSkill.path.split('/').at(-2);skillEditorOpen=true;skillNotice='';}});
 $effect(()=>{const result=pi.skillSave;if(result){skillSaving=false;skillSaveError=Boolean(result.error);skillNotice=result.error||'已保存';}});
 onMount(()=>act('inspect'));
+onDestroy(()=>{for(const url of attachmentURLs)URL.revokeObjectURL(url);});
+$effect(()=>{
+  const received=new Set(messages.map(message=>message.client_id));
+  if(pendingMessages.some(message=>received.has(message.client_id))){
+    for(const message of pendingMessages.filter(message=>received.has(message.client_id)))
+      for(const image of message.images)if(attachmentURLs.delete(image.url))URL.revokeObjectURL(image.url);
+    pendingMessages=pendingMessages.filter(message=>!received.has(message.client_id));
+  }
+});
+$effect(()=>{const delivery=pi.delivery;if(delivery?.error){const message=pendingMessages.find(message=>message.client_id===delivery.client_id);if(message)message.error=delivery.error;}});
+async function deliver(message){
+  message.error='';
+  message.status=message.images.some(image=>image.status!=='uploaded')?'图片上传中':'等待模型响应';
+  await tick();
+  const images=await Promise.all(message.images.map(image=>image.ready));
+  if(images.some(image=>!image)){message.error='图片上传失败，请重试';return;}
+  message.status=message.action==='prompt'?'等待模型响应':message.action==='steer'?'已提交引导':'已排队';
+  act(message.action,{text:message.text,images,client_id:message.client_id});
+}
 function submit(action='prompt'){
   if(!input.trim()&&!attachments.length)return;
-  act(action,{text:input,images:attachments});
+  const message=$state({client_id:crypto.randomUUID(),text:input,images:attachments,action,status:'正在发送',error:''});
+  pendingMessages=[...pendingMessages,message];
   if(action==='steer'||action==='follow_up')queue=[...queue,{action,text:input}];else queue=[];
   input='';attachments=[];scrollRequest++;
+  deliveryQueue=deliveryQueue.then(()=>deliver(message));
 }
+function retryMessage(message){for(const image of message.images)if(image.file)startUpload(image);deliveryQueue=deliveryQueue.then(()=>deliver(message));}
 function entryFor(message){return (pi.entries||[]).find(e=>e.role===message.role&&e.timestamp===message.timestamp);}
 async function copy(text,key){try{await copyText(text);copied=key;}catch{copied='error:'+key;}}
 function saveSkill(){skillSaving=true;skillNotice='';act('save_skill',{name:skillName,source:skillSource});}
-async function addImages(files){
-  const images=await Promise.all([...files].filter(file=>file.type.startsWith('image/')).map(async file=>({name:file.name,url:await readFile(file)})));
-  attachments=[...attachments,...images];
+function startUpload(image){
+  image.status='uploading';image.error='';image.received=0;
+  image.ready=uploadImage(image.file,progress=>{image.received=progress.received;image.total=progress.total;})
+    .then(reference=>{image.status='uploaded';return reference;})
+    .catch(error=>{image.status='error';image.error=error.message;return null;});
+}
+function addImages(files){
+  for(const file of [...files].filter(file=>file.type.startsWith('image/'))){
+    const image=$state({id:crypto.randomUUID(),name:file.name,file,url:URL.createObjectURL(file),received:0,total:file.size,status:'uploading',error:'',ready:null});
+    attachmentURLs.add(image.url);attachments=[...attachments,image];startUpload(image);
+  }
+}
+function removeAttachment(image){
+  attachments=attachments.filter(item=>item.id!==image.id);
+  image.ready.then(reference=>{if(reference?.upload_id)send('chat_upload_discard',{id:panel.id,upload_id:reference.upload_id});});
+  if(attachmentURLs.delete(image.url))URL.revokeObjectURL(image.url);
 }
 function pasteImages(event){
   const images=[...(event.clipboardData?.files||[])].filter(file=>file.type.startsWith('image/'));
   if(images.length){event.preventDefault();addImages(images);}
 }
 </script>
+{#snippet uploadStatus(image)}
+  <div class="upload-status" class:failed={image.status==='error'} role="status">
+    {#if image.status==='uploading'}<progress value={image.received} max={image.total||1} aria-label={'上传进度 '+image.name}></progress><span>上传中 {Math.round(image.received/(image.total||1)*100)}%</span>
+    {:else if image.status==='error'}<span>{image.error}</span>
+    {:else}<span>已上传</span>{/if}
+  </div>
+{/snippet}
 <article class="pi-workspace" aria-label="Pi 对话">
   <div class="pi-heading"><div class="pi-heading-text"><h1 title={pi.name||'Pi 对话'}>{pi.name||'Pi 对话'}</h1></div>
-    <div class="row"><Button variant="outline" size="sm" aria-label="新对话" disabled={panel.busy} onclick={()=>{act('new');queue=[];}}><Plus size={14}/><span>新对话</span></Button>
+    <div class="row"><Button variant="outline" size="sm" aria-label="新对话" disabled={sending} onclick={()=>{act('new');queue=[];pendingMessages=[];}}><Plus size={14}/><span>新对话</span></Button>
     <Button variant={drawer==='sessions'?'secondary':'ghost'} size="icon" aria-label="会话历史" onclick={()=>drawer=drawer==='sessions'?'':'sessions'}><History size={17}/></Button>
     <Button variant={drawer==='skills'?'secondary':'ghost'} size="icon" aria-label="Skills 与资源" onclick={()=>drawer=drawer==='skills'?'':'skills'}><Sparkles size={17}/></Button>
     <Button variant={drawer==='tools'?'secondary':'ghost'} size="icon" aria-label="工具管理" onclick={()=>drawer=drawer==='tools'?'':'tools'}><Wrench size={17}/></Button>
@@ -52,7 +98,7 @@ function pasteImages(event){
     <div class="conversation-column">
       <div class="conversation-scroll" bind:this={scrollPane} use:followTail={{key:pi.id,active,reset:scrollRequest,onChange:value=>following=value}}>
         <div class="conversation-thread">
-        {#if !messages.length}<div class="chat-welcome"><div class="welcome-actions"><Button variant="outline" onclick={()=>{input='请使用 ls 工具查看当前工作目录。';}}>浏览工作目录</Button><Button variant="outline" onclick={()=>drawer='skills'}>查看 Skills</Button></div></div>{/if}
+        {#if !messages.length&&!pendingMessages.length}<div class="chat-welcome"><div class="welcome-actions"><Button variant="outline" onclick={()=>{input='请使用 ls 工具查看当前工作目录。';}}>浏览工作目录</Button><Button variant="outline" onclick={()=>drawer='skills'}>查看 Skills</Button></div></div>{/if}
         {#each messages as message,index (`${message.timestamp}:${index}`)}
           {#if message.role==='user'}<div class="message user-message"><div class="message-label">你</div><div class="user-bubble"><Markdown text={plain(message.content)}/>{#if Array.isArray(message.content)}<div class="chat-images">{#each message.content.filter(p=>p.type==='image') as image}<img src={`data:${image.mimeType};base64,${image.data}`} alt="对话附件"/>{/each}</div>{/if}</div>
             <div class="message-actions"><Button variant="ghost" size="xs" onclick={()=>copy(plain(message.content),'user:'+index)}><Copy size={12}/>{copied==='user:'+index?'已复制':copied==='error:user:'+index?'复制失败':'复制'}</Button><Button variant="ghost" size="xs" disabled={panel.busy||!entryFor(message)} onclick={()=>act('navigate',{entry:entryFor(message).id})}>编辑并分支</Button></div></div>
@@ -69,6 +115,15 @@ function pasteImages(event){
             {#if plain(message.content)}<div class="message-actions"><Button variant="ghost" size="xs" onclick={()=>copy(plain(message.content),String(index))}>{#if copied===String(index)}<Check size={12}/>{:else}<Copy size={12}/>{/if}{copied===String(index)?'已复制':copied==='error:'+index?'复制失败':'复制'}</Button>{#if entryFor(message)}<Button variant="ghost" size="xs" disabled={panel.busy} onclick={()=>act('navigate',{entry:entryFor(message).id})}><GitBranch size={12}/>从这里分支</Button>{/if}</div>{/if}</div>
           {/if}
         {/each}
+        {#each pendingMessages as message (message.client_id)}
+          <div class="message user-message pending-message" data-client-id={message.client_id}>
+            <div class="message-label">你</div>
+            <div class="user-bubble"><Markdown text={message.text}/>
+              {#if message.images.length}<div class="chat-images">{#each message.images as image}<div class="sent-attachment"><img src={image.url} alt={image.name}/>{@render uploadStatus(image)}</div>{/each}</div>{/if}
+            </div>
+            <div class="delivery-status" role="status">{#if message.error}<span class="error-text">{message.error}</span><Button variant="ghost" size="xs" onclick={()=>retryMessage(message)}>重试发送</Button>{:else}{message.status}{/if}</div>
+          </div>
+        {/each}
         {#if panel.busy}<div class="agent-running"><i class="status-dot pulse"></i>{panel.message}</div>{/if}
         </div>
       </div>
@@ -76,11 +131,11 @@ function pasteImages(event){
         {#if !following}<Button variant="secondary" size="sm" class="follow-button" onclick={()=>scrollRequest++}>回到最新 <ChevronDown size={14}/></Button>{/if}
         {#if queue.length}<div class="queue-note">{#each queue as item}<span>{item.action==='steer'?'引导':'排队'} · {item.text}</span>{/each}</div>{/if}
         <div class="composer">
-          {#if attachments.length}<div class="attachment-strip">{#each attachments as image,index}<div><img src={image.url} alt={image.name}/><button aria-label="移除附件" onclick={()=>attachments=attachments.filter((_,i)=>i!==index)}>×</button></div>{/each}</div>{/if}
+          {#if attachments.length}<div class="attachment-strip">{#each attachments as image (image.id)}<div class="upload-tile"><img src={image.url} alt={image.name}/><button aria-label={'移除附件 '+image.name} onclick={()=>removeAttachment(image)}>×</button>{@render uploadStatus(image)}{#if image.status==='error'}<Button size="xs" variant="ghost" onclick={()=>startUpload(image)}>重传</Button>{/if}</div>{/each}</div>{/if}
           {#if input.startsWith('/')}<div class="slash-menu">{#each (pi.skills||[]).filter(s=>('/skill:'+s.name).includes(input.split(' ')[0])) as skill}<button title={skill.description} onclick={()=>input='/skill:'+skill.name+' '}><Sparkles size={13}/>/skill:{skill.name}</button>{/each}{#each pi.prompts||[] as prompt}<button title={prompt.description} onclick={()=>input='/'+prompt.name+' '}><FileText size={13}/>/{prompt.name}</button>{/each}</div>{/if}
-          <Textarea aria-label="消息输入" placeholder="消息 · / 调用 Skill" enterkeyhint={mobile?'enter':'send'} rows={2} bind:value={input} onpaste={pasteImages} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&(!mobile||e.ctrlKey||e.metaKey)){e.preventDefault();submit(panel.busy?'follow_up':'prompt');}}}/>
+          <Textarea aria-label="消息输入" placeholder="消息 · / 调用 Skill" enterkeyhint={mobile?'enter':'send'} rows={2} bind:value={input} onpaste={pasteImages} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&(!mobile||e.ctrlKey||e.metaKey)){e.preventDefault();submit(sending?'follow_up':'prompt');}}}/>
           <div class="composer-toolbar"><div class="row"><Button variant="ghost" size="icon-sm" aria-label="添加图片" onclick={()=>imageInput.click()}><Paperclip size={17}/></Button><button class="model-caption" aria-label="选择对话模型" onclick={()=>drawer='settings'}><span>{(values.model||'').split('/').at(-1)?.replace('.gguf','')}</span><ChevronDown size={12}/></button></div>
-            <div class="row">{#if panel.busy}<Button variant="ghost" size="sm" disabled={!input.trim()} onclick={()=>submit('steer')}>引导</Button><Button variant="outline" size="sm" disabled={!input.trim()} onclick={()=>submit('follow_up')}>排队</Button><Button variant="destructive" size="icon" aria-label="停止生成" onclick={()=>send('cancel',{id:panel.id})}><Square size={13}/></Button>{:else}<Button size="icon" aria-label="发送消息" disabled={!input.trim()&&!attachments.length} onclick={()=>submit()}><ArrowUp size={18}/></Button>{/if}</div>
+            <div class="row">{#if sending}<Button variant="ghost" size="sm" disabled={!input.trim()&&!attachments.length} onclick={()=>submit('steer')}>引导</Button><Button variant="outline" size="sm" disabled={!input.trim()&&!attachments.length} onclick={()=>submit('follow_up')}>排队</Button><Button variant="destructive" size="icon" aria-label="停止生成" onclick={()=>send('cancel',{id:panel.id})}><Square size={13}/></Button>{:else}<Button size="icon" aria-label="发送消息" disabled={!input.trim()&&!attachments.length} onclick={()=>submit()}><ArrowUp size={18}/></Button>{/if}</div>
           </div>
         </div>
         {#if context?.percent||panel.metadata?.每秒tokens}<div class="composer-footer"><span>{context?.percent?`${context.percent.toFixed(0)}% 上下文 `:''}{panel.metadata?.每秒tokens?panel.metadata.每秒tokens+' tok/s ':''}</span></div>{/if}
@@ -107,3 +162,7 @@ function pasteImages(event){
   </div>
   <input hidden type="file" accept="image/*" multiple bind:this={imageInput} onchange={async()=>{await addImages(imageInput.files);imageInput.value='';}}/>
 </article>
+
+<style>
+.upload-tile{width:96px;min-width:0}.attachment-strip .upload-tile>img{width:96px;height:70px}.upload-status{display:grid;gap:3px;font-size:10px;color:#617081;line-height:1.4;padding-top:5px;overflow-wrap:anywhere}.upload-status progress{width:100%;height:4px;accent-color:#397453}.upload-status.failed{color:#b63b35}.sent-attachment{max-width:180px}.delivery-status{display:flex;justify-content:flex-end;gap:8px;align-items:center;font-size:11px;color:#75808e;padding-top:6px}.pending-message .user-bubble{border-color:#dae2ed}
+</style>

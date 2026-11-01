@@ -20,6 +20,7 @@ from chat_tree import ChatTree
 from image_history import ImageHistory
 from preview_transport import WidgetTransport, jpeg
 from settings_writer import SettingsWriter, configuration_parameters
+from chat_uploads import ChatUploads
 from content_store import enabled, read_bytes, read_text, write_text, open_image, save_image
 
 ROOT = Path(__file__).parent
@@ -240,6 +241,9 @@ class WorkflowSession:
             self.update(phase="cancelled", message="任务已停止，当前结果已保留。")
         except Exception as exc:
             self.update(phase="error", message=f"{type(exc).__name__}: {exc}")
+            if params.get('pi_request', {}).get('client_id'):
+                self.owner.send({'type': 'pi_delivery', 'id': self.id,
+                                 'client_id': params['pi_request']['client_id'], 'error': str(exc)})
             if not self.chat:
                 self.state['error_detail'] = traceback.format_exc()
         finally:
@@ -344,6 +348,7 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.playback = saved.get("playback", {"volume": 0.25, "muted": False})
         self._modules = {}
         self.sessions = {}
+        self.chat_uploads = ChatUploads()
         self.state = {"workflows": [], "panels": [], "message": "", "active": saved.get("active", ""), "model_bindings": self.model_bindings, "playback": self.playback}
         self.on_msg(self._message)
         self.refresh()
@@ -473,6 +478,12 @@ class WorkflowPanel(anywidget.AnyWidget):
     def _message(self, widget, content, buffers):
         try:
             action = content["action"]
+            if action == 'chat_upload':
+                self.send({'type': 'chat_upload_progress', **self.chat_uploads.receive(content)})
+                return
+            if action == 'chat_upload_discard':
+                self.chat_uploads.discard(content['id'], content['upload_id'])
+                return
             if action == 'sync':
                 self.send({'type': 'runtime_snapshot', 'values': {name: getattr(self, name)
                            for name in ('state', 'previews', 'texts', 'results', 'chats', 'files', 'histories')}})
@@ -515,7 +526,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                 return
             session = self.sessions[content["id"]]
             if action == "pi":
-                command = content["command"]
+                command = {**content["command"]}
+                command['images'] = self.chat_uploads.resolve(session.id, command.get('images', []))
                 if command["action"] in ("prompt", "compact"):
                     if not session.state["busy"]:
                         session.start({**content["params"], "pi_request":command})
@@ -581,6 +593,13 @@ class WorkflowPanel(anywidget.AnyWidget):
                 path = self.workflow_dir / session.state["selected"]
                 self.send({"type": "workflow", "name": path.name, "source": self.workflow_sources[path.name]})
         except Exception as exc:
+            if content.get('action') == 'chat_upload':
+                self.send({'type': 'chat_upload_progress', 'id': content['id'],
+                           'upload_id': content['upload_id'], 'error': str(exc)})
+                return
+            if content.get('action') == 'pi' and content['command'].get('client_id'):
+                self.send({'type': 'pi_delivery', 'id': content['id'],
+                           'client_id': content['command']['client_id'], 'error': str(exc)})
             self.state = {**self.state, "message": str(exc)}
             if content.get("action") == "settings":
                 self.state = {**self.state, "settings_result": {"request": content.get("request"), "error": str(exc)}}

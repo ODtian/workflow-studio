@@ -115,6 +115,9 @@ def control(panel, command, params=None):
                         workspace_store.save_files([path])
                     panel.owner.send({"type":"pi_skill_saved", "id":panel.id, "error":record.get("error", "")})
                 if record.get("error"):
+                    if command.get('client_id'):
+                        panel.owner.send({'type': 'pi_delivery', 'id': panel.id,
+                                          'client_id': command['client_id'], 'error': record['error']})
                     panel.update(message=record["error"])
                 return
     finally:

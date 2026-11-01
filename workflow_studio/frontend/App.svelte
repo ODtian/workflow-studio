@@ -6,6 +6,8 @@
   import Dropdown from './ui/Dropdown.svelte';
   import WorkflowView from './WorkflowView.svelte';
   import ChatView from './ChatView.svelte';
+  import ImageHistory from './ImageHistory.svelte';
+  import {createChatUploader} from './chatUpload.js';
   import FilesView from './FilesView.svelte';
   import {download, downloadBuffer} from './bridge.js';
   import {filesForModel, bindingFromValues, parameterFields, fieldValue} from './modelBindings.js';
@@ -19,6 +21,7 @@
   const requestedPreviews = new Set();
   const customPreviewIds = new Set();
   const originalImages = new Map();
+  const originalPending = new Map();
   const thumbnailImages = new Map();
   const comparisonImages = new Map();
   const comparisonPending = new Map();
@@ -52,13 +55,19 @@
   let activePanel = $derived(state.panels.find(p=>p.id===activeId));
   let codeInput;
   const send = (action, data = {}) => model.send({action, ...data});
+  const chatUploader = createChatUploader(send);
+  let gallery = $derived(Object.values(histories).flat().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)));
+  let galleryPanelId = $derived(state.panels.find(panel=>!panel.spec.chat)?.id || state.panels[0]?.id);
   function loadOriginal(id, result) {
     if (originalImages.has(result.name)) return Promise.resolve(originalImages.get(result.name));
-    return new Promise(resolve => {
+    if (originalPending.has(result.name)) return originalPending.get(result.name);
+    const promise = new Promise(resolve => {
       const request = ++imageRequestId;
       imageRequests.set(request, resolve);
       send('image_detail', {id,name:result.name,request});
     });
+    originalPending.set(result.name, promise);
+    return promise;
   }
   function loadThumbnail(id, result) {
     if (thumbnailImages.has(result.name)) return Promise.resolve(thumbnailImages.get(result.name));
@@ -185,7 +194,7 @@
     }
     if (!activeId) activeId = next.active || '';
     if (settingsReady && next.panels.length > state.panels.length) activeId = next.panels.at(-1).id;
-    if (activeId !== '__files__' && !next.panels.some(panel => panel.id === activeId)) activeId = next.panels[0]?.id || '__files__';
+    if (!['__files__','__gallery__'].includes(activeId) && !next.panels.some(panel => panel.id === activeId)) activeId = next.panels[0]?.id || '__files__';
     state = next;
     if (!addWorkflow) addWorkflow = next.workflows[0]?.id || '';
   }
@@ -253,6 +262,8 @@
     const runtimeHandlers = {state:updateState, previews:updatePreviews, texts:updateTexts,
       results:updateResults, histories:updateHistories, chats:updateChats, files:updateFiles};
     const custom = (msg, buffers) => {
+      if (msg.type === 'chat_upload_progress') chatUploader.receive(msg);
+      if (msg.type === 'pi_delivery') pi[msg.id] = {...pi[msg.id], delivery:msg};
       if (msg.type === 'runtime_state') runtimeHandlers[msg.name](msg.value);
       if (msg.type === 'runtime_snapshot') {
         modelBindings = msg.values.state.model_bindings;
@@ -315,6 +326,7 @@
         const image = {url:URL.createObjectURL(new Blob([buffers[0]], {type:msg.mime || (thumbnail || comparison ? 'image/jpeg' : 'image/png')}))};
         (comparison ? comparisonImages : thumbnail ? thumbnailImages : originalImages).set(msg.name, image);
         if (comparison) comparisonPending.delete(msg.name);
+        if (!thumbnail && !comparison) originalPending.delete(msg.name);
         imageRequests.get(msg.request)(image);
         imageRequests.delete(msg.request);
       }
@@ -328,6 +340,7 @@
       saveSettings();
       document.removeEventListener('visibilitychange', visibility);
       model.off('msg:custom', custom);
+      chatUploader.close();
       for (const url of previewURLs.values()) if (url.startsWith('blob:')) URL.revokeObjectURL(url);
       for (const image of originalImages.values()) URL.revokeObjectURL(image.url);
       for (const image of thumbnailImages.values()) URL.revokeObjectURL(image.url);
@@ -347,13 +360,14 @@
         </button>
       {/each}
       <button class:active={activeId==='__files__'} onclick={()=>{activeId='__files__';toolsOpen=false;}}><FolderOpen size={17}/><span>文件与传输</span></button>
+      <button class:active={activeId==='__gallery__'} onclick={()=>{activeId='__gallery__';toolsOpen=false;}}><Image size={17}/><span>生图 Gallery</span></button>
     </nav>
     <div class="sidebar-bottom"><button class:active={toolsOpen} onclick={()=>toolsOpen=!toolsOpen}><Settings2 size={17}/>工作流管理</button></div>
   </aside>
   <div class="app-main">
     <header class="app-topbar">
       <Button class="sidebar-toggle" variant="ghost" size="icon" aria-label="切换侧栏" onclick={()=>sidebarOpen=!sidebarOpen}>{#if sidebarOpen}<PanelLeftClose size={17}/>{:else}<PanelLeftOpen size={17}/>{/if}</Button>
-      <div class="breadcrumb"><strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
+      <div class="breadcrumb"><strong>{toolsOpen?'工作流管理':activeId==='__gallery__'?'生图 Gallery':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
       <nav class="mobile-navigation" aria-label="手机工作空间导航">
         {#each state.panels as panel (panel.id)}
           <button class:active={!toolsOpen&&activeId===panel.id} aria-current={!toolsOpen&&activeId===panel.id?'page':undefined} onclick={()=>{activeId=panel.id;toolsOpen=false;}}>
@@ -361,6 +375,7 @@
           </button>
         {/each}
         <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}>文件</button>
+        <button class:active={!toolsOpen&&activeId==='__gallery__'} aria-current={!toolsOpen&&activeId==='__gallery__'?'page':undefined} onclick={()=>{activeId='__gallery__';toolsOpen=false;}}>图集</button>
         <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}>管理</button>
       </nav>
       <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
@@ -378,14 +393,18 @@
       {#each state.panels as panel (panel.id)}
         <section class="panel-page" hidden={toolsOpen || activeId!==panel.id}>
           {#if panel.spec.chat}
-            <ChatView {panel} {mobile} active={activeId===panel.id && pageVisible} bind:values={drafts[panel.id]} pi={pi[panel.id] || {messages:[]}} {send} targets={targetsFor(panel)} onTransfer={transfer}/>
+            <ChatView {panel} {mobile} active={activeId===panel.id && pageVisible} bind:values={drafts[panel.id]} pi={pi[panel.id] || {messages:[]}} {send} uploadImage={(file,progress)=>chatUploader.upload(panel.id,file,progress)} targets={targetsFor(panel)} onTransfer={transfer}/>
           {:else}
             <WorkflowView {panel} bind:values={drafts[panel.id]} bind:playback preview={previews[panel.id]||''} previewInfo={previewInfo[panel.id]||{}} text={texts[panel.id]||''} results={results[panel.id]||[]} {send} history={histories[panel.selected]||[]} loadThumbnail={r=>loadThumbnail(panel.id,r)} loadPreview={r=>loadPreview(panel.id,r)} targets={targetsFor(panel)} onTransfer={transfer} loadOriginal={r=>loadOriginal(panel.id,r)}/>
           {/if}
         </section>
       {/each}
       <section class="panel-page" hidden={toolsOpen || activeId!=='__files__'}><FilesView {files} {send}/></section>
+      <section class="panel-page standalone-gallery" hidden={toolsOpen || activeId!=='__gallery__'}>
+        <ImageHistory history={gallery} bind:playback loadThumbnail={r=>loadThumbnail(galleryPanelId,r)} loadPreview={r=>loadPreview(galleryPanelId,r)} loadOriginal={r=>loadOriginal(galleryPanelId,r)} download={r=>send('download',{id:galleryPanelId,name:r.name})}/>
+      </section>
     </div>
   </div>
   <input type="file" accept=".py" hidden bind:this={codeInput} onchange={async()=>{const file=codeInput.files[0];if(file)send('import',{name:file.name,source:await file.text()});codeInput.value='';}}/>
 </main>
+<style>.standalone-gallery{overflow:auto;padding:24px}@media(max-width:760px){.standalone-gallery{padding:12px}}</style>
