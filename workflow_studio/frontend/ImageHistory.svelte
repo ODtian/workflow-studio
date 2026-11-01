@@ -25,13 +25,13 @@
     return()=>{active=false;};
   });
 </script>
-<section class="history" class:expanded aria-label="生图 Gallery">
-  <div class="gallery-toolbar"><h3>Gallery <Badge variant="secondary">{history.length}</Badge></h3>
+<section class="history" class:expanded aria-label="历史生成记录">
+  <div class="gallery-toolbar"><h3>生成历史 <Badge variant="secondary">{history.length}</Badge></h3>
     <span class="selection-count" role="status">已选 {selected.length} 张</span>
     <Button variant="outline" size="sm" disabled={selected.length<2} onclick={()=>comparing=true}>对比所选 {selected.length?selected.length+' 张':''}</Button>
     {#if selected.length}<Button variant="ghost" size="sm" onclick={()=>{selectedNames=[];comparing=false;}}>清空选择</Button>{/if}
     {#if comparing}<Button variant="ghost" size="sm" onclick={()=>comparing=false}>返回图片墙</Button>{/if}
-    <Button variant="ghost" size="icon-sm" aria-label={expanded?'收起 Gallery':'全屏 Gallery'} onclick={()=>expanded=!expanded}>{#if expanded}<X size={15}/>{:else}<Maximize2 size={15}/>{/if}</Button>
+    <Button variant="ghost" size="icon-sm" aria-label={expanded?'收起历史':'全屏历史'} onclick={()=>expanded=!expanded}>{#if expanded}<X size={15}/>{:else}<Maximize2 size={15}/>{/if}</Button>
   </div>
   {#if videoURL}<div class="history-video"><video src={videoURL} bind:volume={playback.volume} bind:muted={playback.muted} controls playsinline preload="metadata" aria-label={'历史视频 '+videoName}></video><Button size="icon-sm" variant="ghost" aria-label="关闭历史视频" onclick={()=>{videoURL='';videoName='';}}><X size={15}/></Button></div>{/if}
   {#if comparing&&selected.length>1}<ImageComparison entries={selected} {loadOriginal} {loadPreview} {expanded} {thumbnails}/>{/if}

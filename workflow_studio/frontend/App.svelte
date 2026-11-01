@@ -6,7 +6,6 @@
   import Dropdown from './ui/Dropdown.svelte';
   import WorkflowView from './WorkflowView.svelte';
   import ChatView from './ChatView.svelte';
-  import ImageHistory from './ImageHistory.svelte';
   import {createChatUploader} from './chatUpload.js';
   import FilesView from './FilesView.svelte';
   import {download, downloadBuffer} from './bridge.js';
@@ -56,8 +55,6 @@
   let codeInput;
   const send = (action, data = {}) => model.send({action, ...data});
   const chatUploader = createChatUploader(send);
-  let gallery = $derived(Object.values(histories).flat().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)));
-  let galleryPanelId = $derived(state.panels.find(panel=>!panel.spec.chat)?.id || state.panels[0]?.id);
   function loadOriginal(id, result) {
     if (originalImages.has(result.name)) return Promise.resolve(originalImages.get(result.name));
     if (originalPending.has(result.name)) return originalPending.get(result.name);
@@ -194,7 +191,7 @@
     }
     if (!activeId) activeId = next.active || '';
     if (settingsReady && next.panels.length > state.panels.length) activeId = next.panels.at(-1).id;
-    if (!['__files__','__gallery__'].includes(activeId) && !next.panels.some(panel => panel.id === activeId)) activeId = next.panels[0]?.id || '__files__';
+    if (activeId !== '__files__' && !next.panels.some(panel => panel.id === activeId)) activeId = next.panels[0]?.id || '__files__';
     state = next;
     if (!addWorkflow) addWorkflow = next.workflows[0]?.id || '';
   }
@@ -360,14 +357,13 @@
         </button>
       {/each}
       <button class:active={activeId==='__files__'} onclick={()=>{activeId='__files__';toolsOpen=false;}}><FolderOpen size={17}/><span>文件与传输</span></button>
-      <button class:active={activeId==='__gallery__'} onclick={()=>{activeId='__gallery__';toolsOpen=false;}}><Image size={17}/><span>生图 Gallery</span></button>
     </nav>
     <div class="sidebar-bottom"><button class:active={toolsOpen} onclick={()=>toolsOpen=!toolsOpen}><Settings2 size={17}/>工作流管理</button></div>
   </aside>
   <div class="app-main">
     <header class="app-topbar">
       <Button class="sidebar-toggle" variant="ghost" size="icon" aria-label="切换侧栏" onclick={()=>sidebarOpen=!sidebarOpen}>{#if sidebarOpen}<PanelLeftClose size={17}/>{:else}<PanelLeftOpen size={17}/>{/if}</Button>
-      <div class="breadcrumb"><strong>{toolsOpen?'工作流管理':activeId==='__gallery__'?'生图 Gallery':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
+      <div class="breadcrumb"><strong>{toolsOpen?'工作流管理':activeId==='__files__'?'文件与传输':activePanel?.spec.chat?'Pi 对话':activePanel?.spec.tab_name || '生成工作台'}</strong></div>
       <nav class="mobile-navigation" aria-label="手机工作空间导航">
         {#each state.panels as panel (panel.id)}
           <button class:active={!toolsOpen&&activeId===panel.id} aria-current={!toolsOpen&&activeId===panel.id?'page':undefined} onclick={()=>{activeId=panel.id;toolsOpen=false;}}>
@@ -375,7 +371,6 @@
           </button>
         {/each}
         <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}>文件</button>
-        <button class:active={!toolsOpen&&activeId==='__gallery__'} aria-current={!toolsOpen&&activeId==='__gallery__'?'page':undefined} onclick={()=>{activeId='__gallery__';toolsOpen=false;}}>图集</button>
         <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}>管理</button>
       </nav>
       <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
@@ -400,11 +395,7 @@
         </section>
       {/each}
       <section class="panel-page" hidden={toolsOpen || activeId!=='__files__'}><FilesView {files} {send}/></section>
-      <section class="panel-page standalone-gallery" hidden={toolsOpen || activeId!=='__gallery__'}>
-        <ImageHistory history={gallery} bind:playback loadThumbnail={r=>loadThumbnail(galleryPanelId,r)} loadPreview={r=>loadPreview(galleryPanelId,r)} loadOriginal={r=>loadOriginal(galleryPanelId,r)} download={r=>send('download',{id:galleryPanelId,name:r.name})}/>
-      </section>
     </div>
   </div>
   <input type="file" accept=".py" hidden bind:this={codeInput} onchange={async()=>{const file=codeInput.files[0];if(file)send('import',{name:file.name,source:await file.text()});codeInput.value='';}}/>
 </main>
-<style>.standalone-gallery{overflow:auto;padding:24px}@media(max-width:760px){.standalone-gallery{padding:12px}}</style>
