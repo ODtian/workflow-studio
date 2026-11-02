@@ -1,4 +1,4 @@
-"""Prepare previews off the inference thread and send each frame once."""
+"""Encode previews off the inference thread and retain the latest for reconnects."""
 from collections import deque
 import io
 from pathlib import Path
@@ -32,6 +32,7 @@ class WidgetTransport:
         self.latest = {}
         self.messages = deque()
         self.frames = {}
+        self.saved_frames = {}
         self.jobs = {}
         self.last_error = None
         self.sent_frames = 0
@@ -64,6 +65,14 @@ class WidgetTransport:
             self.jobs[panel_id, response['request'] if response else None] = source, video, final, run_id, started, response
         self.preview_ready.set()
 
+    def replay_previews(self):
+        with self.lock:
+            for panel_id, (frame, buffers) in self.saved_frames.items():
+                session = self.owner.sessions.get(panel_id)
+                if session is not None and frame['run_id'] == session.state.get('run_id'):
+                    self.frames.setdefault((panel_id, None), (frame, buffers))
+        self.ready.set()
+
     def _encode(self):
         while True:
             self.preview_ready.wait()
@@ -90,6 +99,8 @@ class WidgetTransport:
                     if run_id and session.state.get('run_id') != run_id:
                         continue
                     self.frames[panel_id, request] = frame, [data]
+                    if response is None:
+                        self.saved_frames[panel_id] = frame, [data]
                 self.ready.set()
 
     def _send(self):
@@ -122,6 +133,7 @@ class WidgetTransport:
             self.closed = True
             self.jobs.clear()
             self.frames.clear()
+            self.saved_frames.clear()
             self.messages.clear()
         self.ready.set()
         self.preview_ready.set()

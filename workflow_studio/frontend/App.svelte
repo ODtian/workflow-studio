@@ -240,10 +240,21 @@
     updateCompact();
     compact.addEventListener('change', updateCompact);
     const scanModels = () => {if (!document.hidden) send('scan_models');};
-    const visibility = () => {pageVisible = !document.hidden;scanModels();if(document.hidden)saveSettings();};
+    let syncPending = true;
+    const syncRuntime = () => {if (!document.hidden && syncPending) send('sync');};
+    const visibility = () => {
+      pageVisible = !document.hidden;
+      if (pageVisible) {
+        syncPending = true;
+        syncRuntime();
+        scanModels();
+      } else saveSettings();
+    };
     const modelTimer = setInterval(scanModels, 5000);
-    const settingsTimer = setInterval(saveSettings, 1500);
+    const settingsTimer = setInterval(() => {saveSettings();syncRuntime();}, 1500);
     document.addEventListener('visibilitychange', visibility);
+    window.addEventListener('pageshow', visibility);
+    window.addEventListener('online', visibility);
     scanModels();
     const updateTexts = value => texts = value;
     const updateResults = value => results = value;
@@ -263,11 +274,17 @@
       if (msg.type === 'pi_delivery') pi[msg.id] = {...pi[msg.id], delivery:msg};
       if (msg.type === 'runtime_state') runtimeHandlers[msg.name](msg.value);
       if (msg.type === 'runtime_snapshot') {
-        modelBindings = msg.values.state.model_bindings;
-        playback = msg.values.state.playback || {volume:0.25, muted:false};
+        if (!settingsReady) {
+          modelBindings = msg.values.state.model_bindings;
+          playback = msg.values.state.playback || {volume:0.25, muted:false};
+        }
         for (const [name,value] of Object.entries(msg.values)) runtimeHandlers[name](value);
-        submittedSettingsSnapshot = settingsSnapshot;
-        settingsReady = true;
+        if (!settingsReady) {
+          submittedSettingsSnapshot = settingsSnapshot;
+          settingsReady = true;
+        }
+        requestedPreviews.clear();
+        syncPending = false;
       }
       if (msg.type === 'settings_saved' && msg.request === settingsRequest) {
         settingsNotice = msg.error ? '设置保存失败' : '设置已保存';
@@ -329,13 +346,15 @@
       }
     };
     model.on('msg:custom', custom);
-    send('sync');
+    syncRuntime();
     return () => {
       compact.removeEventListener('change', updateCompact);
       clearInterval(modelTimer);
       clearInterval(settingsTimer);
       saveSettings();
       document.removeEventListener('visibilitychange', visibility);
+      window.removeEventListener('pageshow', visibility);
+      window.removeEventListener('online', visibility);
       model.off('msg:custom', custom);
       chatUploader.close();
       for (const url of previewURLs.values()) if (url.startsWith('blob:')) URL.revokeObjectURL(url);

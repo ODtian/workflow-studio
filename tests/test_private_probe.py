@@ -263,13 +263,16 @@ class PrivateProbeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             transport = secrets.token_bytes(32)
             preview_received = threading.Event()
+            messages = []
 
             def capture(owner, packet, **kwargs):
                 if packet.get('type') != 'sealed' or packet.get('client') != 'owner':
                     return
                 raw = AESGCM(transport).decrypt(base64.b64decode(packet['nonce']),
                     base64.b64decode(packet['data']), PROTOCOL + b':owner:s2c')
-                if json.loads(raw)['content']['type'] == 'preview_frame':
+                message = json.loads(raw)
+                messages.append(message)
+                if message['content']['type'] == 'preview_frame' and message['content']['final']:
                     preview_received.set()
 
             with patch('anywidget.AnyWidget.send', side_effect=capture):
@@ -284,6 +287,15 @@ class PrivateProbeTest(unittest.TestCase):
                 session.execute(widget.runtime.load('image_grade.py'), params, threading.Event())
                 self.assertEqual(session.state['phase'], 'complete')
                 self.assertTrue(preview_received.wait(timeout=3))
+                first_frame = next(m for m in reversed(messages) if m['content']['type'] == 'preview_frame')
+                preview_received.clear()
+                session.state = {**session.state, 'message': '同步最新进度'}
+                widget.runtime.receive({'action': 'sync'})
+                self.assertTrue(preview_received.wait(timeout=3))
+                self.assertEqual(next(m for m in reversed(messages) if m['content']['type'] == 'preview_frame'), first_frame)
+                snapshot = next(m['content'] for m in messages if m['content']['type'] == 'runtime_snapshot')
+                resumed = next(p for p in snapshot['values']['state']['panels'] if p['id'] == session.id)
+                self.assertEqual(resumed['message'], '同步最新进度')
                 output = next(widget.output_dir.glob('*.png'))
                 self.assertTrue(output.read_bytes().startswith(ENCRYPTED_MAGIC))
                 self.assertEqual(open_image(output).size, (4, 4))

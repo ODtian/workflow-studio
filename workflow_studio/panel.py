@@ -485,8 +485,11 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.chat_uploads.discard(content['id'], content['upload_id'])
                 return
             if action == 'sync':
-                self.send({'type': 'runtime_snapshot', 'values': {name: getattr(self, name)
-                           for name in ('state', 'previews', 'texts', 'results', 'chats', 'files', 'histories')}})
+                values = {name: getattr(self, name)
+                          for name in ('state', 'previews', 'texts', 'results', 'chats', 'files', 'histories')}
+                values['state'] = {**self.state, 'panels': [session.state for session in self.sessions.values()]}
+                self.send({'type': 'runtime_snapshot', 'values': values})
+                self.transport.replay_previews()
                 return
             if action == "files":
                 self.files_bridge.receive(content["command"])
