@@ -26,5 +26,5 @@
 </script>
 <button class="zoom-surface" type="button" bind:this={surface} aria-label={label} onpointerdown={down} onpointermove={move} onpointerup={event=>pointers.delete(event.pointerId)} onpointercancel={event=>pointers.delete(event.pointerId)} onkeydown={key} ondblclick={()=>onchange(view.zoom>1?{zoom:1,x:0,y:0}:{zoom:2,x:0,y:0})}>{@render children()}</button>
 <style>
-.zoom-surface{position:relative;display:block;width:100%;height:100%;min-height:220px;flex:1;border:0;padding:0;overflow:hidden;background:#e9edf1;touch-action:none;cursor:grab;color:#718092}.zoom-surface:active{cursor:grabbing}.zoom-surface:focus-visible{outline:2px solid #809a8b;outline-offset:-2px}
+.zoom-surface{position:relative;display:block;width:100%;height:100%;min-height:220px;flex:1;border:0;padding:0;overflow:hidden;background:var(--preview-background);touch-action:none;cursor:grab;color:var(--muted-foreground)}.zoom-surface:active{cursor:grabbing}.zoom-surface:focus-visible{outline:2px solid #809a8b;outline-offset:-2px}
 </style>

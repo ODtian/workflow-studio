@@ -164,5 +164,5 @@ function pasteImages(event){
 </article>
 
 <style>
-.upload-tile{width:96px;min-width:0}.attachment-strip .upload-tile>img{width:96px;height:70px}.upload-status{display:grid;gap:3px;font-size:10px;color:#617081;line-height:1.4;padding-top:5px;overflow-wrap:anywhere}.upload-status progress{width:100%;height:4px;accent-color:#397453}.upload-status.failed{color:#b63b35}.sent-attachment{max-width:180px}.delivery-status{display:flex;justify-content:flex-end;gap:8px;align-items:center;font-size:11px;color:#75808e;padding-top:6px}.pending-message .user-bubble{border-color:#dae2ed}
+.upload-tile{width:96px;min-width:0}.attachment-strip .upload-tile>img{width:96px;height:70px}.upload-status{display:grid;gap:3px;font-size:10px;color:var(--text-secondary);line-height:1.4;padding-top:5px;overflow-wrap:anywhere}.upload-status progress{width:100%;height:4px;accent-color:var(--success)}.upload-status.failed{color:var(--destructive)}.sent-attachment{max-width:180px}.delivery-status{display:flex;justify-content:flex-end;gap:8px;align-items:center;font-size:11px;color:var(--muted-foreground);padding-top:6px}.pending-message .user-bubble{border-color:var(--border)}
 </style>

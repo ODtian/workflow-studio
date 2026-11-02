@@ -2,15 +2,19 @@ import {mount, unmount} from 'svelte';
 import App from './App.svelte';
 import './theme.css';
 import './mobile.css';
+import {watchColorTheme} from './colorTheme.js';
+export {watchColorTheme, setColorTheme} from './colorTheme.js';
 
 export function render({model, el}) {
   const host = document.createElement('div');
   host.className = 'workflow-studio';
+  const stopTheme = watchColorTheme(host);
   el.append(host);
   const shadow = host.attachShadow({mode: 'open'});
   const style = document.createElement('style');
   style.textContent = GRADIO_COMPONENT_CSS.replaceAll(':root', ':host') +
-    ':host{display:block;width:100%;color-scheme:light}';
+    ':host{display:block;width:100%;background:var(--background)}' +
+    ':host(.studio-expanded){position:fixed;inset:0;z-index:1000;overflow:hidden}';
   shadow.append(style);
   let expanded = true;
   const viewport = window.visualViewport;
@@ -25,12 +29,13 @@ export function render({model, el}) {
     host.dataset.keyboardOpen = String(compact.matches && window.innerHeight-height>120);
   };
   const place = () => {
+    host.classList.toggle('studio-expanded', expanded);
     if (expanded) {
       document.body.append(host);
-      host.style.cssText = 'position:fixed;inset:0;z-index:1000;overflow:hidden;background:#fafafa;';
     } else {
       el.append(host);
-      host.style.cssText = '';
+      host.style.top = '';
+      host.style.height = '';
     }
     updateViewport();
   };
@@ -44,6 +49,7 @@ export function render({model, el}) {
     return expanded;
   }}});
   return () => {
+    stopTheme();
     window.removeEventListener('resize', updateViewport);
     viewport?.removeEventListener('resize', updateViewport);
     viewport?.removeEventListener('scroll', updateViewport);

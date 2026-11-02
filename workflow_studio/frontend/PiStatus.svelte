@@ -14,8 +14,8 @@
 </div>
 
 <style>
-  .pi-status{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:9px 18px;border-bottom:1px solid #eceef1;color:#75808e;font-size:11px;}
-  .pi-mark{background:#202b36;color:white;font-size:14px;font-weight:650;border-radius:5px;padding:1px 7px;}
-  .state{color:#4d6a58;}.state.working{color:#ae662f;}.spacer{flex:1;}
-  .session{font-family:ui-monospace,monospace;color:#8c949e;}
+  .pi-status{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:9px 18px;border-bottom:1px solid var(--border);color:var(--muted-foreground);font-size:11px;}
+  .pi-mark{background:var(--primary);color:var(--primary-foreground);font-size:14px;font-weight:650;border-radius:5px;padding:1px 7px;}
+  .state{color:var(--success);}.state.working{color:var(--warning);}.spacer{flex:1;}
+  .session{font-family:ui-monospace,monospace;color:var(--muted-foreground);}
 </style>

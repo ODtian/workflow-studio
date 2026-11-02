@@ -4,7 +4,20 @@ const encode = data => btoa(Array.from(new Uint8Array(data), x => String.fromCha
 const decode = data => Uint8Array.from(atob(data), x => x.charCodeAt(0));
 
 export async function render({model, el}) {
+  const url = URL.createObjectURL(new Blob([STUDIO_SOURCE], {type: 'text/javascript'}));
+  const studio = await import(url);
+  URL.revokeObjectURL(url);
   const form = document.createElement('form');
+  const themeButton = document.createElement('button');
+  themeButton.type = 'button';
+  let colorTheme;
+  const stopTheme = studio.watchColorTheme(el, theme => {
+    colorTheme = theme;
+    themeButton.textContent = theme === 'dark' ? '☀ 浅色' : '☾ 暗色';
+    themeButton.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到暗色主题');
+  });
+  themeButton.onclick = () => studio.setColorTheme(colorTheme === 'dark' ? 'light' : 'dark');
+  themeButton.style.cssText = 'justify-self:end;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--secondary);color:var(--foreground);cursor:pointer';
   const label = document.createElement('label');
   const setup = model.get('password_setup');
   label.textContent = setup ? '设置工作台密码' : '工作台密码';
@@ -25,17 +38,18 @@ export async function render({model, el}) {
   button.textContent = setup ? '设置密码并打开' : '解锁工作台';
   const notice = document.createElement('p');
   notice.setAttribute('role', 'status');
-  form.style.cssText = 'display:grid;gap:14px;max-width:440px;margin:24px;padding:24px;border:1px solid #d8dee7;border-radius:12px;background:#fff;color:#202830';
+  form.style.cssText = 'display:grid;gap:14px;max-width:440px;margin:24px;padding:24px;border:1px solid var(--border);border-radius:12px;background:var(--background);color:var(--foreground)';
   for (const field of [passwordField, confirmation]) {
-    field.style.cssText = 'display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:10px;border:1px solid #b8c1ce;border-radius:6px;background:#fff;color:#202830';
+    field.style.cssText = 'display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--muted);color:var(--foreground)';
   }
   button.style.cssText = 'padding:10px 16px;border:0;border-radius:6px;background:#397453;color:#fff;cursor:pointer';
   label.append(passwordField);
-  form.append(label);
+  form.append(themeButton, label);
   if (setup) form.append(confirmationLabel);
   form.append(button, notice);
   el.append(form);
   let client, sessionKey, dispose, securityTools, passwordDialog, openPasswordDialog;
+  let stopPasswordTheme, stopSecurityTheme;
   let passwordRequest, passwordStatus, passwordChangeNotice, savePassword;
   let outgoing = Promise.resolve();
   let incoming = Promise.resolve();
@@ -81,16 +95,15 @@ export async function render({model, el}) {
         passwordField.value = '';
         confirmation.value = '';
         form.remove();
-        const url = URL.createObjectURL(new Blob([STUDIO_SOURCE], {type: 'text/javascript'}));
-        const studio = await import(url);
-        URL.revokeObjectURL(url);
         dispose = studio.render({model: adapter, el});
         securityTools = document.createElement('div');
         securityTools.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2001;display:flex;gap:8px;align-items:flex-end';
+        stopSecurityTheme = studio.watchColorTheme(securityTools);
         passwordStatus = document.createElement('span');
         passwordStatus.setAttribute('role', 'status');
         passwordDialog = document.createElement('dialog');
-        passwordDialog.style.cssText = 'margin:auto;width:380px;max-width:90vw;padding:24px;border:1px solid #d8dee7;border-radius:12px;background:#fff;color:#202830';
+        passwordDialog.style.cssText = 'margin:auto;width:380px;max-width:90vw;padding:24px;border:1px solid var(--border);border-radius:12px;background:var(--background);color:var(--foreground)';
+        stopPasswordTheme = studio.watchColorTheme(passwordDialog);
         const passwordForm = document.createElement('form');
         passwordForm.style.cssText = 'display:grid;gap:14px';
         const title = document.createElement('h3');
@@ -103,7 +116,7 @@ export async function render({model, el}) {
           field.autocomplete = autocomplete;
           field.required = true;
           field.setAttribute('aria-label', name);
-          field.style.cssText = 'display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:10px;border:1px solid #b8c1ce;border-radius:6px;background:#fff;color:#202830';
+          field.style.cssText = 'display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--muted);color:var(--foreground)';
           fieldLabel.append(field);
           passwordForm.append(fieldLabel);
           return field;
@@ -193,7 +206,7 @@ export async function render({model, el}) {
     transportKey.fill(0);
     model.send({type: 'unlock', client, wrapped: encode(wrapped)});
   };
-  return () => {dispose?.(); securityTools?.remove(); passwordDialog?.remove(); model.off('msg:custom', receive); form.remove();};
+  return () => {stopTheme(); stopPasswordTheme?.(); stopSecurityTheme?.(); dispose?.(); securityTools?.remove(); passwordDialog?.remove(); model.off('msg:custom', receive); form.remove();};
 }
 
 export default {render};

@@ -38,4 +38,4 @@ async function replaceFromClipboard(){
 {:else}<Input bind:value placeholder={field.placeholder||''} disabled={busy}/>{/if}
 </label>
 {/if}
-<style>.field-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}.field-heading label{font-size:12px}.switch-field{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;min-height:32px}.switch-field>label{flex:1;min-width:0;font-size:12px;font-weight:500;color:#85909f}.upload-preview{max-height:180px;width:100%;object-fit:contain;border-radius:8px}</style>
+<style>.field-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}.field-heading label{font-size:12px}.switch-field{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;min-height:32px}.switch-field>label{flex:1;min-width:0;font-size:12px;font-weight:500;color:var(--muted-foreground)}.upload-preview{max-height:180px;width:100%;object-fit:contain;border-radius:8px}</style>

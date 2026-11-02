@@ -2,7 +2,8 @@
   import {onMount, untrack} from 'svelte';
   import {Button} from '$lib/components/ui/button';
   import {Badge} from '$lib/components/ui/badge';
-  import {MessageSquare, Image, FolderOpen, Settings2, ArrowUpRight, Plus, RefreshCw, Upload, PanelLeftClose, PanelLeftOpen} from '@lucide/svelte';
+  import {MessageSquare, Image, FolderOpen, Settings2, ArrowUpRight, Plus, RefreshCw, Upload, PanelLeftClose, PanelLeftOpen, Sun, Moon} from '@lucide/svelte';
+  import {readColorTheme, setColorTheme, watchColorTheme} from './colorTheme.js';
   import Dropdown from './ui/Dropdown.svelte';
   import WorkflowView from './WorkflowView.svelte';
   import ChatView from './ChatView.svelte';
@@ -12,6 +13,8 @@
   import {filesForModel, bindingFromValues, parameterFields, fieldValue} from './modelBindings.js';
 
   let {model, expand, initialExpanded = true} = $props();
+  let studioElement;
+  let darkTheme = $state(readColorTheme() === 'dark');
   let state = $state({workflows:[], panels:[], message:'', active:'', model_bindings:{}});
   let previews = $state({});
   let previewInfo = $state({});
@@ -235,6 +238,7 @@
   }
 
   onMount(() => {
+    const stopTheme = watchColorTheme(studioElement, theme => darkTheme = theme === 'dark');
     const compact = window.matchMedia('(max-width:760px), (max-width:1000px) and (max-height:500px)');
     const updateCompact = () => mobile = compact.matches;
     updateCompact();
@@ -348,6 +352,7 @@
     model.on('msg:custom', custom);
     syncRuntime();
     return () => {
+      stopTheme();
       compact.removeEventListener('change', updateCompact);
       clearInterval(modelTimer);
       clearInterval(settingsTimer);
@@ -365,7 +370,7 @@
   });
 </script>
 
-<main class="studio" class:expanded class:nav-closed={!sidebarOpen}>
+<main bind:this={studioElement} class="studio" class:expanded class:nav-closed={!sidebarOpen}>
   <aside class="app-sidebar">
     <nav aria-label="工作空间导航">
       {#each state.panels as panel (panel.id)}
@@ -392,7 +397,11 @@
         <button class:active={!toolsOpen&&activeId==='__files__'} aria-current={!toolsOpen&&activeId==='__files__'?'page':undefined} onclick={()=>{activeId='__files__';toolsOpen=false;}}>文件</button>
         <button class:active={toolsOpen} aria-current={toolsOpen?'page':undefined} onclick={()=>toolsOpen=!toolsOpen}>管理</button>
       </nav>
-      <div class="topbar-right">{#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}<Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button></div>
+      <div class="topbar-right">
+        {#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}
+        <Button size="icon-sm" variant="ghost" aria-label={darkTheme?'切换到浅色主题':'切换到暗色主题'} title={darkTheme?'切换到浅色主题':'切换到暗色主题'} onclick={()=>setColorTheme(darkTheme?'light':'dark')}>{#if darkTheme}<Sun size={16}/>{:else}<Moon size={16}/>{/if}</Button>
+        <Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button>
+      </div>
     </header>
     {#if !settingsReady}<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
