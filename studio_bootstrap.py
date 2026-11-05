@@ -26,6 +26,11 @@ def get_studio(workspace=None, panel_factory=None):
     os.environ['WORKFLOW_GZIP_CONTENT'] = '1'
     os.environ['WORKFLOW_MODELS_DIR'] = str(Path(tempfile.gettempdir()) / 'molab-comfy-runtime/models')
     os.environ['WORKFLOW_COMFY_ROOT'] = str(Path(tempfile.gettempdir()) / 'workflow-studio-comfy-core-0.42.0')
+    integration = importlib.util.find_spec('abyss_integration')
+    if integration is not None:
+        for directory in integration.submodule_search_locations or ():
+            if directory not in sys.path:
+                sys.path.insert(0, directory)
     import workspace_store
     output = workspace_store.CONTENT_DIR / 'media'
     os.environ['WORKFLOW_OUTPUT_DIR'] = str(output)
