@@ -177,7 +177,8 @@ def load_model(params, ctx):
     key = (str(path), path.stat().st_mtime_ns, int(params["n_ctx"]), int(params["n_gpu_layers"]),
            int(params["n_batch"]), params["chat_format"], str(projector) if projector else "", "embedded" if mtp == "embedded" else str(draft) if draft else "", int(params.get("speculative_tokens", 2)))
     if key != _loaded_key:
-        release()
+        from model_residency import release as release_models
+        release_models("llama")
         if "comfy.model_management" in sys.modules:
             sys.modules["comfy.model_management"].soft_empty_cache()
         ctx.status("加载 GGUF · " + path.name)
@@ -297,5 +298,3 @@ def run_llama(params, ctx):
         stream.close()
         if params["residency"] == "release":
             release()
-
-

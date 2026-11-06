@@ -36,8 +36,9 @@ function nativeMessages(context) {
     return {role:m.role,content:images.length?[...images,{type:'text',text}]:text,...(calls.length?{tool_calls:calls}:{})};
   })];
 }
-function nativeStream(model,context) {
+function nativeStream(model,context,options={}) {
   const stream=createAssistantMessageEventStream(),id=++sequence;
+  const signal=options.signal;
   const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],usage:usage(),stopReason:'stop',timestamp:Date.now()};
   const indexes=new Map();stream.push({type:'start',partial:message});
   pending.set(id,record=>{
@@ -50,7 +51,12 @@ function nativeStream(model,context) {
       }return;
     }
     pending.delete(id);
-    if(record.type==='model_error'){message.stopReason='error';message.errorMessage=record.error;stream.push({type:'error',reason:'error',error:message});}
+    signal?.removeEventListener('abort',abort);
+    if(record.type==='model_error'||record.type==='model_aborted'){
+      message.stopReason=record.type==='model_aborted'?'aborted':'error';
+      if(record.error)message.errorMessage=record.error;
+      stream.push({type:'error',reason:message.stopReason,error:message});
+    }
     else {
       for(const [name,index] of indexes){const type=name==='content'?'text':'thinking';stream.push({type:`${type}_end`,contentIndex:index,content:message.content[index][type],partial:message});}
       for(const call of record.calls||[]){const index=message.content.length;message.content.push({type:'toolCall',...call});stream.push({type:'toolcall_start',contentIndex:index,partial:message});stream.push({type:'toolcall_delta',contentIndex:index,delta:JSON.stringify(call.arguments),partial:message});stream.push({type:'toolcall_end',contentIndex:index,toolCall:message.content[index],partial:message});}
@@ -58,7 +64,11 @@ function nativeStream(model,context) {
       message.stopReason=record.calls?.length?'toolUse':'stop';stream.push({type:'done',reason:message.stopReason,message});
     }stream.end();
   });
-  send({type:'model_request',id,messages:nativeMessages(context),tools:getCurrentTools(context.messages).map(t=>({type:'function',function:{name:t.name,description:t.description,parameters:t.parameters}}))});return stream;
+  const abort=()=>{send({type:'model_cancel',id});pending.get(id)?.({type:'model_aborted'});};
+  signal?.addEventListener('abort',abort,{once:true});
+  send({type:'model_request',id,messages:nativeMessages(context),tools:getCurrentTools(context.messages).map(t=>({type:'function',function:{name:t.name,description:t.description,parameters:t.parameters}}))});
+  if(signal?.aborted)abort();
+  return stream;
 }
 function register(config){runtime.registerProvider('notebook',{name:'Notebook llama.cpp',baseUrl:'stdio://notebook',apiKey:'notebook-local',api:'notebook-llama',streamSimple:nativeStream,models:[{id:config.model,name:config.model,reasoning:true,input:['text','image'],contextWindow:Number(config.n_ctx),maxTokens:Number(config.max_tokens),cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});return runtime.getModel('notebook',config.model);}
 function workflowRequest(panel,name,args){
@@ -97,8 +107,8 @@ async function snapshot(item){
 async function command(request){
   let item=await ensure(request);const {action}=request;let editor;
   if(['prompt','steer','follow_up'].includes(action)&&request.client_id)item.pendingUsers.push(request.client_id);
-  if(action==='abort'){await item.session.abort();return;}
-  if(action==='steer'||action==='follow_up')await item.session[action==='steer'?'steer':'followUp'](request.text,imageParts(request.images));
+  if(action==='abort'){item.session.clearQueue();await item.session.abort();}
+  else if(action==='steer'||action==='follow_up')await item.session[action==='steer'?'steer':'followUp'](request.text,imageParts(request.images));
   else if(['new','switch','fork'].includes(action)){
     const manager=await(action==='new'?storage.create(item.dir):action==='switch'?storage.open(request.file,item.dir):storage.fork(item.manager,item.dir));
     item.session.dispose();item=await create(request.panel,request.config,manager);

@@ -11,6 +11,8 @@ def release(group='all'):
     targets = set()
     if group in ('all','llama') and 'llama_runner' in sys.modules:
         sys.modules['llama_runner'].release()
+    if group in ('all','llama') and 'strata_runner' in sys.modules:
+        sys.modules['strata_runner'].release()
     moss = sys.modules.get('moss_runner')
     h3 = sys.modules.get('h3_runner')
     if group in ('all','moss') and moss is not None:

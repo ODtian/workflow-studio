@@ -1,6 +1,6 @@
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {mkdir,readFile,writeFile,readdir,stat} from 'node:fs/promises';
+import {mkdir,readFile,writeFile,readdir,stat,rename} from 'node:fs/promises';
 import {packContent,unpackContent} from './content_codec.mjs';
 import {SessionManager} from '@earendil-works/pi-coding-agent';
 
@@ -34,7 +34,9 @@ export class PiSessionStore {
     if(!this.compressed)return Promise.resolve();
     const pending=(this.pending.get(manager)||Promise.resolve()).then(async()=>{
       await mkdir(dir,{recursive:true});
-      await writeFile(this.file(manager,dir),packContent(this.source(manager)));
+      const file=this.file(manager,dir),temporary=file+'.'+randomUUID()+'.tmp';
+      await writeFile(temporary,packContent(this.source(manager)));
+      await rename(temporary,file);
     });this.pending.set(manager,pending);return pending;
   }
   async list(dir){

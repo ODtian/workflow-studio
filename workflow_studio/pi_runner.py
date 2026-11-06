@@ -49,7 +49,7 @@ class PiClient:
     def read(self):
         for line in self.process.stdout:
             record = json.loads(line)
-            target = self.model_events if record["type"] in ("model_request", "workflow_request") else self.pending.get(record.get("request"))
+            target = self.model_events if record["type"] in ("model_request", "model_cancel", "workflow_request") else self.pending.get(record.get("request"))
             if target is not None:
                 target.put(record)
         for target in list(self.pending.values()):
@@ -128,6 +128,7 @@ class NativeContext:
     def __init__(self, client, request, ctx):
         self.client, self.request, self.ctx = client, request, ctx
         self.panel, self.values, self.calls = ctx.panel, {}, []
+        self.cancel = ctx.cancel
 
     def check_cancelled(self):
         self.ctx.check_cancelled()
@@ -147,32 +148,53 @@ class NativeContext:
 
 
 def run_pi(params, ctx):
+    from panel import Cancelled
     started = time.monotonic()
     client = prepare_pi(ctx)
     request, events = client.request(ctx.panel, params, params["pi_request"], inference=True)
     ctx.metadata(对话层="Pi 1.4.0", 通信="JSONL 进程管道", Pi状态="运行中")
     first = None
     worker = None
+    abort_request = None
+    abort_events = None
 
     def generate(record):
         native = NativeContext(client, record["id"], ctx)
         try:
-            llama_runner.run_llama({**params, "system_prompt":"", "messages":record["messages"], "tools":record["tools"]}, native)
+            import strata_runner
+            if params.get("inference_backend") == "strata":
+                generate_model = strata_runner.run_strata
+            else:
+                strata_runner.release()
+                generate_model = llama_runner.run_llama
+            generate_model({**params, "system_prompt":"", "messages":record["messages"], "tools":record["tools"]}, native)
             client.send({"type":"model_done", "id":record["id"], "calls":native.calls,
                          "outputTokens":native.values.get("输出tokens",0), "inputTokens":native.values.get("输入tokens",0)})
+        except Cancelled:
+            client.send({"type":"model_aborted", "id":record["id"]})
         except Exception as exc:
             client.send({"type":"model_error", "id":record["id"], "error":str(exc)})
     try:
         while True:
-            ctx.check_cancelled()
+            if abort_request is None:
+                try:
+                    ctx.check_cancelled()
+                except Cancelled:
+                    ctx.cancel.set()
+                    abort_request, abort_events = client.request(ctx.panel, params, {"action":"abort"})
             try:
                 record = events.get(timeout=0.1)
             except queue.Empty:
                 continue
             if record["type"] == "model_request":
+                if ctx.cancel.is_set():
+                    client.send({"type":"model_aborted", "id":record["id"]})
+                    continue
                 import marimo as mo
                 worker = mo.Thread(target=generate, args=(record,), daemon=True)
                 worker.start()
+            elif record["type"] == "model_cancel":
+                ctx.cancel.set()
             elif record["type"] == "workflow_request":
                 try:
                     result = apply_workflow_tool(ctx.panel.owner, record['name'], record['arguments'])
@@ -191,10 +213,20 @@ def run_pi(params, ctx):
                     ctx.status("Pi 正在生成…")
             elif record["type"] == "result":
                 apply_record(ctx.panel, record)
+                if ctx.cancel.is_set():
+                    if abort_request is None:
+                        abort_request, abort_events = client.request(ctx.panel, params, {"action":"abort"})
+                    if worker is not None:
+                        worker.join()
+                    apply_record(ctx.panel, abort_events.get())
+                    ctx.metadata(Pi状态="已中止")
+                    raise Cancelled()
                 if record.get("error"):
                     raise RuntimeError(record["error"])
                 ctx.metadata(Pi状态="完成", Pi会话=record["snapshot"]["id"])
                 return record["content"]
+    except Cancelled:
+        raise
     except Exception:
         ctx.cancel.set()
         if worker is not None:
@@ -204,3 +236,5 @@ def run_pi(params, ctx):
     finally:
         client.model_events = None
         client.pending.pop(request)
+        if abort_request is not None:
+            client.pending.pop(abort_request, None)

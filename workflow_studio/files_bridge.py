@@ -49,6 +49,8 @@ class FilesBridge:
         if not hasattr(controller, "tools_listeners"):
             controller.tools_listeners = []
         controller.tools_listeners.append(self.publish)
+        from hf_downloads import bind
+        self.hf_downloads = bind(self)
         self.publish()
         if not any(self.controller.state["panes"][name].get("entries") for name in ("drive", "local")):
             self.controller.start()
@@ -66,6 +68,9 @@ class FilesBridge:
     def receive(self, command):
         self.message = ""
         action = command["action"]
+        if self.hf_downloads.receive(command):
+            self.publish()
+            return
         if action == 'drive_connect':
             from persistent_drive_auth import DriveAuthorization
             self.drive_setup = (self.authorization_factory or DriveAuthorization)()
@@ -75,8 +80,10 @@ class FilesBridge:
             threading.Thread(target=self.authorize_drive, args=(command['code'],), daemon=True).start()
         elif action == "save_recipe":
             from copy_registry import save_recipe
-            save_recipe(command["recipe"])
+            recipe_id = save_recipe(command["recipe"])
             self.message = "快捷操作已保存。"
+            if command.get("replay"):
+                threading.Thread(target=self.replay, args=([recipe_id],), daemon=True).start()
         elif action == "delete_recipe":
             def remove(state):
                 record = next(record for record in state["copies"] if record["id"] == command["id"])
@@ -125,6 +132,15 @@ class FilesBridge:
         try:
             for record in self.store.read()["copies"]:
                 if record["id"] in ids:
+                    if record.get("source_provider") == "huggingface":
+                        from hf_downloads import replay_recipe
+                        self.message = "正在从 Hugging Face 复制到 " + record["local_path"]
+                        self.publish()
+                        replay_recipe(record)
+                        self.message = "复制完成：" + record["local_path"]
+                        self.controller._schedule_navigation("local", self.controller.positions["local"])
+                        self.publish()
+                        continue
                     source, target = resolve(self.controller, record)
                     path = self.controller.local_roots["root"].joinpath(*target.parts, source.name)
                     if source.kind == "file" and record["direction"] == "download" and path.exists() and path.stat().st_size == source.size:

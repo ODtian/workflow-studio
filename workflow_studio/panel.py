@@ -159,7 +159,7 @@ class WorkflowSession:
         params = {**self.params, **values}
         signature = json.dumps({key: params[key] for key in module.SPEC["prepare_fields"]}, sort_keys=True)
         with self.prepare_guard:
-            if signature == self.prepared_signature:
+            if signature == self.prepared_signature and not module.SPEC.get("chat"):
                 return
             self.prepare_pending = (signature, module, params)
             if self.prepare_running:

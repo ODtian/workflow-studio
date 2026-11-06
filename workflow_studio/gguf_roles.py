@@ -51,6 +51,10 @@ def _profile(path, modified, size):
         architecture = metadata.get('general.architecture', '')
         if metadata.get('general.type') == 'mmproj' or architecture == 'clip':
             return {'role': 'mmproj', 'has_mtp': False, 'chat_template': ''}
+        if architecture == "dflash":
+            return {"role": "dspark", "has_mtp": False, "chat_template": ""}
+        if not architecture or architecture in ("controlvector", "engram", "deepseek41-engram"):
+            return {"role": "aux", "has_mtp": False, "chat_template": ""}
         nextn = metadata.get(architecture + '.nextn_predict_layers', 0)
         role = 'model'
         if nextn:

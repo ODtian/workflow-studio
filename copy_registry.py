@@ -36,6 +36,22 @@ def save_recipe(value):
     path=Path(str(value.get('local_path','')).strip())
     if not path.is_absolute(): raise ValueError('服务器路径需要以 / 开头')
     safe_local_path(path)
+    if value.get("source_provider") == "huggingface":
+        from hf_downloads import source_from_recipe
+        source=source_from_recipe(value)
+        def save_hf(state):
+            old=next((r for r in state["copies"] if r["id"]==value.get("id")),None)
+            if old is None:
+                old={"id":uuid.uuid4().hex}
+                state["copies"].append(old)
+            companions=old.get("hf_sources",[])[1:]
+            old.update(label=value.get("label","").strip() or source["repo_id"],
+                       source_provider="huggingface",direction="download",drive_id="",
+                       source_kind="directory",enabled=True,repo_id=source["repo_id"],
+                       hf_url=value.get("hf_url",source["repo_id"]),local_path=str(path),
+                       hf_sources=[source,*companions])
+            return old["id"]
+        return store.edit(save_hf)
     direction=value.get('direction')
     if direction not in ('download','upload'): raise ValueError('请选择复制方向')
     remote=drive_id(value.get('drive_id',''))
@@ -47,7 +63,8 @@ def save_recipe(value):
             old={'id':uuid.uuid4().hex}
             state['copies'].append(old)
         old.update(label=label,direction=direction,drive_id=remote,local_path=str(path),enabled=bool(value.get('enabled',True)),source_kind=value.get('source_kind','file'))
-    store.edit(save)
+        return old['id']
+    return store.edit(save)
 
 def remote_entry(controller, file_id, kind):
     from transfer_core import Entry, FOLDER, TransferError, MAX_BYTES

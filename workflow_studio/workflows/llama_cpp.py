@@ -3,6 +3,7 @@ import importlib
 import gguf_roles
 import template_parameters
 import llama_runner
+import strata_runner
 
 for module in (gguf_roles, template_parameters, llama_runner):
     importlib.reload(module)
@@ -18,11 +19,17 @@ _drafts = companion_files('mtp')
 SPEC = {
     "name": "pi · 对话", "tab_name": "pi", "chat_engine": "pi", "output": "text", "chat": True, "images": True,
     "run_label": "发送", "refresh_label": "刷新模型列表", "model_root": str(MODELS / "LLM"),
-    "model_binding_fields": ["thinking", "reasoning_effort", "mmproj", "mtp", "speculative_tokens"],
+    "model_binding_fields": ["strata_ram_gb", "dspark_file", "thinking", "reasoning_effort", "mmproj", "mtp", "speculative_tokens"],
     "model_controls": {model: [thinking_control(model), reasoning_control(model)] for model in _models},
-    "prepare_fields": ["model", "mmproj", "mtp", "n_ctx", "n_gpu_layers", "n_batch", "chat_format", "speculative_tokens"],
-    "ready": bool(_models), "description": "进程内 GGUF 推理，支持图片输入、Thinking 和 MTP 加速。",
+    "prepare_fields": ["inference_backend", "strata_ram_gb", "dspark_file", "model", "mmproj", "mtp", "n_ctx", "n_gpu_layers", "n_batch", "chat_format", "speculative_tokens"],
+    "ready": bool(_models), "description": "llama.cpp 与 Strata 推理，支持 Thinking 和工具调用。",
     "fields": [
+        {"key": "inference_backend", "label": "推理后端", "type": "select", "area": "models",
+         "default": "llama_cpp", "options": [{"label": "llama.cpp", "value": "llama_cpp"}, {"label": "Strata", "value": "strata"}]},
+        {"key": "strata_ram_gb", "label": "Strata 内存缓存 GB（-1 自动）", "type": "number",
+         "section": "加载", "default": -1, "min": -1, "step": 1},
+        {"key": "dspark_file", "label": "DSpark 草稿模型", "type": "select", "section": "加载",
+         "default": "", "options": [{"label": "关闭", "value": ""}] + companion_files("dspark")},
         {"key": "model", "label": "GGUF 模型", "type": "select", "area": "models", "options": _models,
          "default": _model},
         {"key": "system_prompt", "label": "系统提示词", "type": "textarea", "area": "prompts", "persist": True,
@@ -76,5 +83,8 @@ def run(params, ctx):
 
 
 def prepare(params, ctx):
-    prepare_llama(params, ctx)
+    if params.get("inference_backend") == "strata":
+        strata_runner.prepare_strata(params, ctx)
+    else:
+        prepare_llama(params, ctx)
     prepare_pi(ctx)

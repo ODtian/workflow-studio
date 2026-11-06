@@ -9,6 +9,7 @@ let input=$state(''),drawer=$state(''),attachments=$state([]),name=$state(''),sk
 let skillEditorOpen=$state(false),skillSaving=$state(false),skillNotice=$state(''),skillSaveError=$state(false);
 let scrollRequest=$state(0);
 let pendingMessages=$state([]);
+let cancelledRun='';
 let sending=$derived(panel.busy||pendingMessages.some(message=>message.action==='prompt'&&!message.error));
 let deliveryQueue=Promise.resolve();
 const attachmentURLs=new Set();
@@ -36,11 +37,22 @@ $effect(()=>{
   }
 });
 $effect(()=>{const delivery=pi.delivery;if(delivery?.error){const message=pendingMessages.find(message=>message.client_id===delivery.client_id);if(message)message.error=delivery.error;}});
+$effect(()=>{if(panel.phase==='cancelled'&&cancelledRun!==panel.run_id){cancelledRun=panel.run_id;clearPending();}});
+function clearPending(){
+  for(const message of pendingMessages){
+    message.cancelled=true;
+    for(const image of message.images)if(attachmentURLs.delete(image.url))URL.revokeObjectURL(image.url);
+  }
+  pendingMessages=[];queue=[];
+}
+function stop(){clearPending();send('cancel',{id:panel.id});}
 async function deliver(message){
+  if(message.cancelled)return;
   message.error='';
   message.status=message.images.some(image=>image.status!=='uploaded')?'图片上传中':'等待模型响应';
   await tick();
   const images=await Promise.all(message.images.map(image=>image.ready));
+  if(message.cancelled)return;
   if(images.some(image=>!image)){message.error='图片上传失败，请重试';return;}
   message.status=message.action==='prompt'?'等待模型响应':message.action==='steer'?'已提交引导':'已排队';
   act(message.action,{text:message.text,images,client_id:message.client_id});
@@ -88,7 +100,7 @@ function pasteImages(event){
 {/snippet}
 <article class="pi-workspace" aria-label="Pi 对话">
   <div class="pi-heading"><div class="pi-heading-text"><h1 title={pi.name||'Pi 对话'}>{pi.name||'Pi 对话'}</h1></div>
-    <div class="row"><Button variant="outline" size="sm" aria-label="新对话" disabled={sending} onclick={()=>{act('new');queue=[];pendingMessages=[];}}><Plus size={14}/><span>新对话</span></Button>
+    <div class="row"><Button variant="outline" size="sm" aria-label="新对话" disabled={sending} onclick={()=>{clearPending();act('new');}}><Plus size={14}/><span>新对话</span></Button>
     <Button variant={drawer==='sessions'?'secondary':'ghost'} size="icon" aria-label="会话历史" onclick={()=>drawer=drawer==='sessions'?'':'sessions'}><History size={17}/></Button>
     <Button variant={drawer==='skills'?'secondary':'ghost'} size="icon" aria-label="Skills 与资源" onclick={()=>drawer=drawer==='skills'?'':'skills'}><Sparkles size={17}/></Button>
     <Button variant={drawer==='tools'?'secondary':'ghost'} size="icon" aria-label="工具管理" onclick={()=>drawer=drawer==='tools'?'':'tools'}><Wrench size={17}/></Button>
@@ -135,7 +147,7 @@ function pasteImages(event){
           {#if input.startsWith('/')}<div class="slash-menu">{#each (pi.skills||[]).filter(s=>('/skill:'+s.name).includes(input.split(' ')[0])) as skill}<button title={skill.description} onclick={()=>input='/skill:'+skill.name+' '}><Sparkles size={13}/>/skill:{skill.name}</button>{/each}{#each pi.prompts||[] as prompt}<button title={prompt.description} onclick={()=>input='/'+prompt.name+' '}><FileText size={13}/>/{prompt.name}</button>{/each}</div>{/if}
           <Textarea aria-label="消息输入" placeholder="消息 · / 调用 Skill" enterkeyhint={mobile?'enter':'send'} rows={2} bind:value={input} onpaste={pasteImages} onkeydown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&(!mobile||e.ctrlKey||e.metaKey)){e.preventDefault();submit(sending?'follow_up':'prompt');}}}/>
           <div class="composer-toolbar"><div class="row"><Button variant="ghost" size="icon-sm" aria-label="添加图片" onclick={()=>imageInput.click()}><Paperclip size={17}/></Button><button class="model-caption" aria-label="选择对话模型" onclick={()=>drawer='settings'}><span>{(values.model||'').split('/').at(-1)?.replace('.gguf','')}</span><ChevronDown size={12}/></button></div>
-            <div class="row">{#if sending}<Button variant="ghost" size="sm" disabled={!input.trim()&&!attachments.length} onclick={()=>submit('steer')}>引导</Button><Button variant="outline" size="sm" disabled={!input.trim()&&!attachments.length} onclick={()=>submit('follow_up')}>排队</Button><Button variant="destructive" size="icon" aria-label="停止生成" onclick={()=>send('cancel',{id:panel.id})}><Square size={13}/></Button>{:else}<Button size="icon" aria-label="发送消息" disabled={!input.trim()&&!attachments.length} onclick={()=>submit()}><ArrowUp size={18}/></Button>{/if}</div>
+            <div class="row">{#if sending}<Button variant="ghost" size="sm" disabled={!input.trim()&&!attachments.length} onclick={()=>submit('steer')}>引导</Button><Button variant="outline" size="sm" disabled={!input.trim()&&!attachments.length} onclick={()=>submit('follow_up')}>排队</Button><Button variant="destructive" size="icon" aria-label="停止生成" onclick={stop}><Square size={13}/></Button>{:else}<Button size="icon" aria-label="发送消息" disabled={!input.trim()&&!attachments.length} onclick={()=>submit()}><ArrowUp size={18}/></Button>{/if}</div>
           </div>
         </div>
         {#if context?.percent||panel.metadata?.每秒tokens}<div class="composer-footer"><span>{context?.percent?`${context.percent.toFixed(0)}% 上下文 `:''}{panel.metadata?.每秒tokens?panel.metadata.每秒tokens+' tok/s ':''}</span></div>{/if}
