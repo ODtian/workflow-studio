@@ -238,4 +238,4 @@ def run(params, ctx):
 
 HF 快捷复制位于“文件与传输 → 快捷复制 → 新增 HF 快捷复制”。填写仓库 ID、HF 文件链接或目录链接，以及本机目标目录；文件范围支持逗号分隔的匹配规则。“保存并复制”会立即写入目标目录，保存的快捷项可再次执行。HF 的目标目录是运行 Studio 的 molab 容器文件系统。
 
-调用链为 FilesView → FilesBridge.receive → copy_registry.save_recipe → FilesBridge.replay → huggingface_hub.snapshot_download。HF 文件任务复用传输队列的进度、停止、结果与重试显示。启动器从自身 checkout 或安装包 direct_url.json 记录的 Git commit 加载完整仓库，界面资源和执行代码使用同一版本。
+调用链为 FilesView → FilesBridge.receive → copy_registry.save_recipe → FilesBridge.replay → huggingface_hub.snapshot_download。HF 文件任务复用传输队列的进度、停止、结果与重试显示。启动器从自身 checkout 或source_ref 指定的 Git commit 加载完整仓库，界面资源和执行代码使用同一版本。
