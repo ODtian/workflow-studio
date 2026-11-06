@@ -1,6 +1,6 @@
 # Workflow Studio 私密工作流最小验证
 
-入口为 `privacy_probe_notebook.py`，验证分支为 `codex/private-notebook-probe`。
+入口为 `privacy_probe_notebook.py`，统一使用 `main` 分支。
 
 密码层现在复用仓库原有的完整 `WorkflowPanel` / `FilesBridge` 后端，恢复 MOSS、MiniMax H3、Pi、SD 1.5、SDXL 和图片调色，并保留运行时导入的私密工作流。公开仓库中的界面与运行框架作为公共基座。已经完成的私密性验证范围是单文件 Python 文本工作流、提示词、一张图片输入、Python 标准输出与错误输出、文本结果，观察入口为项目文件、持久缓存、widget 状态和 notebook 快照。
 

@@ -9,7 +9,7 @@ def load_studio(*, privacy_probe=False, source_ref=None):
     workspace = Path.cwd()
     source = Path(__file__).resolve().parent
     if not (source / "workflow_studio").is_dir():
-        revision = source_ref or ("codex/private-notebook-probe" if privacy_probe else "main")
+        revision = source_ref or "main"
         source = Path(tempfile.gettempdir()) / ("workflow-studio-" + revision.replace("/", "-"))
         if not (source / ".git").exists():
             subprocess.run(["git", "clone", "--depth", "1", "--no-checkout",

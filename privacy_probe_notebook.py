@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "marimo>=0.25.1", "anywidget>=0.9.18", "cryptography", "Pillow",
-#     "workflow-studio @ git+https://github.com/ODtian/workflow-studio.git@codex/private-notebook-probe",
+#     "workflow-studio @ git+https://github.com/ODtian/workflow-studio.git@main",
 # ]
 # ///
 """Minimal private text-workflow validation inside the native Studio widget."""
