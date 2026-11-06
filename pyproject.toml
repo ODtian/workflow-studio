@@ -9,7 +9,7 @@ description = "Workflow Studio notebook launcher"
 requires-python = ">=3.10"
 dependencies = [
     "anywidget>=0.9.18", "cryptography", "Pillow>=10", "Jinja2", "python-dotenv",
-    "huggingface-hub>=2.4,<3", "numpy>=2",
+    "huggingface-hub>=1.5,<2", "numpy>=2",
     "google-api-python-client", "google-auth-oauthlib", "pydata-google-auth",
 ]
 

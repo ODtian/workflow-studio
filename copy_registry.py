@@ -44,7 +44,7 @@ def save_recipe(value):
             if old is None:
                 old={"id":uuid.uuid4().hex}
                 state["copies"].append(old)
-            companions=old.get("hf_sources",[])[1:]
+            companions=old.get("hf_sources",[])[1:] if old.get("source_provider")=="huggingface" else []
             old.update(label=value.get("label","").strip() or source["repo_id"],
                        source_provider="huggingface",direction="download",drive_id="",
                        source_kind="directory",enabled=True,repo_id=source["repo_id"],
@@ -62,7 +62,7 @@ def save_recipe(value):
         if old is None:
             old={'id':uuid.uuid4().hex}
             state['copies'].append(old)
-        old.update(label=label,direction=direction,drive_id=remote,local_path=str(path),enabled=bool(value.get('enabled',True)),source_kind=value.get('source_kind','file'))
+        old.update(label=label,source_provider='drive',direction=direction,drive_id=remote,local_path=str(path),enabled=bool(value.get('enabled',True)),source_kind=value.get('source_kind','file'))
         return old['id']
     return store.edit(save)
 
