@@ -99,7 +99,8 @@ class PrivateStudioProbe(anywidget.AnyWidget):
             (ROOT / "assets/components.css").read_text(encoding="utf-8"))
         studio_source += ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8")
         adapter = (ROOT / "private_probe_view.js").read_text(encoding="utf-8")
-        super().__init__(_esm="const STUDIO_SOURCE = " + json.dumps(studio_source) + ";\n" + adapter)
+        source = "const STUDIO_SOURCE = " + json.dumps(studio_source) + ";\n" + adapter
+        super().__init__(_esm="data:text/javascript;base64," + b64(source.encode("utf-8")))
         self.public_key = b64(self._rsa.public_key().public_bytes(
             serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo))
         self.password_salt = self._password_config['salt']

@@ -323,6 +323,7 @@ class WorkflowPanel(anywidget.AnyWidget):
         if widget_source is None:
             widget_source = ("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
                              + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8"))
+            widget_source = "data:text/javascript;base64," + base64.b64encode(widget_source.encode("utf-8")).decode("ascii")
         super().__init__(_esm=widget_source)
         self.transport = WidgetTransport(self)
         self.workflow_dir = Path(workflow_dir or ROOT / "workflows").resolve()
