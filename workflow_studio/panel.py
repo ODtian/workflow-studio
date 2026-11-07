@@ -22,6 +22,9 @@ from preview_transport import WidgetTransport, jpeg
 from settings_writer import SettingsWriter, configuration_parameters
 from chat_uploads import ChatUploads
 from content_store import enabled, read_bytes, read_text, write_text, open_image, save_image
+from widget_assets import embed_widget_modules
+
+embed_widget_modules()
 
 ROOT = Path(__file__).parent
 INFERENCE_LOCK = threading.Lock()
