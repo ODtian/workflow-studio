@@ -180,8 +180,7 @@ def run_pi(params, ctx):
                 if ctx.cancel.is_set():
                     client.send({"type":"model_aborted", "id":record["id"]})
                     continue
-                import marimo as mo
-                worker = mo.Thread(target=generate, args=(record,), daemon=True)
+                worker = threading.Thread(target=generate, args=(record,), daemon=True)
                 worker.start()
             elif record["type"] == "model_cancel":
                 ctx.cancel.set()

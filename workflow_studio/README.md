@@ -1,6 +1,6 @@
 # Workflow Studio
 
-一个使用 Gradio 官方前端组件的 marimo 面板，加载多个 Python 工作流。每个工作流自行声明参数和执行代码，面板动态生成表单并显示进度、预览、结果。
+一个直接显示在 Google Colab 单元格里的工作台，加载多个 Python 工作流。每个工作流自行声明参数和执行代码，面板动态生成表单并显示进度、预览、结果。
 
 ## 组合工作台
 
@@ -69,11 +69,11 @@ Pi 提供两个填写页面参数的工具，调用完成后可继续在对应�
 
 「文件与传输」展示 Google Drive 和运行时文件两栏。选择文件后即可复制到另一栏的当前目录。运行时栏提供模型、输入和输出目录的入口。
 
-使用 Drive 栏的「连接 Google Drive」，在 Google 页面授权后将一次性授权码填回工作台。完成连接后可浏览当前账号的「我的云端硬盘」。授权只在当前工作台会话内有效。
+在 Colab 的「文件」栏挂载云端硬盘，再在工作台的 Drive 栏点击「刷新目录」。工作台使用 Colab 挂载的实际路径。
 
 手机端将全选和刷新合并到标题行，目录栏显示当前文件夹名，文件名以两行展示。列表随屏幕高度展开、两侧分别滚动；底部保留 44 像素复制按钮，并显示选中文件数量、总大小和目标目录。
 
-“快捷复制”保存可重复执行的“源文件 → 目标目录”操作。双栏复制时自动保存，使用 Drive 文件 ID 和 Molab 路径持久定位；下次打开工作台即可从对应行一键复制到保存的目录。支持搜索、新增、管理、删除和撤销删除；编辑时分别标明源文件与目标目录。Drive → Molab 的目标目录会在执行时创建。传输历史折叠展示，完成的传输记录可单独删除及恢复。
+「快捷复制」以已挂载 Drive 的相对路径和运行时的绝对路径保存操作。文件夹复制包含子目录。旧链接快捷项可在表单里改为挂载路径。
 
 ## MOSS-Image
 
@@ -96,7 +96,7 @@ MOSS 工作流复用 Comfy 的 `load_diffusion_model`、`load_clip`、`VAE` 和�
 
 共享核心固定为 Comfy 0.42.0。MOSS 默认启用 Spectrum Adaptive，预热步数、误差容忍度和特征缓存设备可在高级设置调整；采样结束后运行信息显示实际计算和特征预测次数。
 
-H3 的注意力选择提供 Spark-H3，自动模式在 CUDA 13 的 SM86、SM89、SM120 GPU 上优先使用。选择自动或 Spark-H3 时，`h3_spark.py` 在 Comfy 首次导入前调用上游安装器准备匹配的内核；安装器以 `python -m comfyui.install` 运行，显式指定源码导入路径，沿用 Molab 的安全导入设置。安装日志保存在临时运行目录，错误原因进入运行信息。LoRA、Sigma Shift 之后调用上游原生模型补丁，沿用当前图片、视频和分段采样路径。保真模式使用 20% 预热，速度模式使用 0% 预热，自定义模式读取页面预热比例；精确计算比例默认 20%，可选仅生成视频或参考视频与生成视频联合稀疏。短序列沿用上游的精确计算路径。源码、内核及运行缓存使用临时目录，控制参数通过 Notebook gzip 配置保存。
+H3 的注意力选择提供 Spark-H3，自动模式在 CUDA 13 的 SM86、SM89、SM120 GPU 上优先使用。选择自动或 Spark-H3 时，`h3_spark.py` 在 Comfy 首次导入前调用上游安装器准备匹配的内核；安装器以 `python -m comfyui.install` 运行，显式指定源码导入路径。安装日志保存在临时运行目录，错误原因进入运行信息。LoRA、Sigma Shift 之后调用上游原生模型补丁，沿用当前图片、视频和分段采样路径。保真模式使用 20% 预热，速度模式使用 0% 预热，自定义模式读取页面预热比例；精确计算比例默认 20%，可选仅生成视频或参考视频与生成视频联合稀疏。短序列沿用上游的精确计算路径。源码、内核及运行缓存使用临时目录，控制参数通过 Notebook gzip 配置保存。
 
 MOSS 的 Base / SFT、BF16、INT8 ConvRot，以及 Qwen3.5-9B 的 BF16、INT8 ConvRot、W4A8 GPTQ 使用这些原生加载器。预览使用采样中的 Latent2RGB；最终结果由所选 FLUX.2 VAE 解码。默认采用 50 步、CFG 3、Euler / simple、Shift 5 和负分支跳过第 22 层。
 
@@ -120,69 +120,11 @@ LoRA 从 `loras/` 扫描，点击“添加 LoRA”后逐项选择文件和权重
 
 Comfy 运行库与 llama.cpp 绑定各自在本次内核中准备一次。MOSS 的 DiT、TE、VAE 分别复用，改变其中一项时保留其余组件；已编码的提示词保留最近四项，后台准备时也会编码当前负面提示词。llama.cpp 保留当前 GGUF 模型实例；上下文、批大小、投影器或 MTP 参数改变时重建对应实例。
 
-## 运行
+## 在 Colab 运行
 
-当前 GitHub 入口使用 `workflow-studio` 启动包：在 Notebook 包管理器添加 `workflow-studio @ git+https://github.com/ODtian/workflow-studio.git@main`，随后通过 `from studio_entry import load_studio` 导入。`notebook.py` 的脚本依赖已包含这一配置，启动单元格调用 `load_studio()` 并显示 widget，源码更新和临时运行目录由启动模块准备。
+检出仓库并运行 `colab_runtime.prepare()` 后，在 Colab 单元格调用 `colab_runtime.start_studio()`。工作台使用 Colab 的小组件管理器，工作流在同一个 Python 内核运行。Colab 文件面板可挂载 Drive，工作台刷新目录后读取挂载结果。
 
-molab：上传标准源码包 `workflow_studio.zip`、`studio_bootstrap.py`、`studio_config.json` 到 notebook 工作目录（当前实例为 `/marimo`），再将 `molab_cell.py` 放入一个 Python 单元格运行。ZIP 采用二进制文件上传；也可先上传 Google Drive，再使用现有文件复制工具复制到 `/marimo`。入口优先解压 ZIP 中的源文件和资源，配置文件与可编辑工作流沿用现有内容。
-
-更新时覆盖同名 `workflow_studio.zip`，重新运行启动单元格。增量包沿用相同目录结构，只放入需要更新的文件；入口将其覆盖到对应目录。开发机通过 `python work/make_bundle.py workflow_studio/llama_runner.py` 构建单文件更新包，通过 `python work/make_bundle.py` 构建完整包。Python 改动只传 Python 文件；前端改动传编译后的 `assets/view.js` 与 `assets/components.css`。
-
-`studio_config.json` 的 `source_drive_id` 指向 Drive 中的完整源码 ZIP。本地源码包缺失时，启动入口通过 notebook 已保存的 Drive 连接自动下载并解压。更新 Drive 中同一个文件可保留文件 ID；完整包用于新实例恢复，增量包用于当前实例更新。
-
-目录结构如下：
-
-```text
-/marimo/
-├── notebook.py
-├── workflow_studio.zip   # 二进制上传的源码与资源包
-├── studio_bootstrap.py
-├── studio_config.json
-├── workflow_studio/       # Python 模块、工作流模板、assets 前端文件
-└── studio_workflows/      # 启动时建立，可编辑的工作流
-```
-
-notebook 单元格只负责导入和启动：
-
-```python
-import marimo as _studio_mo
-from studio_bootstrap import get_studio as _get_studio
-
-studio_panel = _get_studio()
-_studio_mo.ui.anywidget(studio_panel)
-```
-
-`studio_config.json` 配置模型目录、Comfy 核心目录、工作流目录和结果目录。前端资源从 `workflow_studio/assets/` 加载，工作流从 `studio_workflows/` 加载。新增工作流放入该目录，再点击“刷新”。
-
-资源恢复负责界面和工作流代码；模型沿用 `model_dir` 中的文件及现有的复制工具。Molab 启动并执行 notebook 后会显示面板。模型目录结构随工作流加载建立，模型文件由用户放入。
-
-当前 notebook 的 `/marimo/pyproject.toml` 已通过 Files 保存以下启动设置，下次启动时自动执行入口：
-
-```toml
-[tool.marimo.runtime]
-auto_instantiate = true
-```
-
-本地：
-
-```sh
-pip install -r requirements.txt
-marimo edit notebook.py
-```
-
-在现有 notebook 中新增一个单元格：
-
-```python
-import marimo as studio_mo
-from panel import get_panel
-studio_mo.ui.anywidget(get_panel())
-```
-
-界面使用 Gradio 的 Textbox、Number、Dropdown、Button、Image 组件及 Soft 主题。参数、图片和执行状态通过 anywidget 与 marimo notebook 通信，Python 工作流在内核的后台线程执行。编译后的前端随源码包提供，运行时加载 `assets/` 中的资源。
-
-修改前端时，在 `frontend/` 目录执行 `npm ci` 和 `npm run build`。Gradio 组件版本记录在 `package.json`，依赖版本记录在 `package-lock.json`；`theme.css` 使用 Gradio 6.30.0 的 Default 主题、orange 主色和系统字体。
-
-本地使用扩散示例时，安装 `requirements-diffusers.txt`。molab 中的扩散示例会在首次执行时准备自己的 Diffusers 依赖；面板加载时只初始化界面与工作流声明。
+修改前端时，在 `frontend/` 目录执行 `npm ci` 和 `npm run build`。编译后的资源随源码放在 `assets/` 中。
 
 ## 添加工作流
 

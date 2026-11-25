@@ -8,7 +8,7 @@ GZIP_MAGIC = b'\x1f\x8b'
 
 
 def enabled():
-    return os.environ.get('WORKFLOW_GZIP_CONTENT', '1' if Path('/marimo').is_dir() else '0') == '1'
+    return os.environ.get('WORKFLOW_GZIP_CONTENT') == '1'
 
 
 def pack(data):

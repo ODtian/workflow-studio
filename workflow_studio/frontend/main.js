@@ -16,11 +16,14 @@ export function render({model, el}) {
     ':host{display:block;width:100%;background:var(--background)}' +
     ':host(.studio-expanded){position:fixed;inset:0;z-index:1000;overflow:hidden}';
   shadow.append(style);
-  let expanded = true;
+  const colabOutput = globalThis.google?.colab?.output;
+  const inlineHeight = 760;
+  let expanded = false;
   const viewport = window.visualViewport;
   const compact = window.matchMedia('(max-width:760px), (max-width:1000px) and (max-height:500px)');
   const updateViewport = () => {
-    const height = compact.matches ? viewport?.height || window.innerHeight : window.innerHeight;
+    const height = !expanded ? inlineHeight :
+      (compact.matches ? viewport?.height || window.innerHeight : window.innerHeight);
     host.style.setProperty('--studio-viewport-height', height+'px');
     if (expanded) {
       host.style.top = (compact.matches ? viewport?.offsetTop || 0 : 0)+'px';
@@ -35,7 +38,7 @@ export function render({model, el}) {
     } else {
       el.append(host);
       host.style.top = '';
-      host.style.height = '';
+      host.style.height = inlineHeight + 'px';
     }
     updateViewport();
   };
@@ -43,6 +46,7 @@ export function render({model, el}) {
   viewport?.addEventListener('resize', updateViewport);
   viewport?.addEventListener('scroll', updateViewport);
   place();
+  colabOutput?.setIframeHeight?.(inlineHeight, true);
   const app = mount(App, {target: shadow, props: {model, initialExpanded: expanded, expand: () => {
     expanded = !expanded;
     place();

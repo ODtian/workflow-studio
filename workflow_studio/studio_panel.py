@@ -1,4 +1,4 @@
-"""Compose Python workflow panels inside one marimo widget."""
+"""Compose Python workflow panels inside a Colab widget."""
 from __future__ import annotations
 
 import base64
@@ -177,8 +177,7 @@ class WorkflowSession:
                 return
             self.prepare_running = True
         self.update(initializing=True, initialization="准备模型…")
-        import marimo as mo
-        self.prepare_worker = mo.Thread(target=self.prepare_models, daemon=True)
+        self.prepare_worker = threading.Thread(target=self.prepare_models, daemon=True)
         self.prepare_worker.start()
 
     def prepare_models(self):
@@ -218,8 +217,7 @@ class WorkflowSession:
                     total=0, elapsed=0, display_ms=0, delivery_ms=0, end_to_end_ms=0,
                     run_id=run_id or secrets.token_hex(8), metadata={})
         self.owner.send({"type":"preview_reset", "id":self.id, "run_id":self.state['run_id']})
-        import marimo as mo
-        self.worker = mo.Thread(target=self.execute, args=(module, params, self.cancel), daemon=True)
+        self.worker = threading.Thread(target=self.execute, args=(module, params, self.cancel), daemon=True)
         self.worker.start()
 
     def execute(self, module, params, cancel):
@@ -329,7 +327,7 @@ class WorkflowPanel(anywidget.AnyWidget):
     def runtime_changed(self, change):
         self.send({'type': 'runtime_state', 'name': change['name'], 'value': change['new']})
 
-    def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None):
+    def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None, drive_directory=None):
         widget_source = ("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
                          + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8"))
         super().__init__(_esm=widget_source)
@@ -371,11 +369,11 @@ class WorkflowPanel(anywidget.AnyWidget):
             self.add(item["workflow"], item.get("params"), session_id=item.get("id"), activate=False)
         self.files_bridge = None
         if importlib.util.find_spec("transfer_core") is not None:
-            self.files_bridge = self.create_files_bridge()
+            self.files_bridge = self.create_files_bridge(drive_directory)
 
-    def create_files_bridge(self):
+    def create_files_bridge(self, drive_directory):
         from files_bridge import FilesBridge
-        return FilesBridge(self)
+        return FilesBridge(self, drive_directory)
 
     def _send_widget_message(self, content, buffers=None):
         anywidget.AnyWidget.send(self, content, buffers=buffers)
@@ -522,8 +520,7 @@ class WorkflowPanel(anywidget.AnyWidget):
                 self.refresh_models()
                 return
             if action == "unload_models":
-                import marimo as mo
-                mo.Thread(target=self.unload_models, args=(content.get('id'),), daemon=True).start()
+                threading.Thread(target=self.unload_models, args=(content.get('id'),), daemon=True).start()
                 return
             if action == "import":
                 path = self.workflow_dir / Path(content["name"]).name
@@ -542,9 +539,8 @@ class WorkflowPanel(anywidget.AnyWidget):
                     if not session.state["busy"]:
                         session.start({**content["params"], "pi_request":command})
                 else:
-                    import marimo as mo
                     import pi_runner
-                    mo.Thread(target=pi_runner.control, args=(session, command, content.get("params")), daemon=True).start()
+                    threading.Thread(target=pi_runner.control, args=(session, command, content.get("params")), daemon=True).start()
             elif action == "prepare":
                 session.prepare(content["params"])
             elif action == "cancel":
@@ -625,5 +621,6 @@ class WorkflowPanel(anywidget.AnyWidget):
         super().close()
 
 
-def get_panel(workflow_dir=None, output_dir=None, initial=None, settings_backup=None):
-    return WorkflowPanel(workflow_dir=workflow_dir, output_dir=output_dir, initial=initial, settings_backup=settings_backup)
+def get_panel(workflow_dir=None, output_dir=None, initial=None, settings_backup=None, drive_directory=None):
+    return WorkflowPanel(workflow_dir=workflow_dir, output_dir=output_dir, initial=initial, settings_backup=settings_backup,
+                         drive_directory=drive_directory)

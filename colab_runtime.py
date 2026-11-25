@@ -14,8 +14,8 @@ ROOT = STUDIO.parent
 COMFY = ROOT / "ComfyUI"
 COMFY_REF = "355cd6b14c92c19ac3188fe528e47a3f21ef5178"  # v0.42.0
 COMFY_PORT = 8188
-STUDIO_PORT = 2718
 _processes = {}
+_studio_panel = None
 
 
 def prepare():
@@ -30,7 +30,7 @@ def prepare():
                         COMFY_REF], cwd=COMFY, check=True)
         subprocess.run(["git", "checkout", "--quiet", "--detach", "FETCH_HEAD"], cwd=COMFY, check=True)
     subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "-r", str(COMFY / "requirements.txt"),
-                    str(STUDIO), "marimo==0.26.0"], check=True)
+                    str(STUDIO)], check=True)
 
 
 def _start(name, command, cwd, port, *, env=None):
@@ -102,14 +102,25 @@ def start_comfy():
     output.serve_kernel_port_as_window(COMFY_PORT)
 
 
-def start_studio():
-    """Start the regular Studio notebook with the current Colab preview origin."""
-    from google.colab import output
+def mount_drive(mountpoint=None, *, readonly=False):
+    """Request Drive access through Colab's own notebook interface."""
+    from google.colab import drive
 
-    origin = _preview_origin(output, STUDIO_PORT)
-    env = {**os.environ, "PYTHONPATH": str(STUDIO), "WORKFLOW_COMFY_ROOT": str(COMFY),
-           "WORKFLOW_MODELS_DIR": str(COMFY / "models")}
-    _start("studio", ["-m", "marimo", "run", "notebook.py", "--headless", "--host", "127.0.0.1",
-                      "--port", str(STUDIO_PORT), "--allow-origins", origin], STUDIO, STUDIO_PORT, env=env)
-    print("Workflow Studio 已启动。")
-    output.serve_kernel_port_as_window(STUDIO_PORT)
+    path = Path(mountpoint or ROOT.parent / "drive")
+    drive.mount(str(path), readonly=readonly)
+    return path / "MyDrive"
+
+
+def start_studio(*, drive_directory=None, state_directory=None):
+    """Display Studio in the active Colab cell and kernel."""
+    from google.colab import output
+    from IPython.display import display
+    from studio_bootstrap import get_studio
+
+    global _studio_panel
+    output.enable_custom_widget_manager()
+    if _studio_panel is None or _studio_panel.comm is None:
+        _studio_panel = get_studio(workspace=ROOT, runtime=ROOT / "studio", models=COMFY / "models", comfy=COMFY,
+                                   drive_directory=drive_directory or ROOT.parent / "drive/MyDrive",
+                                   state_directory=state_directory)
+    display(_studio_panel)

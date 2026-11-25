@@ -1,4 +1,3 @@
-marimo>=0.25.1
 anywidget>=0.9.18
 traitlets>=5.14
 Pillow>=10
