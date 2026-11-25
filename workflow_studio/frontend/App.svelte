@@ -42,33 +42,25 @@
   let playback = $state({volume:0.25, muted:false});
   const bindingModels = new Map();
   let addWorkflow = $state('');
-  const inColab = Boolean(globalThis.google?.colab?.output);
+  const canFullscreen = !globalThis.google?.colab?.output && document.fullscreenEnabled;
   let fullscreen = $state(Boolean(document.fullscreenElement));
-  let notebookURL = $state('');
   let fullscreenHint = $state(false);
 
   async function toggleFullscreen() {
     fullscreenHint = false;
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else if (document.fullscreenEnabled) await document.documentElement.requestFullscreen();
-      else fullscreenHint = true;
+      else await document.documentElement.requestFullscreen();
     } catch {
       fullscreenHint = true;
     }
   }
 
   $effect(() => {
+    if (!canFullscreen) return;
     const syncFullscreen = () => fullscreen = Boolean(document.fullscreenElement);
-    const syncNotebook = () => notebookURL = model.get('notebook_url') || '';
-    syncFullscreen();
-    syncNotebook();
     document.addEventListener('fullscreenchange', syncFullscreen);
-    model.on('change:notebook_url', syncNotebook);
-    return () => {
-      document.removeEventListener('fullscreenchange', syncFullscreen);
-      model.off('change:notebook_url', syncNotebook);
-    };
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   });
   let transferNotice = $state('');
   let activeId = $state('');
@@ -427,14 +419,12 @@
       <div class="topbar-right">
         {#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}
         <Button size="icon-sm" variant="ghost" aria-label={darkTheme?'切换到浅色主题':'切换到暗色主题'} title={darkTheme?'切换到浅色主题':'切换到暗色主题'} onclick={()=>setColorTheme(darkTheme?'light':'dark')}>{#if darkTheme}<Sun size={16}/>{:else}<Moon size={16}/>{/if}</Button>
-        {#if inColab && notebookURL && !fullscreen}
-          <Button size="sm" variant="outline" href={notebookURL} target="_blank" rel="noopener" aria-label="返回笔记本（新标签页）" title="返回笔记本（新标签页）"><Minimize2 size={15}/><span class="return-label">返回笔记本</span></Button>
-        {:else}
-          <Button size="sm" variant="outline" aria-label={fullscreen?'退出全屏':'全屏'} onclick={toggleFullscreen}>{#if fullscreen}<Minimize2 size={15}/>{:else}<Maximize2 size={15}/>{/if}<span class="return-label">{fullscreen?'退出全屏':'全屏'}</span></Button>
+        {#if canFullscreen}
+          <Button size="sm" variant="outline" aria-label={fullscreen?'退出全屏':'全屏'} onclick={toggleFullscreen}>{#if fullscreen}<Minimize2 size={15}/>{:else}<Maximize2 size={15}/>{/if}<span class="fullscreen-label">{fullscreen?'退出全屏':'全屏'}</span></Button>
         {/if}
       </div>
     </header>
-    {#if fullscreenHint}<button class="app-notice" onclick={()=>fullscreenHint=false}>在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。 ×</button>{/if}
+    {#if fullscreenHint}<button class="app-notice" onclick={()=>fullscreenHint=false}>浏览器未能切换全屏。 ×</button>{/if}
     {#if !settingsReady}<div class="app-notice" role="status">运行本单元格以连接工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
     <div class="app-content">

@@ -23044,7 +23044,7 @@ var root_12$5 = /* @__PURE__ */ from_html(`<!> <details class="settings-group"><
 var root_13$5 = /* @__PURE__ */ from_html(`<!>关键帧`, 1);
 var root_14$5 = /* @__PURE__ */ from_html(`<!>切分`, 1);
 var root_15$5 = /* @__PURE__ */ from_html(`<!>合并`, 1);
-var root_16$4 = /* @__PURE__ */ from_html(`<span> </span>`);
+var root_16$3 = /* @__PURE__ */ from_html(`<span> </span>`);
 var root_17$3 = /* @__PURE__ */ from_html(`<button><span class="h3-edge left svelte-qiiy62" data-edge="left"></span><input type="checkbox" class="svelte-qiiy62"/><span class="h3-clip-copy svelte-qiiy62"><strong class="svelte-qiiy62"> </strong><small class="svelte-qiiy62"> </small></span><span class="h3-edge right svelte-qiiy62" data-edge="right"></span></button>`);
 var root_18$3 = /* @__PURE__ */ from_html(`<button class="h3-context svelte-qiiy62"></button>`);
 var root_19$3 = /* @__PURE__ */ from_html(`<button class="h3-padding svelte-qiiy62"></button>`);
@@ -24278,7 +24278,7 @@ function H3Timeline($$anchor, $$props) {
   var div_24 = sibling(child(div_23));
   set_attribute(div_24, "aria-valuemin", 0);
   each(div_24, 21, () => [0, ...get(plan).map((c) => c.end)], index$1, ($$anchor2, time, index2) => {
-    var span_2 = root_16$4();
+    var span_2 = root_16$3();
     let classes;
     let styles_1;
     var text_20 = only_child(span_2, true);
@@ -24653,7 +24653,7 @@ var root_12$4 = /* @__PURE__ */ from_html(`<!>预览与历史<!>`, 1);
 var root_13$4 = /* @__PURE__ */ from_html(`<!>刷新模型列表`, 1);
 var root_14$4 = /* @__PURE__ */ from_html(`<div><!></div>`);
 var root_15$4 = /* @__PURE__ */ from_html(`<div class="wide"><!></div>`);
-var root_16$3 = /* @__PURE__ */ from_html(`<details class="settings-group" open=""><summary> <!></summary><div class="parameter-grid"><!> <!></div></details>`);
+var root_16$2 = /* @__PURE__ */ from_html(`<details class="settings-group" open=""><summary> <!></summary><div class="parameter-grid"><!> <!></div></details>`);
 var root_17$2 = /* @__PURE__ */ from_html(`<details class="settings-group"><summary>高级设置<!></summary><div class="settings-fields"></div></details>`);
 var root_18$2 = /* @__PURE__ */ from_html(`<nav class="mobile-generation-tabs" aria-label="生成视图"><!><!></nav> <section class="generation-controls"><div class="controls-scroll"><details class="models-panel"><summary><!><span>模型配置</span><!></summary><div class="settings-fields"><!><div class="row"><!><!></div></div></details> <div class="generation-prompts"></div> <!> <!></div></section> <!>`, 1);
 var root_19$2 = /* @__PURE__ */ from_html(`<p class="hint"> </p>`);
@@ -25177,7 +25177,7 @@ function WorkflowView($$anchor, $$props) {
       });
       var node_27 = sibling(div_13, 2);
       each(node_27, 17, () => get(groups), index$1, ($$anchor3, group) => {
-        var details_2 = root_16$3();
+        var details_2 = root_16$2();
         var summary_2 = child(details_2);
         var text_10 = child(summary_2);
         var node_28 = sibling(text_10);
@@ -29532,7 +29532,7 @@ var root_12$3 = /* @__PURE__ */ from_html(`<details class="tool-call"><summary><
 var root_13$3 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
 var root_14$3 = /* @__PURE__ */ from_html(`<!>从这里分支`, 1);
 var root_15$3 = /* @__PURE__ */ from_html(`<div class="message-actions"><!><!></div>`);
-var root_16$2 = /* @__PURE__ */ from_html(`<div class="message assistant-message"><div class="message-label"><span class="mini-pi">π</span> Pi</div> <!> <!> <!></div>`);
+var root_16$1 = /* @__PURE__ */ from_html(`<div class="message assistant-message"><div class="message-label"><span class="mini-pi">π</span> Pi</div> <!> <!> <!></div>`);
 var root_17$1 = /* @__PURE__ */ from_html(`<div class="sent-attachment svelte-1j1sikj"><img/><!></div>`);
 var root_18$1 = /* @__PURE__ */ from_html(`<span class="error-text"> </span><!>`, 1);
 var root_19$1 = /* @__PURE__ */ from_html(`<div class="message user-message pending-message svelte-1j1sikj"><div class="message-label">你</div> <div class="user-bubble svelte-1j1sikj"><!> <!></div> <div class="delivery-status svelte-1j1sikj" role="status"><!></div></div>`);
@@ -29976,7 +29976,7 @@ function ChatView($$anchor, $$props) {
         append($$anchor3, div_10);
       };
       var consequent_13 = ($$anchor3) => {
-        var div_14 = root_16$2();
+        var div_14 = root_16$1();
         var node_17 = sibling(child(div_14), 2);
         each(node_17, 17, () => get(message).content || [], index$1, ($$anchor4, part) => {
           var fragment_8 = comment();
@@ -31621,7 +31621,7 @@ var root_12$1 = /* @__PURE__ */ from_html(`<label class="field wide"><span>HF �
 var root_13$1 = /* @__PURE__ */ from_html(`<label class="field"><span>内容</span> <select><option>文件</option><option>文件夹（包含子目录）</option></select></label> <label class="field"><span>Drive 相对路径</span><!></label>`, 1);
 var root_14$1 = /* @__PURE__ */ from_html(`<section class="shortcut-editor svelte-1mvl52" aria-label="快捷复制设置"><div class="section-heading svelte-1mvl52"><h2 class="svelte-1mvl52"> </h2> <!></div> <div class="parameter-grid svelte-1mvl52"><label class="field"><span>名称</span><!></label> <label class="field"><span>来源与方向</span> <select><option>Hugging Face → 运行时</option><option>Drive → 运行时</option><option>运行时 → Drive</option></select></label> <!> <label class="field wide"><span> </span> <!></label></div> <div class="editor-actions svelte-1mvl52"><!> <div class="row"><!> <!></div></div></section>`);
 var root_15$1 = /* @__PURE__ */ from_html(`<!>编辑`, 1);
-var root_16$1 = /* @__PURE__ */ from_html(`<!> `, 1);
+var root_16 = /* @__PURE__ */ from_html(`<!> `, 1);
 var root_17 = /* @__PURE__ */ from_html(`<div class="record svelte-1mvl52"><div class="record-meta svelte-1mvl52"><strong class="svelte-1mvl52"> </strong> <p class="svelte-1mvl52"> </p> <p class="record-path svelte-1mvl52"> </p></div> <div class="record-actions svelte-1mvl52"><!> <!></div></div>`);
 var root_18 = /* @__PURE__ */ from_html(`<div class="panel-empty svelte-1mvl52">没有符合搜索条件的快捷项。</div>`);
 var root_19 = /* @__PURE__ */ from_html(`<label class="shortcut-search svelte-1mvl52"><!><!></label> <div class="records svelte-1mvl52"></div>`, 1);
@@ -32180,7 +32180,7 @@ function FilesView($$anchor, $$props) {
                           },
                           onclick: () => act({ action: "replay", ids: [get(item).id] }),
                           children: ($$anchor8, $$slotProps3) => {
-                            var fragment_19 = root_16$1();
+                            var fragment_19 = root_16();
                             var node_39 = first_child(fragment_19);
                             Play(node_39, { size: 14 });
                             var text_11 = sibling(node_39, 1, true);
@@ -32452,19 +32452,18 @@ var root = /* @__PURE__ */ from_html(`<i class="status-dot pulse"></i>`);
 var root_1 = /* @__PURE__ */ from_html(`<button><!> <span> </span> <!></button>`);
 var root_2 = /* @__PURE__ */ from_html(`<button><span> </span><!></button>`);
 var root_3 = /* @__PURE__ */ from_html(`<span class="saved-label"> </span>`);
-var root_4 = /* @__PURE__ */ from_html(`<!><span class="return-label">返回笔记本</span>`, 1);
-var root_5 = /* @__PURE__ */ from_html(`<!><span class="return-label"> </span>`, 1);
-var root_6 = /* @__PURE__ */ from_html(`<button class="app-notice">在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。 ×</button>`);
-var root_7 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status">运行本单元格以连接工作台。</div>`);
-var root_8 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status"> </div>`);
-var root_9 = /* @__PURE__ */ from_html(`<button class="app-notice"> </button>`);
-var root_10 = /* @__PURE__ */ from_html(`<!>添加`, 1);
-var root_11 = /* @__PURE__ */ from_html(`<!>刷新`, 1);
-var root_12 = /* @__PURE__ */ from_html(`<!>导入 Python`, 1);
-var root_13 = /* @__PURE__ */ from_html(`<div class="surface workflow-row"><div class="workflow-name"><h3> </h3></div><!><!><!></div>`);
-var root_14 = /* @__PURE__ */ from_html(`<section class="management page-padding"><div class="surface management-add"><!><!><!><!><!></div> <div class="workflow-list"></div></section>`);
-var root_15 = /* @__PURE__ */ from_html(`<section class="panel-page"><!></section>`);
-var root_16 = /* @__PURE__ */ from_html(`<main><aside class="app-sidebar"><nav aria-label="工作空间导航"><!> <button><!><span>文件与传输</span></button></nav> <div class="sidebar-bottom"><button><!>工作流管理</button></div></aside> <div class="app-main"><header class="app-topbar"><!> <div class="breadcrumb"><strong> </strong></div> <nav class="mobile-navigation" aria-label="手机工作空间导航"><!> <button>文件</button> <button>管理</button></nav> <div class="topbar-right"><!> <!> <!></div></header> <!> <!> <!> <div class="app-content"><!> <!> <section class="panel-page"><!></section></div></div> <input type="file" accept=".py" hidden=""/></main>`);
+var root_4 = /* @__PURE__ */ from_html(`<!><span class="fullscreen-label"> </span>`, 1);
+var root_5 = /* @__PURE__ */ from_html(`<button class="app-notice">浏览器未能切换全屏。 ×</button>`);
+var root_6 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status">运行本单元格以连接工作台。</div>`);
+var root_7 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status"> </div>`);
+var root_8 = /* @__PURE__ */ from_html(`<button class="app-notice"> </button>`);
+var root_9 = /* @__PURE__ */ from_html(`<!>添加`, 1);
+var root_10 = /* @__PURE__ */ from_html(`<!>刷新`, 1);
+var root_11 = /* @__PURE__ */ from_html(`<!>导入 Python`, 1);
+var root_12 = /* @__PURE__ */ from_html(`<div class="surface workflow-row"><div class="workflow-name"><h3> </h3></div><!><!><!></div>`);
+var root_13 = /* @__PURE__ */ from_html(`<section class="management page-padding"><div class="surface management-add"><!><!><!><!><!></div> <div class="workflow-list"></div></section>`);
+var root_14 = /* @__PURE__ */ from_html(`<section class="panel-page"><!></section>`);
+var root_15 = /* @__PURE__ */ from_html(`<main><aside class="app-sidebar"><nav aria-label="工作空间导航"><!> <button><!><span>文件与传输</span></button></nav> <div class="sidebar-bottom"><button><!>工作流管理</button></div></aside> <div class="app-main"><header class="app-topbar"><!> <div class="breadcrumb"><strong> </strong></div> <nav class="mobile-navigation" aria-label="手机工作空间导航"><!> <button>文件</button> <button>管理</button></nav> <div class="topbar-right"><!> <!> <!></div></header> <!> <!> <!> <div class="app-content"><!> <!> <section class="panel-page"><!></section></div></div> <input type="file" accept=".py" hidden=""/></main>`);
 function App($$anchor, $$props) {
   push($$props, true);
   let studioElement;
@@ -32502,31 +32501,23 @@ function App($$anchor, $$props) {
   let playback = /* @__PURE__ */ state$1(proxy({ volume: 0.25, muted: false }));
   const bindingModels = /* @__PURE__ */ new Map();
   let addWorkflow = /* @__PURE__ */ state$1("");
-  const inColab = Boolean(globalThis.google?.colab?.output);
+  const canFullscreen = !globalThis.google?.colab?.output && document.fullscreenEnabled;
   let fullscreen = /* @__PURE__ */ state$1(proxy(Boolean(document.fullscreenElement)));
-  let notebookURL = /* @__PURE__ */ state$1("");
   let fullscreenHint = /* @__PURE__ */ state$1(false);
   async function toggleFullscreen() {
     set(fullscreenHint, false);
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else if (document.fullscreenEnabled) await document.documentElement.requestFullscreen();
-      else set(fullscreenHint, true);
+      else await document.documentElement.requestFullscreen();
     } catch {
       set(fullscreenHint, true);
     }
   }
   user_effect(() => {
+    if (!canFullscreen) return;
     const syncFullscreen = () => set(fullscreen, Boolean(document.fullscreenElement), true);
-    const syncNotebook = () => set(notebookURL, $$props.model.get("notebook_url") || "", true);
-    syncFullscreen();
-    syncNotebook();
     document.addEventListener("fullscreenchange", syncFullscreen);
-    $$props.model.on("change:notebook_url", syncNotebook);
-    return () => {
-      document.removeEventListener("fullscreenchange", syncFullscreen);
-      $$props.model.off("change:notebook_url", syncNotebook);
-    };
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
   });
   let transferNotice = /* @__PURE__ */ state$1("");
   let activeId = /* @__PURE__ */ state$1("");
@@ -32904,7 +32895,7 @@ function App($$anchor, $$props) {
       for (const image of comparisonImages.values()) URL.revokeObjectURL(image.url);
     };
   });
-  var main2 = root_16();
+  var main2 = root_15();
   let classes;
   var aside = child(main2);
   var nav = child(aside);
@@ -33091,27 +33082,7 @@ function App($$anchor, $$props) {
   }
   var node_13 = sibling(node_11, 2);
   {
-    var consequent_7 = ($$anchor2) => {
-      Button($$anchor2, {
-        size: "sm",
-        variant: "outline",
-        get href() {
-          return get(notebookURL);
-        },
-        target: "_blank",
-        rel: "noopener",
-        "aria-label": "返回笔记本（新标签页）",
-        title: "返回笔记本（新标签页）",
-        children: ($$anchor3, $$slotProps) => {
-          var fragment_10 = root_4();
-          var node_14 = first_child(fragment_10);
-          Minimize_2(node_14, { size: 15 });
-          append($$anchor3, fragment_10);
-        },
-        $$slots: { default: true }
-      });
-    };
-    var alternate_4 = ($$anchor2) => {
+    var consequent_8 = ($$anchor2) => {
       {
         let $0 = /* @__PURE__ */ user_derived(() => get(fullscreen) ? "退出全屏" : "全屏");
         Button($$anchor2, {
@@ -33122,85 +33093,84 @@ function App($$anchor, $$props) {
           },
           onclick: toggleFullscreen,
           children: ($$anchor3, $$slotProps) => {
-            var fragment_12 = root_5();
-            var node_15 = first_child(fragment_12);
+            var fragment_10 = root_4();
+            var node_14 = first_child(fragment_10);
             {
-              var consequent_8 = ($$anchor4) => {
+              var consequent_7 = ($$anchor4) => {
                 Minimize_2($$anchor4, { size: 15 });
               };
               var alternate_3 = ($$anchor4) => {
                 Maximize_2($$anchor4, { size: 15 });
               };
-              if_block(node_15, ($$render) => {
-                if (get(fullscreen)) $$render(consequent_8);
+              if_block(node_14, ($$render) => {
+                if (get(fullscreen)) $$render(consequent_7);
                 else $$render(alternate_3, -1);
               });
             }
-            var span_3 = sibling(node_15);
+            var span_3 = sibling(node_14);
             var text_6 = only_child(span_3, true);
             template_effect(() => set_text(text_6, get(fullscreen) ? "退出全屏" : "全屏"));
-            append($$anchor3, fragment_12);
+            append($$anchor3, fragment_10);
           },
           $$slots: { default: true }
         });
       }
     };
     if_block(node_13, ($$render) => {
-      if (inColab && get(notebookURL) && !get(fullscreen)) $$render(consequent_7);
-      else $$render(alternate_4, -1);
+      if (canFullscreen) $$render(consequent_8);
     });
   }
-  var node_16 = sibling(header, 2);
+  var node_15 = sibling(header, 2);
   {
     var consequent_9 = ($$anchor2) => {
-      var button_6 = root_6();
+      var button_6 = root_5();
       delegated("click", button_6, () => set(fullscreenHint, false));
       append($$anchor2, button_6);
     };
-    if_block(node_16, ($$render) => {
+    if_block(node_15, ($$render) => {
       if (get(fullscreenHint)) $$render(consequent_9);
     });
   }
-  var node_17 = sibling(node_16, 2);
+  var node_16 = sibling(node_15, 2);
   {
     var consequent_10 = ($$anchor2) => {
-      var div_4 = root_7();
+      var div_4 = root_6();
       append($$anchor2, div_4);
     };
     var consequent_11 = ($$anchor2) => {
-      var div_5 = root_8();
+      var div_5 = root_7();
       var text_7 = only_child(div_5, true);
       template_effect(() => set_text(text_7, get(state2).message));
       append($$anchor2, div_5);
     };
-    if_block(node_17, ($$render) => {
+    if_block(node_16, ($$render) => {
       if (!get(settingsReady)) $$render(consequent_10);
       else if (get(state2).message) $$render(consequent_11, 1);
     });
   }
-  var node_18 = sibling(node_17, 2);
+  var node_17 = sibling(node_16, 2);
   {
     var consequent_12 = ($$anchor2) => {
-      var button_7 = root_9();
+      var button_7 = root_8();
       var text_8 = only_child(button_7);
       template_effect(() => set_text(text_8, `${get(transferNotice) ?? ""} ×`));
       delegated("click", button_7, () => set(transferNotice, ""));
       append($$anchor2, button_7);
     };
-    if_block(node_18, ($$render) => {
+    if_block(node_17, ($$render) => {
       if (get(transferNotice)) $$render(consequent_12);
     });
   }
-  var div_6 = sibling(node_18, 2);
-  var node_19 = child(div_6);
+  var div_6 = sibling(node_17, 2);
+  var node_18 = child(div_6);
   {
     var consequent_14 = ($$anchor2) => {
-      var section = root_14();
+      var section = root_13();
       var div_7 = child(section);
-      var node_20 = child(div_7);
+      var node_19 = child(div_7);
       {
         let $0 = /* @__PURE__ */ user_derived(() => get(state2).workflows.map((w) => [w.name, w.id]));
-        Dropdown(node_20, {
+        Dropdown(node_19, {
           label: "可用工作流",
           show_label: false,
           get choices() {
@@ -33214,51 +33184,51 @@ function App($$anchor, $$props) {
           }
         });
       }
-      var node_21 = sibling(node_20);
+      var node_20 = sibling(node_19);
       {
         let $0 = /* @__PURE__ */ user_derived(() => !get(addWorkflow));
-        Button(node_21, {
+        Button(node_20, {
           get disabled() {
             return get($0);
           },
           onclick: () => send("add", { workflow: get(addWorkflow) }),
           children: ($$anchor3, $$slotProps) => {
-            var fragment_15 = root_10();
-            var node_22 = first_child(fragment_15);
-            Plus(node_22, { size: 15 });
-            append($$anchor3, fragment_15);
+            var fragment_13 = root_9();
+            var node_21 = first_child(fragment_13);
+            Plus(node_21, { size: 15 });
+            append($$anchor3, fragment_13);
           },
           $$slots: { default: true }
         });
       }
-      var node_23 = sibling(node_21);
-      Button(node_23, {
+      var node_22 = sibling(node_20);
+      Button(node_22, {
         variant: "outline",
         onclick: () => send("refresh"),
         children: ($$anchor3, $$slotProps) => {
-          var fragment_16 = root_11();
-          var node_24 = first_child(fragment_16);
-          Refresh_cw(node_24, { size: 15 });
-          append($$anchor3, fragment_16);
+          var fragment_14 = root_10();
+          var node_23 = first_child(fragment_14);
+          Refresh_cw(node_23, { size: 15 });
+          append($$anchor3, fragment_14);
         },
         $$slots: { default: true }
       });
-      var node_25 = sibling(node_23);
-      Button(node_25, {
+      var node_24 = sibling(node_22);
+      Button(node_24, {
         variant: "outline",
         onclick: () => codeInput.click(),
         children: ($$anchor3, $$slotProps) => {
-          var fragment_17 = root_12();
-          var node_26 = first_child(fragment_17);
-          Upload(node_26, { size: 15 });
-          append($$anchor3, fragment_17);
+          var fragment_15 = root_11();
+          var node_25 = first_child(fragment_15);
+          Upload(node_25, { size: 15 });
+          append($$anchor3, fragment_15);
         },
         $$slots: { default: true }
       });
-      var node_27 = sibling(node_25);
+      var node_26 = sibling(node_24);
       {
         let $0 = /* @__PURE__ */ user_derived(() => get(state2).panels.some((p) => p.busy || p.initializing));
-        Button(node_27, {
+        Button(node_26, {
           variant: "outline",
           get disabled() {
             return get($0);
@@ -33273,11 +33243,11 @@ function App($$anchor, $$props) {
       }
       var div_8 = sibling(div_7, 2);
       each(div_8, 21, () => get(state2).panels, index$1, ($$anchor3, panel) => {
-        var div_9 = root_13();
+        var div_9 = root_12();
         var div_10 = child(div_9);
         var h3 = child(div_10);
         var text_10 = only_child(h3, true);
-        var node_28 = sibling(div_10);
+        var node_27 = sibling(div_10);
         {
           var consequent_13 = ($$anchor4) => {
             Badge($$anchor4, {
@@ -33289,12 +33259,12 @@ function App($$anchor, $$props) {
               $$slots: { default: true }
             });
           };
-          if_block(node_28, ($$render) => {
+          if_block(node_27, ($$render) => {
             if (get(panel).busy) $$render(consequent_13);
           });
         }
-        var node_29 = sibling(node_28);
-        Button(node_29, {
+        var node_28 = sibling(node_27);
+        Button(node_28, {
           variant: "outline",
           onclick: () => send("export", { id: get(panel).id }),
           children: ($$anchor4, $$slotProps) => {
@@ -33303,8 +33273,8 @@ function App($$anchor, $$props) {
           },
           $$slots: { default: true }
         });
-        var node_30 = sibling(node_29);
-        Button(node_30, {
+        var node_29 = sibling(node_28);
+        Button(node_29, {
           variant: "ghost",
           get disabled() {
             return get(panel).busy;
@@ -33324,14 +33294,14 @@ function App($$anchor, $$props) {
       });
       append($$anchor2, section);
     };
-    if_block(node_19, ($$render) => {
+    if_block(node_18, ($$render) => {
       if (get(toolsOpen)) $$render(consequent_14);
     });
   }
-  var node_31 = sibling(node_19, 2);
-  each(node_31, 17, () => get(state2).panels, (panel) => panel.id, ($$anchor2, panel) => {
-    var section_1 = root_15();
-    var node_32 = child(section_1);
+  var node_30 = sibling(node_18, 2);
+  each(node_30, 17, () => get(state2).panels, (panel) => panel.id, ($$anchor2, panel) => {
+    var section_1 = root_14();
+    var node_31 = child(section_1);
     {
       var consequent_15 = ($$anchor3) => {
         {
@@ -33366,7 +33336,7 @@ function App($$anchor, $$props) {
           });
         }
       };
-      var alternate_5 = ($$anchor3) => {
+      var alternate_4 = ($$anchor3) => {
         {
           let $0 = /* @__PURE__ */ user_derived(() => get(previews)[get(panel).id] || "");
           let $1 = /* @__PURE__ */ user_derived(() => previewInfo[get(panel).id] || {});
@@ -33416,17 +33386,17 @@ function App($$anchor, $$props) {
           });
         }
       };
-      if_block(node_32, ($$render) => {
+      if_block(node_31, ($$render) => {
         if (get(panel).spec.chat) $$render(consequent_15);
-        else $$render(alternate_5, -1);
+        else $$render(alternate_4, -1);
       });
     }
     template_effect(() => set_attribute(section_1, "hidden", get(toolsOpen) || get(activeId) !== get(panel).id));
     append($$anchor2, section_1);
   });
-  var section_2 = sibling(node_31, 2);
-  var node_33 = child(section_2);
-  FilesView(node_33, {
+  var section_2 = sibling(node_30, 2);
+  var node_32 = child(section_2);
+  FilesView(node_32, {
     get files() {
       return get(files);
     },
