@@ -32246,7 +32246,7 @@ var root_3 = /* @__PURE__ */ from_html(`<span class="saved-label"> </span>`);
 var root_4 = /* @__PURE__ */ from_html(`<!><span class="return-label">返回笔记本</span>`, 1);
 var root_5 = /* @__PURE__ */ from_html(`<!><span class="return-label"> </span>`, 1);
 var root_6 = /* @__PURE__ */ from_html(`<button class="app-notice">在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。 ×</button>`);
-var root_7 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>`);
+var root_7 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status">运行本单元格以连接工作台。</div>`);
 var root_8 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status"> </div>`);
 var root_9 = /* @__PURE__ */ from_html(`<button class="app-notice"> </button>`);
 var root_10 = /* @__PURE__ */ from_html(`<!>添加`, 1);
@@ -33271,21 +33271,24 @@ function render({ model, el }) {
   const style = document.createElement("style");
   style.textContent = GRADIO_COMPONENT_CSS.replaceAll(":root", ":host") + ":host{display:block;width:100%;background:var(--background)}";
   shadow.append(style);
+  const app = mount(App, { target: shadow, props: { model } });
+  const toolbar = shadow.querySelector(".app-topbar");
   const initialOutputHeight = 760;
   const viewport = window.visualViewport;
   const compact = window.matchMedia("(max-width:760px), (max-width:1000px) and (max-height:500px)");
   const updateViewport = () => {
-    const height = compact.matches && viewport?.height || window.innerHeight || initialOutputHeight;
+    const frameHeight = window.innerHeight;
+    const visibleHeight = compact.matches && viewport?.height || frameHeight;
+    const height = colabOutput && frameHeight <= (toolbar?.offsetHeight || 0) ? initialOutputHeight : visibleHeight || initialOutputHeight;
     host.style.height = height + "px";
     host.style.setProperty("--studio-viewport-height", height + "px");
-    host.dataset.keyboardOpen = String(compact.matches && window.innerHeight - height > 120);
+    host.dataset.keyboardOpen = String(compact.matches && frameHeight - height > 120);
   };
   window.addEventListener("resize", updateViewport);
   viewport?.addEventListener("resize", updateViewport);
   viewport?.addEventListener("scroll", updateViewport);
-  colabOutput?.setIframeHeight?.(initialOutputHeight, true);
+  colabOutput?.setIframeHeight?.(initialOutputHeight, false);
   updateViewport();
-  const app = mount(App, { target: shadow, props: { model } });
   return () => {
     stopTheme();
     window.removeEventListener("resize", updateViewport);

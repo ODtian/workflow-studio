@@ -22,22 +22,28 @@ export function render({model, el}) {
   style.textContent = GRADIO_COMPONENT_CSS.replaceAll(':root', ':host') +
     ':host{display:block;width:100%;background:var(--background)}';
   shadow.append(style);
+  const app = mount(App, {target: shadow, props: {model}});
+  const toolbar = shadow.querySelector('.app-topbar');
   const initialOutputHeight = 760;
   const viewport = window.visualViewport;
   const compact = window.matchMedia('(max-width:760px), (max-width:1000px) and (max-height:500px)');
   const updateViewport = () => {
-    const height = (compact.matches && viewport?.height) || window.innerHeight || initialOutputHeight;
+    const frameHeight = window.innerHeight;
+    const visibleHeight = (compact.matches && viewport?.height) || frameHeight;
+    // Colab can restore a placeholder that is shorter than the toolbar.
+    const height = colabOutput && frameHeight <= (toolbar?.offsetHeight || 0)
+      ? initialOutputHeight
+      : visibleHeight || initialOutputHeight;
     host.style.height = height+'px';
     host.style.setProperty('--studio-viewport-height', height+'px');
-    host.dataset.keyboardOpen = String(compact.matches && window.innerHeight-height>120);
+    host.dataset.keyboardOpen = String(compact.matches && frameHeight-height>120);
   };
   window.addEventListener('resize', updateViewport);
   viewport?.addEventListener('resize', updateViewport);
   viewport?.addEventListener('scroll', updateViewport);
-  // Seed the Colab output before it measures the widget.
-  colabOutput?.setIframeHeight?.(initialOutputHeight, true);
+  // Keep Colab from resizing the frame in response to its own viewport height.
+  colabOutput?.setIframeHeight?.(initialOutputHeight, false);
   updateViewport();
-  const app = mount(App, {target: shadow, props: {model}});
   return () => {
     stopTheme();
     window.removeEventListener('resize', updateViewport);

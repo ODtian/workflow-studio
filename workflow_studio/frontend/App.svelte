@@ -435,7 +435,7 @@
       </div>
     </header>
     {#if fullscreenHint}<button class="app-notice" onclick={()=>fullscreenHint=false}>在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。 ×</button>{/if}
-    {#if !settingsReady}<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
+    {#if !settingsReady}<div class="app-notice" role="status">运行本单元格以连接工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
     <div class="app-content">
       {#if toolsOpen}
