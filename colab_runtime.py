@@ -61,14 +61,28 @@ def _comfy_api(path, payload=None):
         return json.load(response)
 
 
+def _preview_origin(output, port):
+    preview = urlsplit(output.eval_js(f"google.colab.kernel.proxyPort({port})"))
+    if preview.scheme != "https" or not preview.netloc:
+        raise RuntimeError("Colab 未返回 HTTPS 预览地址")
+    return f"{preview.scheme}://{preview.netloc}"
+
+
 def start_comfy():
     """Start ComfyUI, run a model-free preview workflow and display the Colab link."""
     from google.colab import output
     import torch
 
+    extension = COMFY / "custom_nodes" / "workflow_studio_colab_preview.py"
+    preview_source = STUDIO / "colab_comfy_preview.py"
+    if not extension.exists() and not extension.is_symlink():
+        extension.symlink_to(preview_source)
+    if extension.resolve() != preview_source:
+        raise RuntimeError(f"Colab 预览扩展路径已被占用: {extension}")
+    env = {**os.environ, "WORKFLOW_STUDIO_COMFY_ORIGIN": _preview_origin(output, COMFY_PORT)}
     device_args = [] if torch.cuda.is_available() else ["--cpu"]
     _start("comfyui", ["main.py", "--listen", "127.0.0.1", "--port", str(COMFY_PORT),
-                     "--disable-auto-launch", *device_args], COMFY, COMFY_PORT)
+                     "--disable-auto-launch", *device_args], COMFY, COMFY_PORT, env=env)
     prompt = {
         "1": {"class_type": "EmptyImage", "inputs": {"width": 64, "height": 64, "batch_size": 1, "color": 0}},
         "2": {"class_type": "PreviewImage", "inputs": {"images": ["1", 0]}},
@@ -92,8 +106,7 @@ def start_studio():
     """Start the regular Studio notebook with the current Colab preview origin."""
     from google.colab import output
 
-    proxy = urlsplit(output.eval_js(f"google.colab.kernel.proxyPort({STUDIO_PORT})"))
-    origin = f"{proxy.scheme}://{proxy.netloc}"
+    origin = _preview_origin(output, STUDIO_PORT)
     env = {**os.environ, "PYTHONPATH": str(STUDIO), "WORKFLOW_COMFY_ROOT": str(COMFY),
            "WORKFLOW_MODELS_DIR": str(COMFY / "models")}
     _start("studio", ["-m", "marimo", "run", "notebook.py", "--headless", "--host", "127.0.0.1",
