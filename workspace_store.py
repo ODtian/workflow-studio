@@ -15,22 +15,23 @@ STORE = Path(os.environ.get('WORKFLOW_STUDIO_STATE_DIR', RUNTIME_DIR / 'settings
 KEY = 'state.json.gz'
 
 
-def _state_path(key):
-    path = (STORE / key).resolve()
-    if not path.is_relative_to(STORE):
+def _state_path(key, directory=None):
+    root = Path(directory).resolve() if directory is not None else STORE
+    path = (root / key).resolve()
+    if not path.is_relative_to(root):
         raise ValueError('设置资源路径超出 Studio 设置目录')
     return path
 
 
-def _get(key):
+def _get(key, directory=None):
     try:
-        return unpack(_state_path(key).read_bytes())
+        return unpack(_state_path(key, directory).read_bytes())
     except FileNotFoundError:
         return None
 
 
-def _put(key, blob):
-    target = _state_path(key)
+def _put(key, blob, directory=None):
+    target = _state_path(key, directory)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:

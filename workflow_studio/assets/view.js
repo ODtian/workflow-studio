@@ -12977,16 +12977,16 @@ function Arrow_right($$anchor, $$props) {
   }));
 }
 const __iconData$J = {
-  "name": "arrow-up-right",
+  "name": "arrow-up",
   "size": 24,
   "node": [
-    ["path", { "d": "M7 7h10v10" }],
-    ["path", { "d": "M7 17 17 7" }]
+    ["path", { "d": "m5 12 7-7 7 7" }],
+    ["path", { "d": "M12 19V5" }]
   ]
 };
 __iconData$J.node;
 var rest_excludes$$ = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Arrow_up_right($$anchor, $$props) {
+function Arrow_up($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$$);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -12995,16 +12995,13 @@ function Arrow_up_right($$anchor, $$props) {
   }));
 }
 const __iconData$I = {
-  "name": "arrow-up",
+  "name": "check",
   "size": 24,
-  "node": [
-    ["path", { "d": "m5 12 7-7 7 7" }],
-    ["path", { "d": "M12 19V5" }]
-  ]
+  "node": [["path", { "d": "M20 6 9 17l-5-5" }]]
 };
 __iconData$I.node;
 var rest_excludes$_ = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Arrow_up($$anchor, $$props) {
+function Check($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$_);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -13013,13 +13010,13 @@ function Arrow_up($$anchor, $$props) {
   }));
 }
 const __iconData$H = {
-  "name": "check",
+  "name": "chevron-down",
   "size": 24,
-  "node": [["path", { "d": "M20 6 9 17l-5-5" }]]
+  "node": [["path", { "d": "m6 9 6 6 6-6" }]]
 };
 __iconData$H.node;
 var rest_excludes$Z = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Check($$anchor, $$props) {
+function Chevron_down($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Z);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -13028,13 +13025,13 @@ function Check($$anchor, $$props) {
   }));
 }
 const __iconData$G = {
-  "name": "chevron-down",
+  "name": "chevron-left",
   "size": 24,
-  "node": [["path", { "d": "m6 9 6 6 6-6" }]]
+  "node": [["path", { "d": "m15 18-6-6 6-6" }]]
 };
 __iconData$G.node;
 var rest_excludes$Y = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Chevron_down($$anchor, $$props) {
+function Chevron_left($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Y);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -13043,13 +13040,13 @@ function Chevron_down($$anchor, $$props) {
   }));
 }
 const __iconData$F = {
-  "name": "chevron-left",
+  "name": "chevron-right",
   "size": 24,
-  "node": [["path", { "d": "m15 18-6-6 6-6" }]]
+  "node": [["path", { "d": "m9 18 6-6-6-6" }]]
 };
 __iconData$F.node;
 var rest_excludes$X = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Chevron_left($$anchor, $$props) {
+function Chevron_right($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$X);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -13058,21 +13055,6 @@ function Chevron_left($$anchor, $$props) {
   }));
 }
 const __iconData$E = {
-  "name": "chevron-right",
-  "size": 24,
-  "node": [["path", { "d": "m9 18 6-6-6-6" }]]
-};
-__iconData$E.node;
-var rest_excludes$W = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Chevron_right($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$W);
-  Icon($$anchor, spread_props(() => props, {
-    get icon() {
-      return __iconData$E;
-    }
-  }));
-}
-const __iconData$D = {
   "name": "clipboard-paste",
   "size": 24,
   "node": [
@@ -13091,17 +13073,17 @@ const __iconData$D = {
     ]
   ]
 };
-__iconData$D.node;
-var rest_excludes$V = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$E.node;
+var rest_excludes$W = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Clipboard_paste($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$V);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$W);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$D;
+      return __iconData$E;
     }
   }));
 }
-const __iconData$C = {
+const __iconData$D = {
   "name": "cloud",
   "size": 24,
   "node": [
@@ -13111,17 +13093,17 @@ const __iconData$C = {
     ]
   ]
 };
-__iconData$C.node;
-var rest_excludes$U = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$D.node;
+var rest_excludes$V = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Cloud($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$U);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$V);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$C;
+      return __iconData$D;
     }
   }));
 }
-const __iconData$B = {
+const __iconData$C = {
   "name": "combine",
   "size": 24,
   "node": [
@@ -13139,17 +13121,17 @@ const __iconData$B = {
     ]
   ]
 };
-__iconData$B.node;
-var rest_excludes$T = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$C.node;
+var rest_excludes$U = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Combine($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$T);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$U);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$B;
+      return __iconData$C;
     }
   }));
 }
-const __iconData$A = {
+const __iconData$B = {
   "name": "copy",
   "size": 24,
   "node": [
@@ -13172,17 +13154,17 @@ const __iconData$A = {
     ]
   ]
 };
-__iconData$A.node;
-var rest_excludes$S = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$B.node;
+var rest_excludes$T = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Copy($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$S);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$T);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$A;
+      return __iconData$B;
     }
   }));
 }
-const __iconData$z = {
+const __iconData$A = {
   "name": "diamond",
   "size": 24,
   "node": [
@@ -13194,17 +13176,17 @@ const __iconData$z = {
     ]
   ]
 };
-__iconData$z.node;
-var rest_excludes$R = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$A.node;
+var rest_excludes$S = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Diamond($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$R);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$S);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$z;
+      return __iconData$A;
     }
   }));
 }
-const __iconData$y = {
+const __iconData$z = {
   "name": "download",
   "size": 24,
   "node": [
@@ -13213,17 +13195,17 @@ const __iconData$y = {
     ["path", { "d": "m7 10 5 5 5-5" }]
   ]
 };
-__iconData$y.node;
-var rest_excludes$Q = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$z.node;
+var rest_excludes$R = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Download($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Q);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$R);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$y;
+      return __iconData$z;
     }
   }));
 }
-const __iconData$x = {
+const __iconData$y = {
   "name": "eighth-notes",
   "size": 24,
   "node": [
@@ -13238,17 +13220,17 @@ const __iconData$x = {
   ],
   "aliases": ["music"]
 };
-__iconData$x.node;
-var rest_excludes$P = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$y.node;
+var rest_excludes$Q = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Eighth_notes($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$P);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Q);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$x;
+      return __iconData$y;
     }
   }));
 }
-const __iconData$w = {
+const __iconData$x = {
   "name": "file-text",
   "size": 24,
   "node": [
@@ -13264,17 +13246,17 @@ const __iconData$w = {
     ["path", { "d": "M16 17H8" }]
   ]
 };
-__iconData$w.node;
-var rest_excludes$O = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$x.node;
+var rest_excludes$P = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function File_text($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$O);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$P);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$w;
+      return __iconData$x;
     }
   }));
 }
-const __iconData$v = {
+const __iconData$w = {
   "name": "file",
   "size": 24,
   "node": [
@@ -13287,17 +13269,17 @@ const __iconData$v = {
     ["path", { "d": "M14 2v5a1 1 0 0 0 1 1h5" }]
   ]
 };
-__iconData$v.node;
-var rest_excludes$N = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$w.node;
+var rest_excludes$O = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function File$1($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$N);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$O);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$v;
+      return __iconData$w;
     }
   }));
 }
-const __iconData$u = {
+const __iconData$v = {
   "name": "film",
   "size": 24,
   "node": [
@@ -13314,17 +13296,17 @@ const __iconData$u = {
     ["path", { "d": "M17 16.5h4" }]
   ]
 };
-__iconData$u.node;
-var rest_excludes$M = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$v.node;
+var rest_excludes$N = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Film($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$M);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$N);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$u;
+      return __iconData$v;
     }
   }));
 }
-const __iconData$t = {
+const __iconData$u = {
   "name": "folder-open",
   "size": 24,
   "node": [
@@ -13336,17 +13318,17 @@ const __iconData$t = {
     ]
   ]
 };
-__iconData$t.node;
-var rest_excludes$L = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$u.node;
+var rest_excludes$M = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Folder_open($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$L);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$M);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$t;
+      return __iconData$u;
     }
   }));
 }
-const __iconData$s = {
+const __iconData$t = {
   "name": "folder",
   "size": 24,
   "node": [
@@ -13358,17 +13340,17 @@ const __iconData$s = {
     ]
   ]
 };
-__iconData$s.node;
-var rest_excludes$K = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$t.node;
+var rest_excludes$L = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Folder($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$K);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$L);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$s;
+      return __iconData$t;
     }
   }));
 }
-const __iconData$r = {
+const __iconData$s = {
   "name": "git-branch",
   "size": 24,
   "node": [
@@ -13377,17 +13359,17 @@ const __iconData$r = {
     ["circle", { "cx": "6", "cy": "18", "r": "3" }]
   ]
 };
-__iconData$r.node;
-var rest_excludes$J = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$s.node;
+var rest_excludes$K = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Git_branch($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$J);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$K);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$r;
+      return __iconData$s;
     }
   }));
 }
-const __iconData$q = {
+const __iconData$r = {
   "name": "hard-drive",
   "size": 24,
   "node": [
@@ -13402,17 +13384,17 @@ const __iconData$q = {
     ["path", { "d": "M6 16h.01" }]
   ]
 };
-__iconData$q.node;
-var rest_excludes$I = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$r.node;
+var rest_excludes$J = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Hard_drive($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$I);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$J);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$q;
+      return __iconData$r;
     }
   }));
 }
-const __iconData$p = {
+const __iconData$q = {
   "name": "image",
   "size": 24,
   "node": [
@@ -13431,17 +13413,17 @@ const __iconData$p = {
     ["path", { "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" }]
   ]
 };
-__iconData$p.node;
-var rest_excludes$H = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$q.node;
+var rest_excludes$I = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Image($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$H);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$I);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$p;
+      return __iconData$q;
     }
   }));
 }
-const __iconData$o = {
+const __iconData$p = {
   "name": "info",
   "size": 24,
   "node": [
@@ -13450,17 +13432,17 @@ const __iconData$o = {
     ["path", { "d": "M12 8h.01" }]
   ]
 };
-__iconData$o.node;
-var rest_excludes$G = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$p.node;
+var rest_excludes$H = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Info($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$G);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$H);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$o;
+      return __iconData$p;
     }
   }));
 }
-const __iconData$n = {
+const __iconData$o = {
   "name": "maximize-2",
   "size": 24,
   "node": [
@@ -13470,17 +13452,17 @@ const __iconData$n = {
     ["path", { "d": "M9 21H3v-6" }]
   ]
 };
-__iconData$n.node;
-var rest_excludes$F = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$o.node;
+var rest_excludes$G = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Maximize_2($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$F);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$G);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$n;
+      return __iconData$o;
     }
   }));
 }
-const __iconData$m = {
+const __iconData$n = {
   "name": "message-square",
   "size": 24,
   "node": [
@@ -13492,9 +13474,29 @@ const __iconData$m = {
     ]
   ]
 };
+__iconData$n.node;
+var rest_excludes$F = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+function Message_square($$anchor, $$props) {
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$F);
+  Icon($$anchor, spread_props(() => props, {
+    get icon() {
+      return __iconData$n;
+    }
+  }));
+}
+const __iconData$m = {
+  "name": "minimize-2",
+  "size": 24,
+  "node": [
+    ["path", { "d": "m14 10 7-7" }],
+    ["path", { "d": "M20 10h-6V4" }],
+    ["path", { "d": "m3 21 7-7" }],
+    ["path", { "d": "M4 14h6v6" }]
+  ]
+};
 __iconData$m.node;
 var rest_excludes$E = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Message_square($$anchor, $$props) {
+function Minimize_2($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$E);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -22966,7 +22968,7 @@ var root_11$4 = /* @__PURE__ */ from_html(`<!>刷新`, 1);
 var root_12$4 = /* @__PURE__ */ from_html(`<!> <details class="settings-group"><summary>模型配置</summary><div class="settings-fields"><!><div class="row"><!><!></div></div></details> <!> <!> <div class="h3-two svelte-qiiy62"></div> <details class="settings-group"><summary>SelfLift</summary><div class="settings-fields"></div></details> <details class="settings-group"><summary>高级设置</summary><div class="settings-fields"></div></details>`, 1);
 var root_13$4 = /* @__PURE__ */ from_html(`<!>关键帧`, 1);
 var root_14$4 = /* @__PURE__ */ from_html(`<!>切分`, 1);
-var root_15$3 = /* @__PURE__ */ from_html(`<!>合并`, 1);
+var root_15$4 = /* @__PURE__ */ from_html(`<!>合并`, 1);
 var root_16$3 = /* @__PURE__ */ from_html(`<span> </span>`);
 var root_17$3 = /* @__PURE__ */ from_html(`<button><span class="h3-edge left svelte-qiiy62" data-edge="left"></span><input type="checkbox" class="svelte-qiiy62"/><span class="h3-clip-copy svelte-qiiy62"><strong class="svelte-qiiy62"> </strong><small class="svelte-qiiy62"> </small></span><span class="h3-edge right svelte-qiiy62" data-edge="right"></span></button>`);
 var root_18$3 = /* @__PURE__ */ from_html(`<button class="h3-context svelte-qiiy62"></button>`);
@@ -22978,9 +22980,9 @@ var root_23$2 = /* @__PURE__ */ from_html(`<img class="svelte-qiiy62"/>`);
 var root_24$2 = /* @__PURE__ */ from_html(`<button class="h3-anchor svelte-qiiy62"><!></button>`);
 var root_25$2 = /* @__PURE__ */ from_html(`<button class="h3-anchor h3-reference-point svelte-qiiy62"><!></button>`);
 var root_26$2 = /* @__PURE__ */ from_html(`<button class="h3-resource-bar svelte-qiiy62"><span class="h3-edge left svelte-qiiy62" data-edge="left"></span><span class="svelte-qiiy62"> </span><small class="svelte-qiiy62"> </small><span class="h3-edge right svelte-qiiy62" data-edge="right"></span></button>`);
-var root_27$1 = /* @__PURE__ */ from_html(`<div class="h3-lane h3-resource svelte-qiiy62"><span class="h3-label svelte-qiiy62"> </span><div class="h3-track svelte-qiiy62"></div></div>`);
-var root_28$1 = /* @__PURE__ */ from_html(`<span class="h3-audio-carry svelte-qiiy62"></span>`);
-var root_29$1 = /* @__PURE__ */ from_html(`<button> </button><!>`, 1);
+var root_27$2 = /* @__PURE__ */ from_html(`<div class="h3-lane h3-resource svelte-qiiy62"><span class="h3-label svelte-qiiy62"> </span><div class="h3-track svelte-qiiy62"></div></div>`);
+var root_28$2 = /* @__PURE__ */ from_html(`<span class="h3-audio-carry svelte-qiiy62"></span>`);
+var root_29$2 = /* @__PURE__ */ from_html(`<button> </button><!>`, 1);
 var root_30$1 = /* @__PURE__ */ from_html(`<div class="h3-workbench svelte-qiiy62" aria-label="H3 时间轴工作台"><nav class="h3-mobile-tabs svelte-qiiy62" aria-label="H3 视图"><!><!></nav> <div class="h3-top svelte-qiiy62"><div class="h3-stage svelte-qiiy62"><!></div> <!> <aside class="h3-inspector svelte-qiiy62"><nav class="h3-inspector-tabs svelte-qiiy62" aria-label="时间轴属性"></nav> <div class="h3-property-scroll svelte-qiiy62"><!></div></aside></div> <!> <section class="h3-timeline svelte-qiiy62" aria-label="视频时间轴"><div class="h3-tools svelte-qiiy62"><!><!><!><!><span class="h3-tool-spacer svelte-qiiy62"></span><label class="h3-duration svelte-qiiy62">总长<!>s</label><div class="h3-auto svelte-qiiy62"><select aria-label="自动分段方式" class="svelte-qiiy62"><option>运动上下文</option><option>末帧续写</option><option>上下文＋淡化</option><option>独立分镜</option><option>最长单段</option></select><!><!></div></div> <input hidden="" type="file" accept="image/*"/> <div class="h3-legend svelte-qiiy62"><span class="svelte-qiiy62"><i class="h3-blue svelte-qiiy62"></i>交叠引用</span><span class="svelte-qiiy62"><i class="h3-orange svelte-qiiy62"></i>图像混合</span><span class="svelte-qiiy62"><i class="h3-gray svelte-qiiy62"></i>补齐裁剪</span></div> <div class="h3-ruler-row svelte-qiiy62"><span class="h3-label svelte-qiiy62">24 fps</span><div class="h3-track h3-ruler svelte-qiiy62" role="slider" aria-label="视频播放位置" tabindex="0"></div></div> <div class="h3-tracks svelte-qiiy62"><div class="h3-lane svelte-qiiy62"><span class="h3-label svelte-qiiy62">分段</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-lane h3-transition svelte-qiiy62"><span class="h3-label svelte-qiiy62">衔接</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-lane h3-anchors svelte-qiiy62"><span class="h3-label svelte-qiiy62">锚点</span><div class="h3-track svelte-qiiy62"><!><!></div></div> <!> <div class="h3-lane h3-audio svelte-qiiy62"><span class="h3-label svelte-qiiy62">音频</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-playhead-area svelte-qiiy62"><span class="h3-playhead svelte-qiiy62"></span></div></div> <div class="h3-timeline-footer svelte-qiiy62"><!><!><span> </span><span class="h3-edit-notice svelte-qiiy62" role="status"> </span></div></section></div>`);
 function H3Timeline($$anchor, $$props) {
   push($$props, true);
@@ -24102,7 +24104,7 @@ function H3Timeline($$anchor, $$props) {
       },
       onclick: merge,
       children: ($$anchor2, $$slotProps) => {
-        var fragment_23 = root_15$3();
+        var fragment_23 = root_15$4();
         var node_41 = first_child(fragment_23);
         Combine(node_41, { size: 13 });
         append($$anchor2, fragment_23);
@@ -24407,7 +24409,7 @@ function H3Timeline($$anchor, $$props) {
   });
   var node_54 = sibling(div_30, 2);
   each(node_54, 17, () => get(tracks), (resource) => resource.id, ($$anchor2, resource) => {
-    var div_32 = root_27$1();
+    var div_32 = root_27$2();
     var span_4 = child(div_32);
     var text_23 = only_child(span_4, true);
     var div_33 = sibling(span_4);
@@ -24442,7 +24444,7 @@ function H3Timeline($$anchor, $$props) {
   var div_34 = sibling(node_54, 2);
   var div_35 = sibling(child(div_34));
   each(div_35, 21, () => get(plan), index$1, ($$anchor2, clip) => {
-    var fragment_27 = root_29$1();
+    var fragment_27 = root_29$2();
     var button_8 = first_child(fragment_27);
     let classes_2;
     let styles_10;
@@ -24450,7 +24452,7 @@ function H3Timeline($$anchor, $$props) {
     var node_55 = sibling(button_8);
     {
       var consequent_16 = ($$anchor3) => {
-        var span_6 = root_28$1();
+        var span_6 = root_28$2();
         let styles_11;
         template_effect(($0, $1) => styles_11 = set_style(span_6, "", styles_11, { left: $0, width: $1 }), [
           () => pct(get(clip).start - seconds(get(clip).audio_context_frames || get(clip).carry)) + "%",
@@ -24575,7 +24577,7 @@ var root_11$3 = /* @__PURE__ */ from_html(`<i class="status-dot pulse"></i>`);
 var root_12$3 = /* @__PURE__ */ from_html(`<!>预览与历史<!>`, 1);
 var root_13$3 = /* @__PURE__ */ from_html(`<!>刷新模型列表`, 1);
 var root_14$3 = /* @__PURE__ */ from_html(`<div><!></div>`);
-var root_15$2 = /* @__PURE__ */ from_html(`<div class="wide"><!></div>`);
+var root_15$3 = /* @__PURE__ */ from_html(`<div class="wide"><!></div>`);
 var root_16$2 = /* @__PURE__ */ from_html(`<details class="settings-group" open=""><summary> <!></summary><div class="parameter-grid"><!> <!></div></details>`);
 var root_17$2 = /* @__PURE__ */ from_html(`<details class="settings-group"><summary>高级设置<!></summary><div class="settings-fields"></div></details>`);
 var root_18$2 = /* @__PURE__ */ from_html(`<nav class="mobile-generation-tabs" aria-label="生成视图"><!><!></nav> <section class="generation-controls"><div class="controls-scroll"><details class="models-panel"><summary><!><span>模型配置</span><!></summary><div class="settings-fields"><!><div class="row"><!><!></div></div></details> <div class="generation-prompts"></div> <!> <!></div></section> <!>`, 1);
@@ -25109,7 +25111,7 @@ function WorkflowView($$anchor, $$props) {
         var node_29 = child(div_15);
         {
           var consequent_8 = ($$anchor4) => {
-            var div_16 = root_15$2();
+            var div_16 = root_15$3();
             var node_30 = child(div_16);
             ResolutionControls(node_30, {
               get presets() {
@@ -29454,7 +29456,7 @@ var root_11$2 = /* @__PURE__ */ from_html(`<div class="tool-section-heading"><sm
 var root_12$2 = /* @__PURE__ */ from_html(`<details class="tool-call"><summary><!><strong> </strong><span class="tool-summary"> </span><!><!></summary><div class="tool-body"><div class="tool-section-heading"><small>参数</small><!></div><pre> </pre><!></div></details>`);
 var root_13$2 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
 var root_14$2 = /* @__PURE__ */ from_html(`<!>从这里分支`, 1);
-var root_15$1 = /* @__PURE__ */ from_html(`<div class="message-actions"><!><!></div>`);
+var root_15$2 = /* @__PURE__ */ from_html(`<div class="message-actions"><!><!></div>`);
 var root_16$1 = /* @__PURE__ */ from_html(`<div class="message assistant-message"><div class="message-label"><span class="mini-pi">π</span> Pi</div> <!> <!> <!></div>`);
 var root_17$1 = /* @__PURE__ */ from_html(`<div class="sent-attachment svelte-1j1sikj"><img/><!></div>`);
 var root_18$1 = /* @__PURE__ */ from_html(`<span class="error-text"> </span><!>`, 1);
@@ -29466,9 +29468,9 @@ var root_23$1 = /* @__PURE__ */ from_html(`<div class="upload-tile svelte-1j1sik
 var root_24$1 = /* @__PURE__ */ from_html(`<div class="attachment-strip svelte-1j1sikj"></div>`);
 var root_25$1 = /* @__PURE__ */ from_html(`<button><!> </button>`);
 var root_26$1 = /* @__PURE__ */ from_html(`<div class="slash-menu"><!><!></div>`);
-var root_27 = /* @__PURE__ */ from_html(`<!><!><!>`, 1);
-var root_28 = /* @__PURE__ */ from_html(`<div class="composer-footer"><span> </span></div>`);
-var root_29 = /* @__PURE__ */ from_html(`<p class="hint"> </p>`);
+var root_27$1 = /* @__PURE__ */ from_html(`<!><!><!>`, 1);
+var root_28$1 = /* @__PURE__ */ from_html(`<div class="composer-footer"><span> </span></div>`);
+var root_29$1 = /* @__PURE__ */ from_html(`<p class="hint"> </p>`);
 var root_30 = /* @__PURE__ */ from_html(`<details class="settings-group"><summary> </summary><div class="settings-fields"></div></details>`);
 var root_31 = /* @__PURE__ */ from_html(`<div class="resource-row"><div><strong> </strong></div><!></div>`);
 var root_32 = /* @__PURE__ */ from_html(`<!>重载资源`, 1);
@@ -30053,7 +30055,7 @@ function ChatView($$anchor, $$props) {
         var node_32 = sibling(node_31, 2);
         {
           var consequent_12 = ($$anchor4) => {
-            var div_19 = root_15$1();
+            var div_19 = root_15$2();
             var node_33 = child(div_19);
             Button(node_33, {
               variant: "ghost",
@@ -30372,7 +30374,7 @@ function ChatView($$anchor, $$props) {
   var node_58 = child(div_34);
   {
     var consequent_22 = ($$anchor2) => {
-      var fragment_26 = root_27();
+      var fragment_26 = root_27$1();
       var node_59 = first_child(fragment_26);
       {
         let $0 = /* @__PURE__ */ user_derived(() => !get(input).trim() && !get(attachments).length);
@@ -30445,7 +30447,7 @@ function ChatView($$anchor, $$props) {
   var node_62 = sibling(div_28, 2);
   {
     var consequent_23 = ($$anchor2) => {
-      var div_35 = root_28();
+      var div_35 = root_28$1();
       var span_7 = child(div_35);
       var text_29 = only_child(span_7);
       template_effect(($0) => set_text(text_29, `${$0 ?? ""}${$$props.panel.metadata?.每秒tokens ? $$props.panel.metadata.每秒tokens + " tok/s " : ""}`), [
@@ -30491,7 +30493,7 @@ function ChatView($$anchor, $$props) {
       var node_66 = child(div_37);
       {
         var consequent_26 = ($$anchor3) => {
-          var fragment_31 = root_27();
+          var fragment_31 = root_27$1();
           var node_67 = first_child(fragment_31);
           {
             let $0 = /* @__PURE__ */ user_derived(() => $$props.panel.busy || $$props.panel.initializing);
@@ -30512,7 +30514,7 @@ function ChatView($$anchor, $$props) {
           var node_68 = sibling(node_67);
           {
             var consequent_25 = ($$anchor4) => {
-              var p_3 = root_29();
+              var p_3 = root_29$1();
               var text_33 = only_child(p_3, true);
               template_effect(() => set_text(text_33, $$props.panel.initialization));
               append($$anchor4, p_3);
@@ -31476,20 +31478,23 @@ var root_9$1 = /* @__PURE__ */ from_html(`<!>管理`, 1);
 var root_10$1 = /* @__PURE__ */ from_html(`<div class="surface shortcut-card"><div class="row"><!><h3> </h3><!></div><p class="path-text"> </p><div class="row"><!><!></div></div>`);
 var root_11$1 = /* @__PURE__ */ from_html(`<div class="empty-resource">暂无快捷操作</div>`);
 var root_12$1 = /* @__PURE__ */ from_html(`<div class="shortcut-search"><!><!></div><div class="shortcut-grid"></div>`, 1);
-var root_13$1 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
-var root_14$1 = /* @__PURE__ */ from_html(`<div class="transfer-record"><div><strong> </strong><!></div><!><!><!></div>`);
-var root_15 = /* @__PURE__ */ from_html(`<p class="empty-resource">暂无传输记录</p>`);
-var root_16 = /* @__PURE__ */ from_html(`<div class="surface transfer-history"></div>`);
-var root_17 = /* @__PURE__ */ from_html(`<div class="files-tabs"><!><!></div> <!> <!> <!>`, 1);
-var root_18 = /* @__PURE__ */ from_html(`<code> </code>`);
-var root_19 = /* @__PURE__ */ from_html(`<div class="field wide"><span>配套来源</span><!></div>`);
-var root_20 = /* @__PURE__ */ from_html(`<label class="field wide"><span>HF 仓库或文件地址</span><!></label> <label class="field wide"><span>文件范围（多个规则用逗号分隔）</span><!></label> <label class="field"><span>版本</span><!></label> <!>`, 1);
-var root_21 = /* @__PURE__ */ from_html(`<label class="field"><span>内容</span><select><option>文件</option><option>文件夹 · 包含子目录</option></select></label><label class="field"><span>Drive 相对路径</span><!></label>`, 1);
-var root_22 = /* @__PURE__ */ from_html(`<section class="surface shortcut-editor"><h2>快捷操作设置</h2><div class="parameter-grid"><label class="field"><span>名称</span><!></label><label class="field"><span>复制方向</span><select><option>HF → 本机</option><option>Drive → 本机</option><option>本机 → Drive</option></select></label><!><label class="field wide"><span> </span><!></label></div><div class="row"><!><!><!></div></section>`);
-var root_23 = /* @__PURE__ */ from_html(`<div class="file-notice" role="status"><span> </span><!></div>`);
-var root_24 = /* @__PURE__ */ from_html(`<div class="surface transfer-task"><div class="row"><strong> </strong><span> </span><!></div><!></div>`);
-var root_25 = /* @__PURE__ */ from_html(`<section class="transfer-queue"><h3>正在传输</h3><!></section>`);
-var root_26 = /* @__PURE__ */ from_html(`<article class="files-workspace page-padding" aria-label="文件传输"><!> <!> <!> <!></article>`);
+var root_13$1 = /* @__PURE__ */ from_html(`<p class="hint history-storage svelte-1mvl52" role="status">记录暂存在内存中。检查运行时可用空间后刷新目录。</p>`);
+var root_14$1 = /* @__PURE__ */ from_html(`<p class="hint history-storage svelte-1mvl52">记录保存在当前 Colab 运行时。挂载可写的 Google Drive 后刷新 Drive 目录，可跨运行时保留记录。</p>`);
+var root_15$1 = /* @__PURE__ */ from_html(`<p class="path-text"> </p>`);
+var root_16 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
+var root_17 = /* @__PURE__ */ from_html(`<div class="transfer-record"><div class="transfer-record-details svelte-1mvl52"><strong> </strong> <p class="hint"> <!><!></p> <!> <!></div> <!> <!> <!></div>`);
+var root_18 = /* @__PURE__ */ from_html(`<p class="empty-resource">暂无传输记录</p>`);
+var root_19 = /* @__PURE__ */ from_html(`<!> <div class="surface transfer-history"></div>`, 1);
+var root_20 = /* @__PURE__ */ from_html(`<div class="files-tabs"><!><!></div> <!> <!> <!>`, 1);
+var root_21 = /* @__PURE__ */ from_html(`<code> </code>`);
+var root_22 = /* @__PURE__ */ from_html(`<div class="field wide"><span>配套来源</span><!></div>`);
+var root_23 = /* @__PURE__ */ from_html(`<label class="field wide"><span>HF 仓库或文件地址</span><!></label> <label class="field wide"><span>文件范围（多个规则用逗号分隔）</span><!></label> <label class="field"><span>版本</span><!></label> <!>`, 1);
+var root_24 = /* @__PURE__ */ from_html(`<label class="field"><span>内容</span><select><option>文件</option><option>文件夹 · 包含子目录</option></select></label><label class="field"><span>Drive 相对路径</span><!></label>`, 1);
+var root_25 = /* @__PURE__ */ from_html(`<section class="surface shortcut-editor"><h2>快捷操作设置</h2><div class="parameter-grid"><label class="field"><span>名称</span><!></label><label class="field"><span>复制方向</span><select><option>HF → 本机</option><option>Drive → 本机</option><option>本机 → Drive</option></select></label><!><label class="field wide"><span> </span><!></label></div><div class="row"><!><!><!></div></section>`);
+var root_26 = /* @__PURE__ */ from_html(`<div class="file-notice" role="status"><span> </span><!></div>`);
+var root_27 = /* @__PURE__ */ from_html(`<div class="surface transfer-task"><div class="row"><strong> </strong><span> </span><!></div><!></div>`);
+var root_28 = /* @__PURE__ */ from_html(`<section class="transfer-queue"><h3>正在传输</h3><!></section>`);
+var root_29 = /* @__PURE__ */ from_html(`<article class="files-workspace page-padding" aria-label="文件传输"><!> <!> <!> <!></article>`);
 function FilesView($$anchor, $$props) {
   push($$props, true);
   let files = prop($$props, "files", 19, () => ({}));
@@ -31520,7 +31525,13 @@ function FilesView($$anchor, $$props) {
   let shortcuts = /* @__PURE__ */ user_derived(() => (files().recipes || []).toReversed().filter((i) => [i.label, i.local_path, i.drive_path, i.repo_id].join(" ").toLowerCase().includes(get(query).toLowerCase())));
   let activeTasks = /* @__PURE__ */ user_derived(() => (files().tasks || []).filter((t) => ["running", "queued"].includes(t.status)));
   let history = /* @__PURE__ */ user_derived(() => (files().tasks || []).filter((t) => !["running", "queued"].includes(t.status)).toReversed());
-  var article = root_26();
+  const sourceLabel = (task) => {
+    if (task.source === "huggingface") return "Hugging Face 下载";
+    if (task.direction === "copy") return "Drive 复制";
+    return task.direction === "download" ? "Drive 下载" : "上传至 Drive";
+  };
+  const displayTime = new Intl.DateTimeFormat("zh-CN", { dateStyle: "short", timeStyle: "short" });
+  var article = root_29();
   var node = child(article);
   component(node, () => Tabs, ($$anchor2, Tabs_Root) => {
     Tabs_Root($$anchor2, {
@@ -31532,7 +31543,7 @@ function FilesView($$anchor, $$props) {
         set(tab, $$value, true);
       },
       children: ($$anchor3, $$slotProps) => {
-        var fragment = root_17();
+        var fragment = root_20();
         var div = first_child(fragment);
         var node_1 = child(div);
         component(node_1, () => Tabs_list, ($$anchor4, Tabs_List) => {
@@ -31799,78 +31810,136 @@ function FilesView($$anchor, $$props) {
           Tabs_Content_2($$anchor4, {
             value: "history",
             children: ($$anchor5, $$slotProps2) => {
-              var div_9 = root_16();
+              var fragment_13 = root_19();
+              var node_25 = first_child(fragment_13);
+              {
+                var consequent_1 = ($$anchor6) => {
+                  var p_1 = root_13$1();
+                  append($$anchor6, p_1);
+                };
+                var consequent_2 = ($$anchor6) => {
+                  var p_2 = root_14$1();
+                  append($$anchor6, p_2);
+                };
+                if_block(node_25, ($$render) => {
+                  if (files().history_storage === "memory") $$render(consequent_1);
+                  else if (files().history_storage === "runtime") $$render(consequent_2, 1);
+                });
+              }
+              var div_9 = sibling(node_25, 2);
               each(
                 div_9,
                 21,
                 () => get(history),
-                index$1,
+                (task) => task.id,
                 ($$anchor6, task) => {
-                  var div_10 = root_14$1();
+                  var div_10 = root_17();
                   var div_11 = child(div_10);
                   var strong = child(div_11);
                   var text_5 = only_child(strong, true);
-                  var node_25 = sibling(strong);
+                  var p_3 = sibling(strong, 2);
+                  var text_6 = child(p_3);
+                  var node_26 = sibling(text_6);
                   {
-                    var consequent_1 = ($$anchor7) => {
-                      var p_1 = root_13$1();
-                      var text_6 = only_child(p_1, true);
-                      template_effect(() => set_text(text_6, get(task).error));
-                      append($$anchor7, p_1);
+                    var consequent_3 = ($$anchor7) => {
+                      var text_7 = text$1();
+                      template_effect(($0) => set_text(text_7, `· ${$0 ?? ""}`), [() => bytes(get(task).bytes)]);
+                      append($$anchor7, text_7);
                     };
-                    if_block(node_25, ($$render) => {
-                      if (get(task).error) $$render(consequent_1);
+                    if_block(node_26, ($$render) => {
+                      if (get(task).bytes) $$render(consequent_3);
                     });
                   }
-                  var node_26 = sibling(div_11);
-                  Badge(node_26, {
+                  var node_27 = sibling(node_26);
+                  {
+                    var consequent_4 = ($$anchor7) => {
+                      var text_8 = text$1();
+                      template_effect(($0) => set_text(text_8, `· ${$0 ?? ""}`), [() => displayTime.format(get(task).finished_at * 1e3)]);
+                      append($$anchor7, text_8);
+                    };
+                    if_block(node_27, ($$render) => {
+                      if (get(task).finished_at) $$render(consequent_4);
+                    });
+                  }
+                  var node_28 = sibling(p_3, 2);
+                  {
+                    var consequent_5 = ($$anchor7) => {
+                      var p_4 = root_15$1();
+                      var text_9 = only_child(p_4, true);
+                      template_effect(() => set_text(text_9, get(task).target_path || get(task).local_path));
+                      append($$anchor7, p_4);
+                    };
+                    if_block(node_28, ($$render) => {
+                      if (get(task).target_path || get(task).local_path) $$render(consequent_5);
+                    });
+                  }
+                  var node_29 = sibling(node_28, 2);
+                  {
+                    var consequent_6 = ($$anchor7) => {
+                      var p_5 = root_16();
+                      var text_10 = only_child(p_5, true);
+                      template_effect(() => set_text(text_10, get(task).error));
+                      append($$anchor7, p_5);
+                    };
+                    if_block(node_29, ($$render) => {
+                      if (get(task).error) $$render(consequent_6);
+                    });
+                  }
+                  var node_30 = sibling(div_11, 2);
+                  Badge(node_30, {
                     variant: "secondary",
                     children: ($$anchor7, $$slotProps3) => {
-                      var text_7 = text$1();
-                      template_effect(() => set_text(text_7, taskStatus[get(task).status]));
-                      append($$anchor7, text_7);
+                      var text_11 = text$1();
+                      template_effect(() => set_text(text_11, taskStatus[get(task).status]));
+                      append($$anchor7, text_11);
                     },
                     $$slots: { default: true }
                   });
-                  var node_27 = sibling(node_26);
+                  var node_31 = sibling(node_30, 2);
                   {
-                    var consequent_2 = ($$anchor7) => {
+                    var consequent_7 = ($$anchor7) => {
                       Button($$anchor7, {
                         size: "sm",
                         variant: "outline",
                         onclick: () => act({ action: "retry", task_id: get(task).id }),
                         children: ($$anchor8, $$slotProps3) => {
-                          var text_8 = text$1("重试");
-                          append($$anchor8, text_8);
+                          var text_12 = text$1("重试");
+                          append($$anchor8, text_12);
                         },
                         $$slots: { default: true }
                       });
                     };
-                    var d = /* @__PURE__ */ user_derived(() => ["failed", "cancelled"].includes(get(task).status) && get(task).retryable !== false);
-                    if_block(node_27, ($$render) => {
-                      if (get(d)) $$render(consequent_2);
+                    var d = /* @__PURE__ */ user_derived(() => ["failed", "cancelled"].includes(get(task).status) && get(task).retryable);
+                    if_block(node_31, ($$render) => {
+                      if (get(d)) $$render(consequent_7);
                     });
                   }
-                  var node_28 = sibling(node_27);
-                  Button(node_28, {
+                  var node_32 = sibling(node_31, 2);
+                  Button(node_32, {
                     size: "sm",
                     variant: "ghost",
                     onclick: () => act({ action: "delete_task", id: get(task).id }),
                     children: ($$anchor7, $$slotProps3) => {
-                      var text_9 = text$1("删除记录");
-                      append($$anchor7, text_9);
+                      var text_13 = text$1("删除记录");
+                      append($$anchor7, text_13);
                     },
                     $$slots: { default: true }
                   });
-                  template_effect(() => set_text(text_5, get(task).name));
+                  template_effect(
+                    ($0) => {
+                      set_text(text_5, get(task).name);
+                      set_text(text_6, $0);
+                    },
+                    [() => sourceLabel(get(task))]
+                  );
                   append($$anchor6, div_10);
                 },
                 ($$anchor6) => {
-                  var p_2 = root_15();
-                  append($$anchor6, p_2);
+                  var p_6 = root_18();
+                  append($$anchor6, p_6);
                 }
               );
-              append($$anchor5, div_9);
+              append($$anchor5, fragment_13);
             },
             $$slots: { default: true }
           });
@@ -31880,14 +31949,14 @@ function FilesView($$anchor, $$props) {
       $$slots: { default: true }
     });
   });
-  var node_29 = sibling(node, 2);
+  var node_33 = sibling(node, 2);
   {
-    var consequent_7 = ($$anchor2) => {
-      var section = root_22();
+    var consequent_12 = ($$anchor2) => {
+      var section = root_25();
       var div_12 = sibling(child(section));
       var label = child(div_12);
-      var node_30 = sibling(child(label));
-      Input(node_30, {
+      var node_34 = sibling(child(label));
+      Input(node_34, {
         get value() {
           return get(draft).label;
         },
@@ -31905,13 +31974,13 @@ function FilesView($$anchor, $$props) {
       option_2.value = option_2.__value = "upload";
       var select_value;
       init_select(select);
-      var node_31 = sibling(label_1);
+      var node_35 = sibling(label_1);
       {
-        var consequent_4 = ($$anchor3) => {
-          var fragment_15 = root_20();
-          var label_2 = first_child(fragment_15);
-          var node_32 = sibling(child(label_2));
-          Input(node_32, {
+        var consequent_9 = ($$anchor3) => {
+          var fragment_18 = root_23();
+          var label_2 = first_child(fragment_18);
+          var node_36 = sibling(child(label_2));
+          Input(node_36, {
             placeholder: "owner/repo 或 https://huggingface.co/.../resolve/main/file",
             get value() {
               return get(draft).hf_url;
@@ -31921,8 +31990,8 @@ function FilesView($$anchor, $$props) {
             }
           });
           var label_3 = sibling(label_2, 2);
-          var node_33 = sibling(child(label_3));
-          Input(node_33, {
+          var node_37 = sibling(child(label_3));
+          Input(node_37, {
             placeholder: "例如 IQ3_S/*.gguf；留空复制全部",
             get value() {
               return get(draft).hf_patterns;
@@ -31932,8 +32001,8 @@ function FilesView($$anchor, $$props) {
             }
           });
           var label_4 = sibling(label_3, 2);
-          var node_34 = sibling(child(label_4));
-          Input(node_34, {
+          var node_38 = sibling(child(label_4));
+          Input(node_38, {
             get value() {
               return get(draft).hf_revision;
             },
@@ -31941,28 +32010,28 @@ function FilesView($$anchor, $$props) {
               get(draft).hf_revision = $$value;
             }
           });
-          var node_35 = sibling(label_4, 2);
+          var node_39 = sibling(label_4, 2);
           {
-            var consequent_3 = ($$anchor4) => {
-              var div_13 = root_19();
-              var node_36 = sibling(child(div_13));
-              each(node_36, 17, () => get(draft).hf_sources.slice(1), index$1, ($$anchor5, source2) => {
-                var code = root_18();
-                var text_10 = only_child(code);
-                template_effect(($0) => set_text(text_10, `${get(source2).repo_id ?? ""} · ${$0 ?? ""}`), [() => get(source2).allow_patterns?.join(", ") || "全部文件"]);
+            var consequent_8 = ($$anchor4) => {
+              var div_13 = root_22();
+              var node_40 = sibling(child(div_13));
+              each(node_40, 17, () => get(draft).hf_sources.slice(1), index$1, ($$anchor5, source2) => {
+                var code = root_21();
+                var text_14 = only_child(code);
+                template_effect(($0) => set_text(text_14, `${get(source2).repo_id ?? ""} · ${$0 ?? ""}`), [() => get(source2).allow_patterns?.join(", ") || "全部文件"]);
                 append($$anchor5, code);
               });
               append($$anchor4, div_13);
             };
-            if_block(node_35, ($$render) => {
-              if (get(draft).hf_sources?.length > 1) $$render(consequent_3);
+            if_block(node_39, ($$render) => {
+              if (get(draft).hf_sources?.length > 1) $$render(consequent_8);
             });
           }
-          append($$anchor3, fragment_15);
+          append($$anchor3, fragment_18);
         };
         var alternate = ($$anchor3) => {
-          var fragment_16 = root_21();
-          var label_5 = first_child(fragment_16);
+          var fragment_19 = root_24();
+          var label_5 = first_child(fragment_19);
           var select_1 = sibling(child(label_5));
           var option_3 = child(select_1);
           option_3.value = option_3.__value = "file";
@@ -31970,8 +32039,8 @@ function FilesView($$anchor, $$props) {
           option_4.value = option_4.__value = "directory";
           init_select(select_1);
           var label_6 = sibling(label_5);
-          var node_37 = sibling(child(label_6));
-          Input(node_37, {
+          var node_41 = sibling(child(label_6));
+          Input(node_41, {
             placeholder: "例如 models/diffusion_models",
             get value() {
               return get(draft).drive_path;
@@ -31981,18 +32050,18 @@ function FilesView($$anchor, $$props) {
             }
           });
           bind_select_value(select_1, () => get(draft).source_kind, ($$value) => get(draft).source_kind = $$value);
-          append($$anchor3, fragment_16);
+          append($$anchor3, fragment_19);
         };
-        if_block(node_31, ($$render) => {
-          if (get(draft).source_provider === "huggingface") $$render(consequent_4);
+        if_block(node_35, ($$render) => {
+          if (get(draft).source_provider === "huggingface") $$render(consequent_9);
           else $$render(alternate, -1);
         });
       }
-      var label_7 = sibling(node_31);
+      var label_7 = sibling(node_35);
       var span = child(label_7);
-      var text_11 = only_child(span, true);
-      var node_38 = sibling(span);
-      Input(node_38, {
+      var text_15 = only_child(span, true);
+      var node_42 = sibling(span);
+      Input(node_42, {
         get value() {
           return get(draft).local_path;
         },
@@ -32001,9 +32070,9 @@ function FilesView($$anchor, $$props) {
         }
       });
       var div_14 = sibling(div_12);
-      var node_39 = child(div_14);
+      var node_43 = child(div_14);
       {
-        var consequent_5 = ($$anchor3) => {
+        var consequent_10 = ($$anchor3) => {
           {
             let $0 = /* @__PURE__ */ user_derived(() => !get(draft).hf_url.trim() || !get(draft).local_path.trim());
             Button($$anchor3, {
@@ -32012,8 +32081,8 @@ function FilesView($$anchor, $$props) {
               },
               onclick: () => saveShortcut(true),
               children: ($$anchor4, $$slotProps) => {
-                var text_12 = text$1("保存并复制");
-                append($$anchor4, text_12);
+                var text_16 = text$1("保存并复制");
+                append($$anchor4, text_16);
               },
               $$slots: { default: true }
             });
@@ -32023,20 +32092,20 @@ function FilesView($$anchor, $$props) {
           Button($$anchor3, {
             onclick: () => saveShortcut(),
             children: ($$anchor4, $$slotProps) => {
-              var text_13 = text$1("保存快捷操作");
-              append($$anchor4, text_13);
+              var text_17 = text$1("保存快捷操作");
+              append($$anchor4, text_17);
             },
             $$slots: { default: true }
           });
         };
-        if_block(node_39, ($$render) => {
-          if (get(draft).source_provider === "huggingface") $$render(consequent_5);
+        if_block(node_43, ($$render) => {
+          if (get(draft).source_provider === "huggingface") $$render(consequent_10);
           else $$render(alternate_1, -1);
         });
       }
-      var node_40 = sibling(node_39);
+      var node_44 = sibling(node_43);
       {
-        var consequent_6 = ($$anchor3) => {
+        var consequent_11 = ($$anchor3) => {
           Button($$anchor3, {
             variant: "destructive",
             onclick: () => {
@@ -32044,23 +32113,23 @@ function FilesView($$anchor, $$props) {
               set(editing, false);
             },
             children: ($$anchor4, $$slotProps) => {
-              var text_14 = text$1("删除快捷操作");
-              append($$anchor4, text_14);
+              var text_18 = text$1("删除快捷操作");
+              append($$anchor4, text_18);
             },
             $$slots: { default: true }
           });
         };
-        if_block(node_40, ($$render) => {
-          if (get(draft).id) $$render(consequent_6);
+        if_block(node_44, ($$render) => {
+          if (get(draft).id) $$render(consequent_11);
         });
       }
-      var node_41 = sibling(node_40);
-      Button(node_41, {
+      var node_45 = sibling(node_44);
+      Button(node_45, {
         variant: "ghost",
         onclick: () => set(editing, false),
         children: ($$anchor3, $$slotProps) => {
-          var text_15 = text$1("收起");
-          append($$anchor3, text_15);
+          var text_19 = text$1("收起");
+          append($$anchor3, text_19);
         },
         $$slots: { default: true }
       });
@@ -32068,7 +32137,7 @@ function FilesView($$anchor, $$props) {
         if (select_value !== (select_value = get(draft).source_provider === "huggingface" ? "huggingface" : get(draft).direction)) {
           select.value = (select.__value = select_value) ?? "", select_option(select, select_value);
         }
-        set_text(text_11, get(draft).source_provider === "huggingface" ? "运行时目标目录" : "运行时完整路径");
+        set_text(text_15, get(draft).source_provider === "huggingface" ? "运行时目标目录" : "运行时完整路径");
       });
       delegated("change", select, (event2) => {
         const value = event2.currentTarget.value;
@@ -32077,68 +32146,68 @@ function FilesView($$anchor, $$props) {
       });
       append($$anchor2, section);
     };
-    if_block(node_29, ($$render) => {
-      if (get(editing)) $$render(consequent_7);
+    if_block(node_33, ($$render) => {
+      if (get(editing)) $$render(consequent_12);
     });
   }
-  var node_42 = sibling(node_29, 2);
+  var node_46 = sibling(node_33, 2);
   {
-    var consequent_9 = ($$anchor2) => {
-      var div_15 = root_23();
+    var consequent_14 = ($$anchor2) => {
+      var div_15 = root_26();
       var span_1 = child(div_15);
-      var text_16 = only_child(span_1, true);
-      var node_43 = sibling(span_1);
+      var text_20 = only_child(span_1, true);
+      var node_47 = sibling(span_1);
       {
-        var consequent_8 = ($$anchor3) => {
+        var consequent_13 = ($$anchor3) => {
           Button($$anchor3, {
             variant: "outline",
             size: "sm",
             onclick: () => act({ action: "undo" }),
             children: ($$anchor4, $$slotProps) => {
-              var text_17 = text$1("撤销删除");
-              append($$anchor4, text_17);
+              var text_21 = text$1("撤销删除");
+              append($$anchor4, text_21);
             },
             $$slots: { default: true }
           });
         };
-        if_block(node_43, ($$render) => {
-          if (files().can_undo) $$render(consequent_8);
+        if_block(node_47, ($$render) => {
+          if (files().can_undo) $$render(consequent_13);
         });
       }
-      template_effect(() => set_text(text_16, files().error || files().message || files().notice));
+      template_effect(() => set_text(text_20, files().error || files().message || files().notice));
       append($$anchor2, div_15);
     };
-    if_block(node_42, ($$render) => {
-      if (files().error || files().message || files().notice || files().can_undo) $$render(consequent_9);
+    if_block(node_46, ($$render) => {
+      if (files().error || files().message || files().notice || files().can_undo) $$render(consequent_14);
     });
   }
-  var node_44 = sibling(node_42, 2);
+  var node_48 = sibling(node_46, 2);
   {
-    var consequent_10 = ($$anchor2) => {
-      var section_1 = root_25();
-      var node_45 = sibling(child(section_1));
-      each(node_45, 17, () => get(activeTasks), index$1, ($$anchor3, task) => {
-        var div_16 = root_24();
+    var consequent_15 = ($$anchor2) => {
+      var section_1 = root_28();
+      var node_49 = sibling(child(section_1));
+      each(node_49, 17, () => get(activeTasks), index$1, ($$anchor3, task) => {
+        var div_16 = root_27();
         var div_17 = child(div_16);
         var strong_1 = child(div_17);
-        var text_18 = only_child(strong_1, true);
+        var text_22 = only_child(strong_1, true);
         var span_2 = sibling(strong_1);
-        var text_19 = only_child(span_2);
-        var node_46 = sibling(span_2);
-        Button(node_46, {
+        var text_23 = only_child(span_2);
+        var node_50 = sibling(span_2);
+        Button(node_50, {
           size: "sm",
           variant: "ghost",
           onclick: () => act({ action: "cancel", task_id: get(task).id }),
           children: ($$anchor4, $$slotProps) => {
-            var text_20 = text$1("停止");
-            append($$anchor4, text_20);
+            var text_24 = text$1("停止");
+            append($$anchor4, text_24);
           },
           $$slots: { default: true }
         });
-        var node_47 = sibling(div_17);
+        var node_51 = sibling(div_17);
         {
           let $0 = /* @__PURE__ */ user_derived(() => get(task).total || 1);
-          Progress(node_47, {
+          Progress(node_51, {
             get max() {
               return get($0);
             },
@@ -32149,8 +32218,8 @@ function FilesView($$anchor, $$props) {
         }
         template_effect(
           ($0, $1, $2) => {
-            set_text(text_18, get(task).name);
-            set_text(text_19, `${$0 ?? ""} / ${$1 ?? ""}${$2 ?? ""}`);
+            set_text(text_22, get(task).name);
+            set_text(text_23, `${$0 ?? ""} / ${$1 ?? ""}${$2 ?? ""}`);
           },
           [
             () => bytes(get(task).bytes),
@@ -32162,8 +32231,8 @@ function FilesView($$anchor, $$props) {
       });
       append($$anchor2, section_1);
     };
-    if_block(node_44, ($$render) => {
-      if (get(activeTasks).length) $$render(consequent_10);
+    if_block(node_48, ($$render) => {
+      if (get(activeTasks).length) $$render(consequent_15);
     });
   }
   append($$anchor, article);
@@ -32174,20 +32243,20 @@ var root = /* @__PURE__ */ from_html(`<i class="status-dot pulse"></i>`);
 var root_1 = /* @__PURE__ */ from_html(`<button><!> <span> </span> <!></button>`);
 var root_2 = /* @__PURE__ */ from_html(`<button><span> </span><!></button>`);
 var root_3 = /* @__PURE__ */ from_html(`<span class="saved-label"> </span>`);
-var root_4 = /* @__PURE__ */ from_html(`<span class="return-label"> </span><!>`, 1);
-var root_5 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>`);
-var root_6 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status"> </div>`);
-var root_7 = /* @__PURE__ */ from_html(`<button class="app-notice"> </button>`);
-var root_8 = /* @__PURE__ */ from_html(`<!>添加`, 1);
-var root_9 = /* @__PURE__ */ from_html(`<!>刷新`, 1);
-var root_10 = /* @__PURE__ */ from_html(`<!>导入 Python`, 1);
-var root_11 = /* @__PURE__ */ from_html(`<div class="surface workflow-row"><div class="workflow-name"><h3> </h3></div><!><!><!></div>`);
-var root_12 = /* @__PURE__ */ from_html(`<section class="management page-padding"><div class="surface management-add"><!><!><!><!><!></div> <div class="workflow-list"></div></section>`);
-var root_13 = /* @__PURE__ */ from_html(`<section class="panel-page"><!></section>`);
-var root_14 = /* @__PURE__ */ from_html(`<main><aside class="app-sidebar"><nav aria-label="工作空间导航"><!> <button><!><span>文件与传输</span></button></nav> <div class="sidebar-bottom"><button><!>工作流管理</button></div></aside> <div class="app-main"><header class="app-topbar"><!> <div class="breadcrumb"><strong> </strong></div> <nav class="mobile-navigation" aria-label="手机工作空间导航"><!> <button>文件</button> <button>管理</button></nav> <div class="topbar-right"><!> <!> <!></div></header> <!> <!> <div class="app-content"><!> <!> <section class="panel-page"><!></section></div></div> <input type="file" accept=".py" hidden=""/></main>`);
+var root_4 = /* @__PURE__ */ from_html(`<!><span class="return-label"> </span>`, 1);
+var root_5 = /* @__PURE__ */ from_html(`<button class="app-notice">在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。 ×</button>`);
+var root_6 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>`);
+var root_7 = /* @__PURE__ */ from_html(`<div class="app-notice" role="status"> </div>`);
+var root_8 = /* @__PURE__ */ from_html(`<button class="app-notice"> </button>`);
+var root_9 = /* @__PURE__ */ from_html(`<!>添加`, 1);
+var root_10 = /* @__PURE__ */ from_html(`<!>刷新`, 1);
+var root_11 = /* @__PURE__ */ from_html(`<!>导入 Python`, 1);
+var root_12 = /* @__PURE__ */ from_html(`<div class="surface workflow-row"><div class="workflow-name"><h3> </h3></div><!><!><!></div>`);
+var root_13 = /* @__PURE__ */ from_html(`<section class="management page-padding"><div class="surface management-add"><!><!><!><!><!></div> <div class="workflow-list"></div></section>`);
+var root_14 = /* @__PURE__ */ from_html(`<section class="panel-page"><!></section>`);
+var root_15 = /* @__PURE__ */ from_html(`<main><aside class="app-sidebar"><nav aria-label="工作空间导航"><!> <button><!><span>文件与传输</span></button></nav> <div class="sidebar-bottom"><button><!>工作流管理</button></div></aside> <div class="app-main"><header class="app-topbar"><!> <div class="breadcrumb"><strong> </strong></div> <nav class="mobile-navigation" aria-label="手机工作空间导航"><!> <button>文件</button> <button>管理</button></nav> <div class="topbar-right"><!> <!> <!></div></header> <!> <!> <!> <div class="app-content"><!> <!> <section class="panel-page"><!></section></div></div> <input type="file" accept=".py" hidden=""/></main>`);
 function App($$anchor, $$props) {
   push($$props, true);
-  let initialExpanded = prop($$props, "initialExpanded", 3, true);
   let studioElement;
   let darkTheme = /* @__PURE__ */ state$1(readColorTheme() === "dark");
   let state2 = /* @__PURE__ */ state$1(proxy({
@@ -32223,7 +32292,23 @@ function App($$anchor, $$props) {
   let playback = /* @__PURE__ */ state$1(proxy({ volume: 0.25, muted: false }));
   const bindingModels = /* @__PURE__ */ new Map();
   let addWorkflow = /* @__PURE__ */ state$1("");
-  let expanded = /* @__PURE__ */ state$1(proxy(initialExpanded()));
+  let fullscreen = /* @__PURE__ */ state$1(proxy(Boolean(document.fullscreenElement)));
+  let fullscreenHint = /* @__PURE__ */ state$1(false);
+  async function toggleFullscreen() {
+    set(fullscreenHint, false);
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (document.fullscreenEnabled) await document.documentElement.requestFullscreen();
+      else set(fullscreenHint, true);
+    } catch {
+      set(fullscreenHint, true);
+    }
+  }
+  user_effect(() => {
+    const syncFullscreen = () => set(fullscreen, Boolean(document.fullscreenElement), true);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  });
   let transferNotice = /* @__PURE__ */ state$1("");
   let activeId = /* @__PURE__ */ state$1("");
   let settingsReady = /* @__PURE__ */ state$1(false);
@@ -32600,7 +32685,7 @@ function App($$anchor, $$props) {
       for (const image of comparisonImages.values()) URL.revokeObjectURL(image.url);
     };
   });
-  var main2 = root_14();
+  var main2 = root_15();
   let classes;
   var aside = child(main2);
   var nav = child(aside);
@@ -32787,25 +32872,32 @@ function App($$anchor, $$props) {
   }
   var node_13 = sibling(node_11, 2);
   {
-    let $0 = /* @__PURE__ */ user_derived(() => get(expanded) ? "返回 notebook" : "展开工作台");
-    let $1 = /* @__PURE__ */ user_derived(() => get(expanded) ? "返回 notebook" : "展开工作台");
+    let $0 = /* @__PURE__ */ user_derived(() => get(fullscreen) ? "退出全屏" : "全屏");
     Button(node_13, {
       size: "sm",
       variant: "outline",
       get "aria-label"() {
         return get($0);
       },
-      get title() {
-        return get($1);
-      },
-      onclick: () => set(expanded, $$props.expand(), true),
+      onclick: toggleFullscreen,
       children: ($$anchor2, $$slotProps) => {
         var fragment_9 = root_4();
-        var span_3 = first_child(fragment_9);
+        var node_14 = first_child(fragment_9);
+        {
+          var consequent_7 = ($$anchor3) => {
+            Minimize_2($$anchor3, { size: 15 });
+          };
+          var alternate_3 = ($$anchor3) => {
+            Maximize_2($$anchor3, { size: 15 });
+          };
+          if_block(node_14, ($$render) => {
+            if (get(fullscreen)) $$render(consequent_7);
+            else $$render(alternate_3, -1);
+          });
+        }
+        var span_3 = sibling(node_14);
         var text_6 = only_child(span_3, true);
-        var node_14 = sibling(span_3);
-        Arrow_up_right(node_14, { size: 13 });
-        template_effect(() => set_text(text_6, get(expanded) ? "返回 notebook" : "展开工作台"));
+        template_effect(() => set_text(text_6, get(fullscreen) ? "退出全屏" : "全屏"));
         append($$anchor2, fragment_9);
       },
       $$slots: { default: true }
@@ -32813,44 +32905,55 @@ function App($$anchor, $$props) {
   }
   var node_15 = sibling(header, 2);
   {
-    var consequent_7 = ($$anchor2) => {
-      var div_4 = root_5();
-      append($$anchor2, div_4);
-    };
     var consequent_8 = ($$anchor2) => {
-      var div_5 = root_6();
-      var text_7 = only_child(div_5, true);
-      template_effect(() => set_text(text_7, get(state2).message));
-      append($$anchor2, div_5);
+      var button_6 = root_5();
+      delegated("click", button_6, () => set(fullscreenHint, false));
+      append($$anchor2, button_6);
     };
     if_block(node_15, ($$render) => {
-      if (!get(settingsReady)) $$render(consequent_7);
-      else if (get(state2).message) $$render(consequent_8, 1);
+      if (get(fullscreenHint)) $$render(consequent_8);
     });
   }
   var node_16 = sibling(node_15, 2);
   {
     var consequent_9 = ($$anchor2) => {
-      var button_6 = root_7();
-      var text_8 = only_child(button_6);
-      template_effect(() => set_text(text_8, `${get(transferNotice) ?? ""} ×`));
-      delegated("click", button_6, () => set(transferNotice, ""));
-      append($$anchor2, button_6);
+      var div_4 = root_6();
+      append($$anchor2, div_4);
+    };
+    var consequent_10 = ($$anchor2) => {
+      var div_5 = root_7();
+      var text_7 = only_child(div_5, true);
+      template_effect(() => set_text(text_7, get(state2).message));
+      append($$anchor2, div_5);
     };
     if_block(node_16, ($$render) => {
-      if (get(transferNotice)) $$render(consequent_9);
+      if (!get(settingsReady)) $$render(consequent_9);
+      else if (get(state2).message) $$render(consequent_10, 1);
     });
   }
-  var div_6 = sibling(node_16, 2);
-  var node_17 = child(div_6);
+  var node_17 = sibling(node_16, 2);
   {
     var consequent_11 = ($$anchor2) => {
-      var section = root_12();
+      var button_7 = root_8();
+      var text_8 = only_child(button_7);
+      template_effect(() => set_text(text_8, `${get(transferNotice) ?? ""} ×`));
+      delegated("click", button_7, () => set(transferNotice, ""));
+      append($$anchor2, button_7);
+    };
+    if_block(node_17, ($$render) => {
+      if (get(transferNotice)) $$render(consequent_11);
+    });
+  }
+  var div_6 = sibling(node_17, 2);
+  var node_18 = child(div_6);
+  {
+    var consequent_13 = ($$anchor2) => {
+      var section = root_13();
       var div_7 = child(section);
-      var node_18 = child(div_7);
+      var node_19 = child(div_7);
       {
         let $0 = /* @__PURE__ */ user_derived(() => get(state2).workflows.map((w) => [w.name, w.id]));
-        Dropdown(node_18, {
+        Dropdown(node_19, {
           label: "可用工作流",
           show_label: false,
           get choices() {
@@ -32864,51 +32967,51 @@ function App($$anchor, $$props) {
           }
         });
       }
-      var node_19 = sibling(node_18);
+      var node_20 = sibling(node_19);
       {
         let $0 = /* @__PURE__ */ user_derived(() => !get(addWorkflow));
-        Button(node_19, {
+        Button(node_20, {
           get disabled() {
             return get($0);
           },
           onclick: () => send("add", { workflow: get(addWorkflow) }),
           children: ($$anchor3, $$slotProps) => {
-            var fragment_10 = root_8();
-            var node_20 = first_child(fragment_10);
-            Plus(node_20, { size: 15 });
-            append($$anchor3, fragment_10);
+            var fragment_12 = root_9();
+            var node_21 = first_child(fragment_12);
+            Plus(node_21, { size: 15 });
+            append($$anchor3, fragment_12);
           },
           $$slots: { default: true }
         });
       }
-      var node_21 = sibling(node_19);
-      Button(node_21, {
+      var node_22 = sibling(node_20);
+      Button(node_22, {
         variant: "outline",
         onclick: () => send("refresh"),
         children: ($$anchor3, $$slotProps) => {
-          var fragment_11 = root_9();
-          var node_22 = first_child(fragment_11);
-          Refresh_cw(node_22, { size: 15 });
-          append($$anchor3, fragment_11);
+          var fragment_13 = root_10();
+          var node_23 = first_child(fragment_13);
+          Refresh_cw(node_23, { size: 15 });
+          append($$anchor3, fragment_13);
         },
         $$slots: { default: true }
       });
-      var node_23 = sibling(node_21);
-      Button(node_23, {
+      var node_24 = sibling(node_22);
+      Button(node_24, {
         variant: "outline",
         onclick: () => codeInput.click(),
         children: ($$anchor3, $$slotProps) => {
-          var fragment_12 = root_10();
-          var node_24 = first_child(fragment_12);
-          Upload(node_24, { size: 15 });
-          append($$anchor3, fragment_12);
+          var fragment_14 = root_11();
+          var node_25 = first_child(fragment_14);
+          Upload(node_25, { size: 15 });
+          append($$anchor3, fragment_14);
         },
         $$slots: { default: true }
       });
-      var node_25 = sibling(node_23);
+      var node_26 = sibling(node_24);
       {
         let $0 = /* @__PURE__ */ user_derived(() => get(state2).panels.some((p) => p.busy || p.initializing));
-        Button(node_25, {
+        Button(node_26, {
           variant: "outline",
           get disabled() {
             return get($0);
@@ -32923,13 +33026,13 @@ function App($$anchor, $$props) {
       }
       var div_8 = sibling(div_7, 2);
       each(div_8, 21, () => get(state2).panels, index$1, ($$anchor3, panel) => {
-        var div_9 = root_11();
+        var div_9 = root_12();
         var div_10 = child(div_9);
         var h3 = child(div_10);
         var text_10 = only_child(h3, true);
-        var node_26 = sibling(div_10);
+        var node_27 = sibling(div_10);
         {
-          var consequent_10 = ($$anchor4) => {
+          var consequent_12 = ($$anchor4) => {
             Badge($$anchor4, {
               variant: "secondary",
               children: ($$anchor5, $$slotProps) => {
@@ -32939,12 +33042,12 @@ function App($$anchor, $$props) {
               $$slots: { default: true }
             });
           };
-          if_block(node_26, ($$render) => {
-            if (get(panel).busy) $$render(consequent_10);
+          if_block(node_27, ($$render) => {
+            if (get(panel).busy) $$render(consequent_12);
           });
         }
-        var node_27 = sibling(node_26);
-        Button(node_27, {
+        var node_28 = sibling(node_27);
+        Button(node_28, {
           variant: "outline",
           onclick: () => send("export", { id: get(panel).id }),
           children: ($$anchor4, $$slotProps) => {
@@ -32953,8 +33056,8 @@ function App($$anchor, $$props) {
           },
           $$slots: { default: true }
         });
-        var node_28 = sibling(node_27);
-        Button(node_28, {
+        var node_29 = sibling(node_28);
+        Button(node_29, {
           variant: "ghost",
           get disabled() {
             return get(panel).busy;
@@ -32974,16 +33077,16 @@ function App($$anchor, $$props) {
       });
       append($$anchor2, section);
     };
-    if_block(node_17, ($$render) => {
-      if (get(toolsOpen)) $$render(consequent_11);
+    if_block(node_18, ($$render) => {
+      if (get(toolsOpen)) $$render(consequent_13);
     });
   }
-  var node_29 = sibling(node_17, 2);
-  each(node_29, 17, () => get(state2).panels, (panel) => panel.id, ($$anchor2, panel) => {
-    var section_1 = root_13();
-    var node_30 = child(section_1);
+  var node_30 = sibling(node_18, 2);
+  each(node_30, 17, () => get(state2).panels, (panel) => panel.id, ($$anchor2, panel) => {
+    var section_1 = root_14();
+    var node_31 = child(section_1);
     {
-      var consequent_12 = ($$anchor3) => {
+      var consequent_14 = ($$anchor3) => {
         {
           let $0 = /* @__PURE__ */ user_derived(() => get(activeId) === get(panel).id && get(pageVisible));
           let $1 = /* @__PURE__ */ user_derived(() => pi[get(panel).id] || { messages: [] });
@@ -33016,7 +33119,7 @@ function App($$anchor, $$props) {
           });
         }
       };
-      var alternate_3 = ($$anchor3) => {
+      var alternate_4 = ($$anchor3) => {
         {
           let $0 = /* @__PURE__ */ user_derived(() => get(previews)[get(panel).id] || "");
           let $1 = /* @__PURE__ */ user_derived(() => previewInfo[get(panel).id] || {});
@@ -33066,17 +33169,17 @@ function App($$anchor, $$props) {
           });
         }
       };
-      if_block(node_30, ($$render) => {
-        if (get(panel).spec.chat) $$render(consequent_12);
-        else $$render(alternate_3, -1);
+      if_block(node_31, ($$render) => {
+        if (get(panel).spec.chat) $$render(consequent_14);
+        else $$render(alternate_4, -1);
       });
     }
     template_effect(() => set_attribute(section_1, "hidden", get(toolsOpen) || get(activeId) !== get(panel).id));
     append($$anchor2, section_1);
   });
-  var section_2 = sibling(node_29, 2);
-  var node_31 = child(section_2);
-  FilesView(node_31, {
+  var section_2 = sibling(node_30, 2);
+  var node_32 = child(section_2);
+  FilesView(node_32, {
     get files() {
       return get(files);
     },
@@ -33086,7 +33189,7 @@ function App($$anchor, $$props) {
   bind_this(input, ($$value) => codeInput = $$value, () => codeInput);
   bind_this(main2, ($$value) => studioElement = $$value, () => studioElement);
   template_effect(() => {
-    classes = set_class(main2, 1, "studio", null, classes, { expanded: get(expanded), "nav-closed": !get(sidebarOpen) });
+    classes = set_class(main2, 1, "studio", null, classes, { "nav-closed": !get(sidebarOpen) });
     classes_2 = set_class(button_1, 1, "", null, classes_2, { active: get(activeId) === "__files__" });
     classes_3 = set_class(button_2, 1, "", null, classes_3, { active: get(toolsOpen) });
     set_text(text_2, get(toolsOpen) ? "工作流管理" : get(activeId) === "__files__" ? "文件与传输" : get(activePanel)?.spec.chat ? "Pi 对话" : get(activePanel)?.spec.tab_name || "生成工作台");
@@ -33122,43 +33225,24 @@ function render({ model, el }) {
   el.append(host);
   const shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
-  style.textContent = GRADIO_COMPONENT_CSS.replaceAll(":root", ":host") + ":host{display:block;width:100%;background:var(--background)}:host(.studio-expanded){position:fixed;inset:0;z-index:1000;overflow:hidden}";
+  style.textContent = GRADIO_COMPONENT_CSS.replaceAll(":root", ":host") + ":host{display:block;width:100%;background:var(--background)}";
   shadow.append(style);
   const colabOutput = globalThis.google?.colab?.output;
   const inlineHeight = 760;
-  let expanded = false;
   const viewport = window.visualViewport;
   const compact = window.matchMedia("(max-width:760px), (max-width:1000px) and (max-height:500px)");
   const updateViewport = () => {
-    const height = !expanded ? inlineHeight : compact.matches ? viewport?.height || window.innerHeight : window.innerHeight;
+    const height = (compact.matches ? viewport?.height : window.innerHeight) || inlineHeight;
+    host.style.height = height + "px";
     host.style.setProperty("--studio-viewport-height", height + "px");
-    if (expanded) {
-      host.style.top = (compact.matches ? viewport?.offsetTop || 0 : 0) + "px";
-      host.style.height = height + "px";
-    }
     host.dataset.keyboardOpen = String(compact.matches && window.innerHeight - height > 120);
-  };
-  const place = () => {
-    host.classList.toggle("studio-expanded", expanded);
-    if (expanded) {
-      document.body.append(host);
-    } else {
-      el.append(host);
-      host.style.top = "";
-      host.style.height = inlineHeight + "px";
-    }
-    updateViewport();
   };
   window.addEventListener("resize", updateViewport);
   viewport?.addEventListener("resize", updateViewport);
   viewport?.addEventListener("scroll", updateViewport);
-  place();
   colabOutput?.setIframeHeight?.(inlineHeight, true);
-  const app = mount(App, { target: shadow, props: { model, initialExpanded: expanded, expand: () => {
-    expanded = !expanded;
-    place();
-    return expanded;
-  } } });
+  updateViewport();
+  const app = mount(App, { target: shadow, props: { model } });
   return () => {
     stopTheme();
     window.removeEventListener("resize", updateViewport);

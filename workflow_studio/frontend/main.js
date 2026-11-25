@@ -13,45 +13,24 @@ export function render({model, el}) {
   const shadow = host.attachShadow({mode: 'open'});
   const style = document.createElement('style');
   style.textContent = GRADIO_COMPONENT_CSS.replaceAll(':root', ':host') +
-    ':host{display:block;width:100%;background:var(--background)}' +
-    ':host(.studio-expanded){position:fixed;inset:0;z-index:1000;overflow:hidden}';
+    ':host{display:block;width:100%;background:var(--background)}';
   shadow.append(style);
   const colabOutput = globalThis.google?.colab?.output;
   const inlineHeight = 760;
-  let expanded = false;
   const viewport = window.visualViewport;
   const compact = window.matchMedia('(max-width:760px), (max-width:1000px) and (max-height:500px)');
   const updateViewport = () => {
-    const height = !expanded ? inlineHeight :
-      (compact.matches ? viewport?.height || window.innerHeight : window.innerHeight);
+    const height = (compact.matches ? viewport?.height : window.innerHeight) || inlineHeight;
+    host.style.height = height+'px';
     host.style.setProperty('--studio-viewport-height', height+'px');
-    if (expanded) {
-      host.style.top = (compact.matches ? viewport?.offsetTop || 0 : 0)+'px';
-      host.style.height = height+'px';
-    }
     host.dataset.keyboardOpen = String(compact.matches && window.innerHeight-height>120);
-  };
-  const place = () => {
-    host.classList.toggle('studio-expanded', expanded);
-    if (expanded) {
-      document.body.append(host);
-    } else {
-      el.append(host);
-      host.style.top = '';
-      host.style.height = inlineHeight + 'px';
-    }
-    updateViewport();
   };
   window.addEventListener('resize', updateViewport);
   viewport?.addEventListener('resize', updateViewport);
   viewport?.addEventListener('scroll', updateViewport);
-  place();
   colabOutput?.setIframeHeight?.(inlineHeight, true);
-  const app = mount(App, {target: shadow, props: {model, initialExpanded: expanded, expand: () => {
-    expanded = !expanded;
-    place();
-    return expanded;
-  }}});
+  updateViewport();
+  const app = mount(App, {target: shadow, props: {model}});
   return () => {
     stopTheme();
     window.removeEventListener('resize', updateViewport);

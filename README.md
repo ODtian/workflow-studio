@@ -28,11 +28,15 @@ start_studio()
 
 ComfyUI 通过 Colab 预览打开。Studio 面板直接显示在 Colab 单元格中，工作流在当前 Python 内核执行。两者共用与仓库检出目录并列的 `ComfyUI/models`。
 
+在 Studio 所在的单元格输出旁打开「⋮」，选择「全屏查看输出项」。
+
 ### Google Drive 和模型
 
 在 Colab 的「文件」栏挂载云端硬盘，再在 Studio 的「文件与传输」刷新目录。也可以在 Colab 代码单元格调用 `colab_runtime.mount_drive()`。复制文件夹时保留子目录，从运行时和挂载盘两栏选择来源与目标。
 
 模型选择来自运行时的模型目录。GGUF 放在 `LLM/`，图像和视频权重按类型放在 `diffusion_models/`、`text_encoders/`、`vae/` 等目录。通过「文件与传输 → 快捷复制 → 新增快捷复制 → HF → 本机」填写 Hugging Face 来源、文件范围和目标目录，再点击「保存并复制」。
+
+在「文件与传输 → 传输记录」查看 Hugging Face 下载和 Drive 复制。记录保存在当前运行时，挂载可写 Drive 并刷新 Drive 目录后会同步到「Workflow Studio/transfer-history」。
 
 ### 设置与结果
 

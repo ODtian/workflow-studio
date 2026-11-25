@@ -2,7 +2,7 @@
   import {onMount, untrack} from 'svelte';
   import {Button} from '$lib/components/ui/button';
   import {Badge} from '$lib/components/ui/badge';
-  import {MessageSquare, Image, FolderOpen, Settings2, ArrowUpRight, Plus, RefreshCw, Upload, PanelLeftClose, PanelLeftOpen, Sun, Moon} from '@lucide/svelte';
+  import {MessageSquare, Image, FolderOpen, Settings2, Maximize2, Minimize2, Plus, RefreshCw, Upload, PanelLeftClose, PanelLeftOpen, Sun, Moon} from '@lucide/svelte';
   import {readColorTheme, setColorTheme, watchColorTheme} from './colorTheme.js';
   import Dropdown from './ui/Dropdown.svelte';
   import WorkflowView from './WorkflowView.svelte';
@@ -12,7 +12,7 @@
   import {download, downloadBuffer} from './bridge.js';
   import {filesForModel, bindingFromValues, parameterFields, fieldValue} from './modelBindings.js';
 
-  let {model, expand, initialExpanded = true} = $props();
+  let {model} = $props();
   let studioElement;
   let darkTheme = $state(readColorTheme() === 'dark');
   let state = $state({workflows:[], panels:[], message:'', active:'', model_bindings:{}});
@@ -42,7 +42,25 @@
   let playback = $state({volume:0.25, muted:false});
   const bindingModels = new Map();
   let addWorkflow = $state('');
-  let expanded = $state(initialExpanded);
+  let fullscreen = $state(Boolean(document.fullscreenElement));
+  let fullscreenHint = $state(false);
+
+  async function toggleFullscreen() {
+    fullscreenHint = false;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (document.fullscreenEnabled) await document.documentElement.requestFullscreen();
+      else fullscreenHint = true;
+    } catch {
+      fullscreenHint = true;
+    }
+  }
+
+  $effect(() => {
+    const syncFullscreen = () => fullscreen = Boolean(document.fullscreenElement);
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+  });
   let transferNotice = $state('');
   let activeId = $state('');
   let settingsReady = $state(false);
@@ -370,7 +388,7 @@
   });
 </script>
 
-<main bind:this={studioElement} class="studio" class:expanded class:nav-closed={!sidebarOpen}>
+<main bind:this={studioElement} class="studio" class:nav-closed={!sidebarOpen}>
   <aside class="app-sidebar">
     <nav aria-label="工作空间导航">
       {#each state.panels as panel (panel.id)}
@@ -400,9 +418,10 @@
       <div class="topbar-right">
         {#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}
         <Button size="icon-sm" variant="ghost" aria-label={darkTheme?'切换到浅色主题':'切换到暗色主题'} title={darkTheme?'切换到浅色主题':'切换到暗色主题'} onclick={()=>setColorTheme(darkTheme?'light':'dark')}>{#if darkTheme}<Sun size={16}/>{:else}<Moon size={16}/>{/if}</Button>
-        <Button size="sm" variant="outline" aria-label={expanded?'返回 notebook':'展开工作台'} title={expanded?'返回 notebook':'展开工作台'} onclick={()=>expanded=expand()}><span class="return-label">{expanded?'返回 notebook':'展开工作台'}</span><ArrowUpRight size={13}/></Button>
+        <Button size="sm" variant="outline" aria-label={fullscreen?'退出全屏':'全屏'} onclick={toggleFullscreen}>{#if fullscreen}<Minimize2 size={15}/>{:else}<Maximize2 size={15}/>{/if}<span class="return-label">{fullscreen?'退出全屏':'全屏'}</span></Button>
       </div>
     </header>
+    {#if fullscreenHint}<button class="app-notice" onclick={()=>fullscreenHint=false}>在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。 ×</button>{/if}
     {#if !settingsReady}<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
     <div class="app-content">

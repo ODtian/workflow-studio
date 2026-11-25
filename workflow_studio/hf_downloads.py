@@ -34,38 +34,30 @@ def source_from_recipe(recipe):
 
 
 class HuggingFaceDownloads:
-    def __init__(self, bridge):
-        self.bridge = bridge
-        self.controller = bridge.controller
+    def __init__(self, controller):
+        self.controller = controller
         self.operations = {}
-        with self.controller.lock:
-            known = {task["id"] for task in self.controller.tasks}
-            self.controller.tasks.extend(
-                {**task, "retryable": False}
-                for task in bridge.store.read().get("hf_downloads", [])
-                if task["id"] not in known
-            )
-        self.controller._publish()
 
     def download(self, recipe):
         from huggingface_hub import snapshot_download
 
         local_dir = recipe["local_path"]
         for source in recipe["hf_sources"]:
-            files = snapshot_download(**source, local_dir=local_dir, dry_run=True, max_workers=2)
-            if not files:
-                raise ValueError("没有找到符合文件范围的 Hugging Face 文件。")
+            try:
+                files = snapshot_download(**source, local_dir=local_dir, dry_run=True, max_workers=2)
+                if not files:
+                    raise ValueError("没有找到符合文件范围的 Hugging Face 文件。")
+            except Exception as error:
+                self.controller.on_finish({
+                    "id": uuid.uuid4().hex, "name": source["repo_id"], "source": "huggingface",
+                    "kind": "directory", "direction": "download", "status": "failed", "bytes": 0,
+                    "target_path": local_dir, "error": str(error), "retryable": False,
+                })
+                raise
             for file in files:
                 options = {"repo_id": source["repo_id"], "revision": file.commit_hash,
                            "filename": file.filename, "local_dir": local_dir}
                 self.controller.transfers.submit(self.run, options).result()
-
-    def save(self):
-        with self.controller.lock:
-            history = [dict(task) for task in self.controller.tasks
-                       if task.get("source") == "huggingface"
-                       and task["status"] in ("completed", "failed", "cancelled")][-64:]
-        self.bridge.store.edit(lambda state: state.update(hf_downloads=history))
 
     def run(self, options, task_id=None):
         from huggingface_hub import hf_hub_download
@@ -75,10 +67,10 @@ class HuggingFaceDownloads:
         if task_id is None:
             task_id = uuid.uuid4().hex
             task = {
-                "id": task_id, "name": "Hugging Face · " + options["repo_id"] + "/" + options["filename"],
+                "id": task_id, "name": options["repo_id"] + "/" + options["filename"],
                 "source": "huggingface", "kind": "file", "direction": "download",
                 "status": "queued", "bytes": 0, "total": 0, "speed": 0, "error": "",
-                "retryable": True,
+                "target_path": str(Path(options["local_dir"]) / options["filename"]), "retryable": True,
             }
             cancel = threading.Event()
             with controller.lock:
@@ -122,7 +114,7 @@ class HuggingFaceDownloads:
             path = Path(result)
             size = path.stat().st_size
             with controller.lock:
-                task.update(status="completed", bytes=size, total=size, local_path=str(path), speed=0)
+                task.update(status="completed", bytes=size, total=size, target_path=str(path), speed=0)
                 self.operations.pop(task_id, None)
             return result
         except Exception as error:
@@ -130,8 +122,10 @@ class HuggingFaceDownloads:
                 task.update(status="cancelled" if cancel.is_set() else "failed", error=str(error), speed=0)
             raise
         finally:
+            with controller.lock:
+                finished = dict(task)
+            controller.on_finish(finished)
             controller._publish()
-            self.save()
 
     def receive(self, command):
         task_id = command.get("task_id")

@@ -121,10 +121,11 @@ class Entry:
 
 
 class TransferController:
-    def __init__(self, drive_directory, *, local_roots, on_change=None):
+    def __init__(self, drive_directory, *, local_roots, on_change=None, on_finish=None):
         self.drive_directory = Path(drive_directory) if drive_directory is not None else None
         self.local_roots = {name: Path(path).absolute() for name, path in local_roots.items()}
         self.on_change = on_change or (lambda state: None)
+        self.on_finish = on_finish or (lambda task: None)
         self.lock = threading.RLock()
         self.transfers = ThreadPoolExecutor(max_workers=MAX_PARALLEL, thread_name_prefix='studio-transfer')
         self.reads = ThreadPoolExecutor(max_workers=2, thread_name_prefix='studio-files')
@@ -176,7 +177,9 @@ class TransferController:
 
     def snapshot(self):
         with self.lock:
-            return {**copy.deepcopy(self.state), 'tasks': copy.deepcopy(self.tasks[-64:])}
+            active = [task for task in self.tasks if task['status'] in ('queued', 'running')]
+            finished = [task for task in self.tasks if task['status'] not in ('queued', 'running')]
+            return {**copy.deepcopy(self.state), 'tasks': copy.deepcopy(finished[-64:] + active)}
 
     def _publish(self):
         if not self.closed:
@@ -251,15 +254,19 @@ class TransferController:
                 job = self.jobs.get(message.get('task_id'))
                 if job is None:
                     raise TransferError('任务已失效')
+                finished = None
                 with self.lock:
                     if action == 'cancel':
                         job['cancel'].set()
                         if job['task']['status'] == 'queued':
-                            job['task']['status'] = 'cancelled'
+                            job['task'].update(status='cancelled', error='已取消')
+                            finished = dict(job['task'])
                     elif job['task']['status'] in ('failed', 'cancelled'):
                         job['cancel'] = threading.Event()
                         job['task'].update(status='queued', error='')
                         self.transfers.submit(self._run, job)
+                if finished is not None:
+                    self.on_finish(finished)
             elif action in ('refresh', 'root', 'navigate'):
                 side = message.get('pane')
                 if side not in self.positions:
@@ -305,6 +312,7 @@ class TransferController:
                     continue
                 task = {'id': uuid.uuid4().hex, 'name': source.name, 'kind': source.kind,
                         'direction': 'download' if source.pane == 'drive' else 'upload',
+                        'source': 'drive' if source.pane == 'drive' else 'runtime',
                         'status': 'queued', 'bytes': 0, 'total': 0, 'speed': 0, 'error': ''}
                 job = {'task': task, 'source': source, 'target': target, 'cancel': threading.Event(), 'copied': {}}
                 if message.get('save_shortcut'):
@@ -332,10 +340,10 @@ class TransferController:
 
     def _run(self, job):
         task = job['task']
-        if job['cancel'].is_set() or self.closed:
-            return
         started, last = time.monotonic(), 0.0
         with self.lock:
+            if task['status'] != 'queued' or job['cancel'].is_set() or self.closed:
+                return
             task.update(status='running', error='')
         self._publish()
         try:
@@ -343,6 +351,8 @@ class TransferController:
             source_root, target_root = self.root(source.pane), self.root(target.pane)
             source_path = source_root.joinpath(*source.parts)
             target_path = target_root.joinpath(*target.parts)
+            with self.lock:
+                task['target_path'] = str(target_path / source.name)
             if target_path.is_relative_to(source_path) or target_path / source.name == source_path:
                 raise TransferError('源和目标目录重叠')
             files, directories = self._plan(source)
@@ -377,7 +387,10 @@ class TransferController:
                         self._publish()
 
                 parent = target_path.joinpath(*file.parts[offset:-1])
-                self._copy_file(source_root, file, parent, job['cancel'], progress)
+                name = self._copy_file(source_root, file, parent, job['cancel'], progress)
+                if source.kind == 'file':
+                    with self.lock:
+                        task['target_path'] = str(parent / name)
                 job['copied'][file.parts] = file.size
             with self.lock:
                 task.update(status='completed', bytes=task['total'], speed=0)
@@ -388,6 +401,9 @@ class TransferController:
             with self.lock:
                 error = str(exc) if isinstance(exc, (TransferError, OverflowError)) else '复制失败，请检查 Colab 的挂载和剩余空间'
                 task.update(status='failed', error=error, speed=0)
+        with self.lock:
+            finished = dict(task)
+        self.on_finish(finished)
         self._publish()
         target = job['target']
         if not self.closed and self.positions[target.pane] == target:
@@ -424,7 +440,7 @@ class TransferController:
                         raise TransferError('目标文件在发布前发生变化')
                     os.replace(temporary, name, src_dir_fd=folder, dst_dir_fd=folder)
                     reserved = None
-                    return
+                    return name
                 raise TransferError('同名文件过多')
             finally:
                 with contextlib.suppress(FileNotFoundError):

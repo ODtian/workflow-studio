@@ -468,6 +468,9 @@ figure.svelte-2s60qv{margin:0;min-width:0;display:flex;flex-direction:column;bac
 .upload-tile.svelte-1j1sikj{width:96px;min-width:0}.attachment-strip.svelte-1j1sikj .upload-tile:where(.svelte-1j1sikj)>img:where(.svelte-1j1sikj){width:96px;height:70px}.upload-status.svelte-1j1sikj{display:grid;gap:3px;font-size:10px;color:var(--text-secondary);line-height:1.4;padding-top:5px;overflow-wrap:anywhere}.upload-status.svelte-1j1sikj progress:where(.svelte-1j1sikj){width:100%;height:4px;accent-color:var(--success)}.upload-status.failed.svelte-1j1sikj{color:var(--destructive)}.sent-attachment.svelte-1j1sikj{max-width:180px}.delivery-status.svelte-1j1sikj{display:flex;justify-content:flex-end;gap:8px;align-items:center;font-size:11px;color:var(--muted-foreground);padding-top:6px}.pending-message.svelte-1j1sikj .user-bubble:where(.svelte-1j1sikj){border-color:var(--border)}
 
 .drive-mount-hint.svelte-1ml1ipk{margin:0;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;overflow-wrap:anywhere}
+
+  .history-storage.svelte-1mvl52 { margin: 0 0 10px; }
+  .transfer-record-details.svelte-1mvl52 { min-width: 0; overflow-wrap: anywhere; }
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
@@ -2017,19 +2020,12 @@ figure.svelte-2s60qv{margin:0;min-width:0;display:flex;flex-direction:column;bac
 
 .studio {
   background: var(--background);
-  height: 100dvh;
-  min-height: 500px;
+  height: 100%;
+  min-height: 0;
   font-size: 13px;
   line-height: 1.5;
   display: flex;
   overflow: hidden;
-}
-
-.studio:not(.expanded) {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  height: 850px;
-  max-height: 90dvh;
 }
 
 .row {
@@ -3670,11 +3666,6 @@ select {
   --tw-translate-z: 0;
 }
 
-.studio.expanded {
-  height: 100%;
-  min-height: 0;
-}
-
 .app-main {
   min-height: 0;
 }
@@ -3968,7 +3959,6 @@ select {
 }
 @media (max-width:760px), (max-width:1000px) and (max-height:500px) {
   .studio{min-height:0;font-size:14px}
-  .studio:not(.expanded){height:var(--studio-viewport-height,100dvh);max-height:90dvh;border-radius:8px}
   .app-sidebar,.sidebar-toggle,.breadcrumb,.saved-label,.return-label,.topbar-right [data-slot=badge]{display:none}
   .app-main{padding-bottom:env(safe-area-inset-bottom)}
   .app-topbar{height:calc(36px + env(safe-area-inset-top));min-height:calc(36px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));gap:4px}

@@ -3,6 +3,7 @@ from pathlib import Path
 import threading
 from studio_paths import model_directory
 from transfer_core import TransferController
+from transfer_history import TransferHistory
 
 
 class FilesBridge:
@@ -15,11 +16,12 @@ class FilesBridge:
         self.models = model_directory()
         roots = {"root": Path(self.models.anchor), "models": self.models,
                  "input": owner.workflow_dir.parent / "input", "output": owner.output_dir}
-        self.controller = TransferController(drive_directory, local_roots=roots, on_change=self.publish)
-        self.hidden_tasks = set()
+        self.history = TransferHistory(drive_directory)
+        self.controller = TransferController(drive_directory, local_roots=roots, on_change=self.publish,
+                                             on_finish=self.history.finish)
         self.undo = []
         self.message = ""
-        self.hf_downloads = HuggingFaceDownloads(self)
+        self.hf_downloads = HuggingFaceDownloads(self.controller)
         self.publish()
         self.controller.start()
 
@@ -29,8 +31,15 @@ class FilesBridge:
         saved = self.store.read()
         value.update(recipes=saved["copies"], message=self.message,
                      drive_directory=str(self.controller.drive_directory or ''),
-                     model_directory=str(self.models), can_undo=bool(self.undo or saved.get("copy_trash")))
-        value["tasks"] = [task for task in value["tasks"] if task["id"] not in self.hidden_tasks]
+                     model_directory=str(self.models), can_undo=bool(self.undo or saved.get("copy_trash")),
+                     history_storage=self.history.storage)
+        live = {task["id"]: task for task in value["tasks"]}
+        active = [task for task in live.values() if task["status"] in ("queued", "running")]
+        active_ids = {task["id"] for task in active}
+        value["tasks"] = [
+            {**task, "retryable": task["id"] in live and live[task["id"]].get("retryable", True)}
+            for task in self.history.visible() if task["id"] not in active_ids
+        ] + active
         self.owner.files = value
 
     def receive(self, command):
@@ -54,13 +63,13 @@ class FilesBridge:
             self.undo.append(("recipe", command["id"]))
             self.message = "快捷操作已删除。"
         elif action == "delete_task":
-            self.hidden_tasks.add(command["id"])
-            self.undo.append(("task", command["id"]))
-            self.message = "传输记录已删除。"
-        elif action == "undo":
+            if self.history.set_deleted(command["id"], True):
+                self.undo.append(("task", command["id"]))
+                self.message = "传输记录已删除。"
+        elif action == "undo" and (self.undo or self.store.read().get("copy_trash")):
             kind, value = self.undo.pop() if self.undo else ("recipe", self.store.read()["copy_trash"][-1]["id"])
             if kind == "task":
-                self.hidden_tasks.remove(value)
+                self.history.set_deleted(value, False)
             else:
                 def restore(state):
                     record = next(record for record in state["copy_trash"] if record["id"] == value)
@@ -71,6 +80,8 @@ class FilesBridge:
         elif action == "replay":
             threading.Thread(target=self.replay, args=(command["ids"],), daemon=True).start()
         else:
+            if action == "refresh" and command.get("pane") == "drive":
+                self.history.sync()
             self.controller.handle({**command, "save_shortcut": action == "transfer"})
         self.publish()
 

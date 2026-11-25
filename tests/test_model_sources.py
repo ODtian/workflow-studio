@@ -14,6 +14,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "workflow_studio")]
 from diffusers_runner import fields
 from hf_downloads import HuggingFaceDownloads
 from transfer_core import TransferController
+from transfer_history import TransferHistory, workspace_store
 
 
 class ModelSourcesTest(unittest.TestCase):
@@ -34,17 +35,17 @@ class ModelSourcesTest(unittest.TestCase):
             self.assertEqual([option["value"] for option in fields("sd15")[0]["options"]], [str(checkpoint)])
 
     def test_hf_download_starts_only_after_file_panel_request(self):
-        with tempfile.TemporaryDirectory() as directory, ThreadPoolExecutor(max_workers=1) as pool:
+        with (tempfile.TemporaryDirectory() as directory, ThreadPoolExecutor(max_workers=1) as pool,
+              patch.object(workspace_store, "STORE", Path(directory) / "settings")):
             path = Path(directory) / "weight.safetensors"
             path.write_bytes(b"fixture")
+            history = TransferHistory(None)
             controller = SimpleNamespace(lock=threading.RLock(), tasks=[], transfers=pool, closed=False,
-                                         _publish=lambda: None)
-            saved = {}
-            store = SimpleNamespace(read=lambda: saved, edit=lambda change: change(saved))
+                                         _publish=lambda: None, on_finish=history.finish)
             with patch("huggingface_hub.snapshot_download", return_value=[
                     SimpleNamespace(commit_hash="resolved-ref", filename=path.name)]) as snapshot, patch(
                     "huggingface_hub.hf_hub_download", return_value=str(path)) as download:
-                manager = HuggingFaceDownloads(SimpleNamespace(controller=controller, store=store))
+                manager = HuggingFaceDownloads(controller)
                 snapshot.assert_not_called()
                 download.assert_not_called()
                 manager.download({"local_path": directory, "hf_sources": [
@@ -52,7 +53,9 @@ class ModelSourcesTest(unittest.TestCase):
                 self.assertTrue(snapshot.call_args.kwargs["dry_run"])
                 self.assertEqual(download.call_args.kwargs["revision"], "resolved-ref")
                 self.assertEqual(download.call_args.kwargs["local_dir"], directory)
-                self.assertEqual(saved["hf_downloads"][0]["status"], "completed")
+                saved, = TransferHistory(None).visible()
+                self.assertEqual(saved["status"], "completed")
+                self.assertEqual(saved["target_path"], str(path))
 
     def test_drive_starts_at_the_signed_in_accounts_root(self):
         with tempfile.TemporaryDirectory() as directory:

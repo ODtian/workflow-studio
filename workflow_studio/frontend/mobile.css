@@ -1,6 +1,5 @@
 @media (max-width:760px), (max-width:1000px) and (max-height:500px) {
   .studio{min-height:0;font-size:14px}
-  .studio:not(.expanded){height:var(--studio-viewport-height,100dvh);max-height:90dvh;border-radius:8px}
   .app-sidebar,.sidebar-toggle,.breadcrumb,.saved-label,.return-label,.topbar-right [data-slot=badge]{display:none}
   .app-main{padding-bottom:env(safe-area-inset-bottom)}
   .app-topbar{height:calc(36px + env(safe-area-inset-top));min-height:calc(36px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));gap:4px}
