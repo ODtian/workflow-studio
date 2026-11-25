@@ -7,7 +7,7 @@ import threading
 
 
 def apply_update(widget):
-    import panel
+    import studio_panel as panel
     inference_lock, chats = panel.INFERENCE_LOCK, panel.CHATS
     with inference_lock:
         for name, cache_names in (

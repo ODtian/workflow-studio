@@ -11,7 +11,7 @@ import tempfile
 SOURCE = Path(__file__).parent
 
 
-def get_studio(workspace=None, panel_factory=None):
+def get_studio(workspace=None):
     from dotenv import load_dotenv
     workspace = Path(workspace or Path.cwd()).resolve()
     load_dotenv(workspace / '.env')
@@ -24,8 +24,8 @@ def get_studio(workspace=None, panel_factory=None):
             sys.path.insert(0, str(directory))
     os.environ['WORKFLOW_WORKSPACE'] = str(runtime)
     os.environ['WORKFLOW_GZIP_CONTENT'] = '1'
-    os.environ['WORKFLOW_MODELS_DIR'] = str(Path(tempfile.gettempdir()) / 'molab-comfy-runtime/models')
-    os.environ['WORKFLOW_COMFY_ROOT'] = str(Path(tempfile.gettempdir()) / 'workflow-studio-comfy-core-0.42.0')
+    os.environ.setdefault('WORKFLOW_MODELS_DIR', str(Path(tempfile.gettempdir()) / 'molab-comfy-runtime/models'))
+    os.environ.setdefault('WORKFLOW_COMFY_ROOT', str(Path(tempfile.gettempdir()) / 'workflow-studio-comfy-core-0.42.0'))
     import workspace_store
     output = workspace_store.CONTENT_DIR / 'media'
     os.environ['WORKFLOW_OUTPUT_DIR'] = str(output)
@@ -46,6 +46,5 @@ def get_studio(workspace=None, panel_factory=None):
     def save_settings(value):
         workspace_store.edit(lambda state: state.update(studio_settings=value))
 
-    from panel import get_panel
-    factory = panel_factory or get_panel
-    return factory(workflow_dir=workflows, output_dir=output, settings_backup=save_settings)
+    from studio_panel import get_panel
+    return get_panel(workflow_dir=workflows, output_dir=output, settings_backup=save_settings)

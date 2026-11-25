@@ -22,9 +22,6 @@ from preview_transport import WidgetTransport, jpeg
 from settings_writer import SettingsWriter, configuration_parameters
 from chat_uploads import ChatUploads
 from content_store import enabled, read_bytes, read_text, write_text, open_image, save_image
-from widget_assets import embed_widget_modules
-
-embed_widget_modules()
 
 ROOT = Path(__file__).parent
 INFERENCE_LOCK = threading.Lock()
@@ -321,12 +318,9 @@ class WorkflowPanel(anywidget.AnyWidget):
     def runtime_changed(self, change):
         self.send({'type': 'runtime_state', 'name': change['name'], 'value': change['new']})
 
-    def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None,
-                 *, widget_source=None, workflow_sources=None):
-        if widget_source is None:
-            widget_source = ("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
-                             + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8"))
-            widget_source = "data:text/javascript;base64," + base64.b64encode(widget_source.encode("utf-8")).decode("ascii")
+    def __init__(self, workflow_dir=None, output_dir=None, initial=None, settings_backup=None):
+        widget_source = ("const GRADIO_COMPONENT_CSS = " + json.dumps((ROOT / "assets/components.css").read_text(encoding="utf-8"))
+                         + ";\n" + (ROOT / "assets/view.js").read_text(encoding="utf-8"))
         super().__init__(_esm=widget_source)
         self.transport = WidgetTransport(self)
         self.workflow_dir = Path(workflow_dir or ROOT / "workflows").resolve()
@@ -335,7 +329,6 @@ class WorkflowPanel(anywidget.AnyWidget):
         self.workflow_sources = {path.name: read_text(path)
                                  for path in sorted(self.workflow_dir.glob("*.py"))
                                  if not path.name.startswith("_")}
-        self.workflow_sources.update(workflow_sources or {})
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.history_store = ImageHistory(self.output_dir if enabled() else self.workflow_dir.parent / "studio_history")
         self.history_store.import_directory(self.output_dir)

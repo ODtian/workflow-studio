@@ -410,7 +410,6 @@
         <section class="management page-padding">
           <div class="surface management-add"><Dropdown label="可用工作流" show_label={false} bind:value={addWorkflow} choices={state.workflows.map(w=>[w.name,w.id])}/><Button disabled={!addWorkflow} onclick={()=>send('add',{workflow:addWorkflow})}><Plus size={15}/>添加</Button><Button variant="outline" onclick={()=>send('refresh')}><RefreshCw size={15}/>刷新</Button><Button variant="outline" onclick={()=>codeInput.click()}><Upload size={15}/>导入 Python</Button><Button variant="outline" disabled={state.panels.some(p=>p.busy||p.initializing)} onclick={()=>send('unload_models')}>卸载全部模型</Button></div>
           <div class="workflow-list">{#each state.panels as panel}<div class="surface workflow-row"><div class="workflow-name"><h3 title={panel.selected}>{panel.spec.name}</h3></div>{#if panel.busy}<Badge variant="secondary">运行中</Badge>{/if}<Button variant="outline" onclick={()=>send('export',{id:panel.id})}>导出</Button><Button variant="ghost" disabled={panel.busy} onclick={()=>send('remove',{id:panel.id})}>移除</Button></div>{/each}</div>
-          {#if state.password_protected}<details class="surface workspace-settings"><summary>安全设置</summary><div class="row"><Button variant="outline" onclick={()=>send('open_password_dialog')}>修改密码</Button></div></details>{/if}
         </section>
       {/if}
       {#each state.panels as panel (panel.id)}

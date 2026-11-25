@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [tailwindcss(), svelte({preprocess:vitePreprocess()})],
   resolve:{alias:{$lib:fileURLToPath(new URL('./lib',import.meta.url))}},
   build: {
+    minify: false,
+    cssMinify: false,
     outDir: '../assets',
     lib: {entry: 'main.js', formats: ['es'], fileName: () => 'view.js'},
     cssCodeSplit: false,

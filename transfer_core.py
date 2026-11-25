@@ -23,7 +23,7 @@ from dataclasses import dataclass
 SCHEMA = 'general-files-v2'
 DRIVE_ROOTS = {'root': 'root', 'models': '15hWuax1e3-jKpYMRR8JlnbFpC6huMbAe',
                'results': '1XedAN9O0OzkdFvkqqeWdXHMZ08qXXmht'}
-LOCAL_ROOTS = {'root': Path('/'), 'models': Path('/tmp/molab-comfy-runtime/models'),
+LOCAL_ROOTS = {'root': Path('/'), 'models': Path(os.environ.get('WORKFLOW_MODELS_DIR', '/tmp/molab-comfy-runtime/models')),
                'input': Path('/tmp/workflow-studio-runtime/input'),
                'output': Path('/tmp/workflow-studio-runtime/content/media')}
 LABELS = {'root': '/', 'models': '模型目录', 'results': '结果目录', 'input': '输入目录', 'output': '输出目录'}

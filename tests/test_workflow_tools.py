@@ -125,11 +125,14 @@ class WorkflowToolTests(unittest.TestCase):
         workspace.edit = lambda update: update(store)
         llama = ModuleType('llama_runner')
         llama.run_llama = native_model
+        strata = ModuleType('strata_runner')
+        strata.release = lambda: None
         marimo = ModuleType('marimo')
         marimo.Thread = threading.Thread
         with tempfile.TemporaryDirectory(prefix='pi-workflow-tools-') as directory, patch.dict(
                 os.environ, {'WORKFLOW_WORKSPACE': directory, 'WORKFLOW_GZIP_CONTENT': '1'}), patch.dict(
-                sys.modules, {'llama_runner': llama, 'workspace_store': workspace, 'marimo': marimo}):
+                sys.modules, {'llama_runner': llama, 'strata_runner': strata,
+                              'workspace_store': workspace, 'marimo': marimo}):
             sys.modules.pop('pi_runner', None)
             runner = importlib.import_module('pi_runner')
             ctx = SimpleNamespace(panel=pi_panel, cancel=threading.Event(),

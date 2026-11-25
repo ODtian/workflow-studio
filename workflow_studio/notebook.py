@@ -7,7 +7,7 @@ app = marimo.App(width="full")
 @app.cell
 def _():
     import marimo as mo
-    from panel import get_panel
+    from studio_panel import get_panel
     mo.ui.anywidget(get_panel())
     return
 

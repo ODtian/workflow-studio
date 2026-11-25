@@ -29,6 +29,20 @@ Git 更新和初始化由 `studio_entry.py` 执行，每次调用更新临时目
 
 模型存放在 `model_dir/LLM/`。公开模型目录记录下载仓库、固定版本与文件大小；notebook 的 `workspace_store` 中可保存自己的 Drive 模型清单，运行时优先使用该清单恢复权重。公开仓库保存工作流源码和前端资源。
 
+### 在 Google Colab 启动
+
+在 Colab 运行时检出本仓库，并把检出目录加入 Python 导入路径。然后按顺序调用：
+
+```python
+from colab_runtime import prepare, start_comfy, start_studio
+
+prepare()
+start_comfy()
+start_studio()
+```
+
+两个入口由 Colab 提供预览，共用 `/content/workflow-studio-colab/ComfyUI/models` 中的模型。CPU 可验证启动和接口，生成任务需要按工作流要求选择 GPU 并准备模型。运行时回收前，请下载需要保留的文件。
+
 首次使用时，在“文件与传输”点击“连接 Google Drive”，打开 Google 授权页，将返回的一次性授权码填入工作台并点击“完成连接”。授权保存在本 Notebook 的 Secrets 中。后续启动通过 `persistent_drive_auth.connect_from_secrets()` 自动连接，授权失效时从页面重新连接。
 
 ## 内容存储
