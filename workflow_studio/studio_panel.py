@@ -315,6 +315,7 @@ class WorkflowSession:
 
 
 class WorkflowPanel(anywidget.AnyWidget):
+    notebook_url = traitlets.Unicode().tag(sync=True)
     state = traitlets.Dict()
     previews = traitlets.Dict()
     texts = traitlets.Dict()

@@ -28,7 +28,7 @@ start_studio()
 
 ComfyUI 通过 Colab 预览打开。Studio 面板直接显示在 Colab 单元格中，工作流在当前 Python 内核执行。两者共用与仓库检出目录并列的 `ComfyUI/models`。
 
-在 Studio 所在的单元格输出旁打开「⋮」，选择「全屏查看输出项」。
+在 Studio 所在的单元格输出旁打开「⋮」，选择「全屏查看输出项」。按 Esc 退出 Colab 全屏。在 `start_studio(notebook_url=...)` 中传入当前笔记本链接，还可用全屏工具栏的「返回笔记本」在新标签页打开原笔记本。
 
 ### Google Drive 和模型
 

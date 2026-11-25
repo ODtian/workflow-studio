@@ -42,14 +42,19 @@
   let playback = $state({volume:0.25, muted:false});
   const bindingModels = new Map();
   let addWorkflow = $state('');
+  const inColab = Boolean(globalThis.google?.colab?.output);
+  const fullscreenMode = window.matchMedia('(display-mode: fullscreen)');
   let fullscreen = $state(Boolean(document.fullscreenElement));
+  let displayFullscreen = $state(fullscreenMode.matches);
+  let colabFullscreen = $derived(inColab && displayFullscreen && !fullscreen);
+  let notebookURL = $state('');
   let fullscreenHint = $state(false);
 
   async function toggleFullscreen() {
     fullscreenHint = false;
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else if (document.fullscreenEnabled) await document.documentElement.requestFullscreen();
+      else if (!colabFullscreen && document.fullscreenEnabled) await document.documentElement.requestFullscreen();
       else fullscreenHint = true;
     } catch {
       fullscreenHint = true;
@@ -57,9 +62,22 @@
   }
 
   $effect(() => {
-    const syncFullscreen = () => fullscreen = Boolean(document.fullscreenElement);
+    const syncFullscreen = () => {
+      fullscreen = Boolean(document.fullscreenElement);
+      displayFullscreen = fullscreenMode.matches;
+      fullscreenHint = false;
+    };
+    const syncNotebook = () => notebookURL = model.get('notebook_url') || '';
+    syncFullscreen();
+    syncNotebook();
+    fullscreenMode.addEventListener('change', syncFullscreen);
     document.addEventListener('fullscreenchange', syncFullscreen);
-    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+    model.on('change:notebook_url', syncNotebook);
+    return () => {
+      fullscreenMode.removeEventListener('change', syncFullscreen);
+      document.removeEventListener('fullscreenchange', syncFullscreen);
+      model.off('change:notebook_url', syncNotebook);
+    };
   });
   let transferNotice = $state('');
   let activeId = $state('');
@@ -418,10 +436,14 @@
       <div class="topbar-right">
         {#if activePanel?.busy}<Badge variant="secondary">运行中</Badge>{:else if settingsNotice!=='设置已保存'}<span class="saved-label">{settingsNotice}</span>{/if}
         <Button size="icon-sm" variant="ghost" aria-label={darkTheme?'切换到浅色主题':'切换到暗色主题'} title={darkTheme?'切换到浅色主题':'切换到暗色主题'} onclick={()=>setColorTheme(darkTheme?'light':'dark')}>{#if darkTheme}<Sun size={16}/>{:else}<Moon size={16}/>{/if}</Button>
-        <Button size="sm" variant="outline" aria-label={fullscreen?'退出全屏':'全屏'} onclick={toggleFullscreen}>{#if fullscreen}<Minimize2 size={15}/>{:else}<Maximize2 size={15}/>{/if}<span class="return-label">{fullscreen?'退出全屏':'全屏'}</span></Button>
+        {#if colabFullscreen && notebookURL}
+          <Button size="sm" variant="outline" href={notebookURL} target="_blank" rel="noopener" aria-label="返回笔记本（新标签页）" title="返回笔记本（新标签页）"><Minimize2 size={15}/><span class="return-label">返回笔记本</span></Button>
+        {:else}
+          <Button size="sm" variant="outline" aria-label={fullscreen||colabFullscreen?'退出全屏':'全屏'} onclick={toggleFullscreen}>{#if fullscreen||colabFullscreen}<Minimize2 size={15}/>{:else}<Maximize2 size={15}/>{/if}<span class="return-label">{fullscreen||colabFullscreen?'退出全屏':'全屏'}</span></Button>
+        {/if}
       </div>
     </header>
-    {#if fullscreenHint}<button class="app-notice" onclick={()=>fullscreenHint=false}>在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。 ×</button>{/if}
+    {#if fullscreenHint}<button class="app-notice" onclick={()=>fullscreenHint=false}>{colabFullscreen?'按 Esc 退出 Colab 全屏。':'在 Colab 单元格输出的 ⋮ 菜单中选择「全屏查看输出项」。'} ×</button>{/if}
     {#if !settingsReady}<div class="app-notice" role="status">运行 Notebook 后载入工作台。</div>{:else if state.message}<div class="app-notice" role="status">{state.message}</div>{/if}
     {#if transferNotice}<button class="app-notice" onclick={()=>transferNotice=''}>{transferNotice} ×</button>{/if}
     <div class="app-content">

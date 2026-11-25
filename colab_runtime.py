@@ -111,11 +111,18 @@ def mount_drive(mountpoint=None, *, readonly=False):
     return path / "MyDrive"
 
 
-def start_studio(*, drive_directory=None, state_directory=None):
+def start_studio(*, drive_directory=None, state_directory=None, notebook_url=None):
     """Display Studio in the active Colab cell and kernel."""
     from google.colab import output
     from IPython.display import display
     from studio_bootstrap import get_studio
+
+    return_url = ""
+    if notebook_url:
+        notebook = urlsplit(notebook_url)
+        if notebook.scheme != "https" or notebook.netloc != "colab.research.google.com":
+            raise ValueError("notebook_url 必须是 Google Colab 笔记本的 HTTPS 链接")
+        return_url = notebook._replace(fragment="").geturl()
 
     global _studio_panel
     output.enable_custom_widget_manager()
@@ -123,4 +130,5 @@ def start_studio(*, drive_directory=None, state_directory=None):
         _studio_panel = get_studio(workspace=ROOT, runtime=ROOT / "studio", models=COMFY / "models", comfy=COMFY,
                                    drive_directory=drive_directory or ROOT.parent / "drive/MyDrive",
                                    state_directory=state_directory)
+    _studio_panel.notebook_url = return_url
     display(_studio_panel)
