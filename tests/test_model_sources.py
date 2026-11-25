@@ -12,12 +12,34 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / "workflow_studio")]
 
 from diffusers_runner import fields
+from copy_registry import sync as sync_shortcuts
 from hf_downloads import HuggingFaceDownloads
 from transfer_core import TransferController
 from transfer_history import TransferHistory, workspace_store
 
 
 class ModelSourcesTest(unittest.TestCase):
+    def test_shortcuts_restore_across_runtimes_without_reviving_deleted_items(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            drive = root / 'drive'
+            drive.mkdir()
+            record = {'id': 'db98fa191cde40dc9122a689d8fb3a7d', 'label': 'File',
+                      'source_provider': 'drive', 'direction': 'download', 'source_kind': 'file',
+                      'drive_path': 'models/file', 'local_path': '/content/models', 'updated_at': 1}
+            with patch.object(workspace_store, 'STORE', root / 'first'):
+                workspace_store.edit(lambda state: state['copies'].append(record))
+                self.assertEqual(sync_shortcuts(drive), 'drive')
+            with patch.object(workspace_store, 'STORE', root / 'second'):
+                self.assertEqual(sync_shortcuts(drive), 'drive')
+                self.assertEqual(workspace_store.read()['copies'], [record])
+                workspace_store.edit(lambda state: state.update(copies=[], copy_trash=[{**record, 'updated_at': 2}]))
+                self.assertEqual(sync_shortcuts(drive), 'drive')
+            with patch.object(workspace_store, 'STORE', root / 'first'):
+                self.assertEqual(sync_shortcuts(drive), 'drive')
+                self.assertEqual(workspace_store.read()['copies'], [])
+                self.assertEqual(workspace_store.read()['copy_trash'], [{**record, 'updated_at': 2}])
+
     def test_diffusers_lists_only_detected_local_weights(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(
                 "os.environ", {"WORKFLOW_MODELS_DIR": directory}):

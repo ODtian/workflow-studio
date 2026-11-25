@@ -1,10 +1,59 @@
 """Save explicit shortcuts for mounted Drive and Hugging Face."""
+import json
 import os
 from pathlib import Path
+import time
 import uuid
 
 import workspace_store as store
 from transfer_core import Entry, directory_fd, fingerprint, local_file, safe_local_path, safe_parts
+
+
+def _filename(record_id):
+    return uuid.UUID(record_id).hex + '.json.gz'
+
+
+def sync(drive_root):
+    if drive_root is None or not Path(drive_root).is_dir():
+        return 'runtime'
+    directory = Path(drive_root) / 'Workflow Studio' / 'shortcuts'
+
+    def merge(state):
+        local = {item['id']: {**item, 'deleted': deleted}
+                 for key, deleted in [('copies', False), ('copy_trash', True)]
+                 for item in state.get(key, [])}
+        remote = {}
+        for path in directory.glob('*.json.gz'):
+            try:
+                record = json.loads(store._get(path.name, directory))
+                record_id = record['id']
+                if (_filename(record_id) != path.name or not isinstance(record.get('label'), str)
+                        or not isinstance(record.get('updated_at', 0), int)):
+                    continue
+                remote[record_id] = record
+                previous = local.get(record_id)
+                if previous is None or record.get('updated_at', 0) > previous.get('updated_at', 0):
+                    local[record_id] = record
+            except (ValueError, TypeError, KeyError, OSError, EOFError, AttributeError):
+                continue
+        for key, deleted in [('copies', False), ('copy_trash', True)]:
+            state[key] = [{name: value for name, value in item.items() if name != 'deleted'}
+                          for item in local.values() if bool(item.get('deleted')) == deleted]
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+            if not os.access(directory, os.W_OK):
+                return 'runtime'
+            for record_id, record in local.items():
+                if remote.get(record_id) != record:
+                    store._put(_filename(record_id), json.dumps(record, ensure_ascii=False).encode(), directory)
+        except (OSError, ValueError):
+            return 'runtime'
+        return 'drive'
+
+    try:
+        return store.edit(merge)
+    except (OSError, ValueError):
+        return 'runtime'
 
 
 def remember(controller, source, target):
@@ -20,7 +69,7 @@ def remember(controller, source, target):
                 return
         state['copies'].append({'id': uuid.uuid4().hex, 'label': source.name, 'source_provider': 'drive',
                                 'direction': direction, 'drive_path': drive_path, 'source_kind': source.kind,
-                                'local_path': local_path})
+                                'local_path': local_path, 'updated_at': time.time_ns()})
     store.edit(save)
 
 
@@ -50,7 +99,7 @@ def save_recipe(value):
                        source_provider="huggingface",direction="download",
                        source_kind="directory",repo_id=source["repo_id"],
                        hf_url=value.get("hf_url",source["repo_id"]),local_path=str(path),
-                       hf_sources=[source,*companions])
+                       hf_sources=[source,*companions],updated_at=time.time_ns())
             return old["id"]
         return store.edit(save_hf)
     direction = value.get('direction')
@@ -67,7 +116,7 @@ def save_recipe(value):
             record = {'id': uuid.uuid4().hex}
             state['copies'].append(record)
         record.update(label=label, source_provider='drive', direction=direction, drive_path='/'.join(parts) or '.',
-                      local_path=str(path), source_kind=value.get('source_kind', 'file'))
+                      local_path=str(path), source_kind=value.get('source_kind', 'file'), updated_at=time.time_ns())
         record.pop('drive_id', None)
         return record['id']
     return store.edit(save)

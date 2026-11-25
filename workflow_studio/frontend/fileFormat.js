@@ -1,6 +1,6 @@
 export function bytes(value) {
   if (!value) return '0 B';
-  const units = ['B','KB','MB','GB','TB'];
+  const units = ['B','KiB','MiB','GiB','TiB'];
   const scale = Math.min(Math.floor(Math.log(value)/Math.log(1024)),4);
   return `${(value/1024**scale).toFixed(scale ? 1 : 0)} ${units[scale]}`;
 }

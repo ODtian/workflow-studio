@@ -1,6 +1,8 @@
 """Connect the Studio file panel to its transfer queue."""
 from pathlib import Path
 import threading
+import time
+from copy_registry import sync as sync_shortcuts
 from studio_paths import model_directory
 from transfer_core import TransferController
 from transfer_history import TransferHistory
@@ -17,6 +19,7 @@ class FilesBridge:
         roots = {"root": Path(self.models.anchor), "models": self.models,
                  "input": owner.workflow_dir.parent / "input", "output": owner.output_dir}
         self.history = TransferHistory(drive_directory)
+        self.shortcut_storage = sync_shortcuts(drive_directory)
         self.controller = TransferController(drive_directory, local_roots=roots, on_change=self.publish,
                                              on_finish=self.history.finish)
         self.undo = []
@@ -32,7 +35,7 @@ class FilesBridge:
         value.update(recipes=saved["copies"], message=self.message,
                      drive_directory=str(self.controller.drive_directory or ''),
                      model_directory=str(self.models), can_undo=bool(self.undo or saved.get("copy_trash")),
-                     history_storage=self.history.storage)
+                     history_storage=self.history.storage, shortcut_storage=self.shortcut_storage)
         live = {task["id"]: task for task in value["tasks"]}
         active = [task for task in live.values() if task["status"] in ("queued", "running")]
         active_ids = {task["id"] for task in active}
@@ -58,6 +61,7 @@ class FilesBridge:
             def remove(state):
                 record = next(record for record in state["copies"] if record["id"] == command["id"])
                 state["copies"].remove(record)
+                record['updated_at'] = time.time_ns()
                 state.setdefault("copy_trash", []).append(record)
             self.store.edit(remove)
             self.undo.append(("recipe", command["id"]))
@@ -74,6 +78,7 @@ class FilesBridge:
                 def restore(state):
                     record = next(record for record in state["copy_trash"] if record["id"] == value)
                     state["copy_trash"].remove(record)
+                    record['updated_at'] = time.time_ns()
                     state["copies"].append(record)
                 self.store.edit(restore)
             self.message = "已恢复删除项。"
@@ -83,6 +88,9 @@ class FilesBridge:
             if action == "refresh" and command.get("pane") == "drive":
                 self.history.sync()
             self.controller.handle({**command, "save_shortcut": action == "transfer"})
+        if action in ("save_recipe", "delete_recipe", "undo", "transfer") or (
+                action == "refresh" and command.get("pane") == "drive"):
+            self.shortcut_storage = sync_shortcuts(self.controller.drive_directory)
         self.publish()
 
     def replay(self, ids):

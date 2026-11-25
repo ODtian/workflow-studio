@@ -12684,7 +12684,7 @@ const buttonVariants = tv({
   },
   defaultVariants: { variant: "default", size: "default" }
 });
-var rest_excludes$14 = /* @__PURE__ */ new Set([
+var rest_excludes$17 = /* @__PURE__ */ new Set([
   "$$slots",
   "$$events",
   "$$legacy",
@@ -12701,7 +12701,7 @@ var root$s = /* @__PURE__ */ from_html(`<a><!></a>`);
 var root_1$f = /* @__PURE__ */ from_html(`<button><!></button>`);
 function Button($$anchor, $$props) {
   push($$props, true);
-  let variant = prop($$props, "variant", 3, "default"), size = prop($$props, "size", 3, "default"), ref = prop($$props, "ref", 15, null), href = prop($$props, "href", 3, void 0), type = prop($$props, "type", 3, "button"), restProps = /* @__PURE__ */ rest_props($$props, rest_excludes$14);
+  let variant = prop($$props, "variant", 3, "default"), size = prop($$props, "size", 3, "default"), ref = prop($$props, "ref", 15, null), href = prop($$props, "href", 3, void 0), type = prop($$props, "type", 3, "button"), restProps = /* @__PURE__ */ rest_props($$props, rest_excludes$17);
   var fragment = comment();
   var node = first_child(fragment);
   {
@@ -12769,7 +12769,7 @@ const badgeVariants = tv({
   },
   defaultVariants: { variant: "default" }
 });
-var rest_excludes$13 = /* @__PURE__ */ new Set([
+var rest_excludes$16 = /* @__PURE__ */ new Set([
   "$$slots",
   "$$events",
   "$$legacy",
@@ -12781,7 +12781,7 @@ var rest_excludes$13 = /* @__PURE__ */ new Set([
 ]);
 function Badge($$anchor, $$props) {
   push($$props, true);
-  let ref = prop($$props, "ref", 15, null), variant = prop($$props, "variant", 3, "default"), restProps = /* @__PURE__ */ rest_props($$props, rest_excludes$13);
+  let ref = prop($$props, "ref", 15, null), variant = prop($$props, "variant", 3, "default"), restProps = /* @__PURE__ */ rest_props($$props, rest_excludes$16);
   var fragment = comment();
   var node = first_child(fragment);
   element(node, () => $$props.href ? "a" : "span", false, ($$element, $$anchor2) => {
@@ -12881,7 +12881,7 @@ const hasA11yProp = (props) => {
 };
 const LucideContext = /* @__PURE__ */ Symbol("lucide-context");
 const getLucideContext = () => getContext(LucideContext);
-var rest_excludes$12 = /* @__PURE__ */ new Set([
+var rest_excludes$15 = /* @__PURE__ */ new Set([
   "$$slots",
   "$$events",
   "$$legacy",
@@ -12901,7 +12901,7 @@ var root$r = /* @__PURE__ */ from_svg(`<svg><!><!></svg>`);
 function Icon($$anchor, $$props) {
   push($$props, true);
   const globalProps = getLucideContext() ?? {};
-  const color = prop($$props, "color", 19, () => globalProps.color ?? "currentColor"), size = prop($$props, "size", 19, () => globalProps.size ?? 24), width = prop($$props, "width", 19, size), height = prop($$props, "height", 19, size), strokeWidth = prop($$props, "strokeWidth", 19, () => globalProps.strokeWidth ?? 2), absoluteStrokeWidth = prop($$props, "absoluteStrokeWidth", 19, () => globalProps.absoluteStrokeWidth ?? false), nonScalingStroke = prop($$props, "nonScalingStroke", 19, () => globalProps.nonScalingStroke ?? false), iconNode = prop($$props, "iconNode", 19, () => []), icon = prop($$props, "icon", 19, () => ({ node: iconNode(), aliases: [], size: 24 })), props = /* @__PURE__ */ rest_props($$props, rest_excludes$12);
+  const color = prop($$props, "color", 19, () => globalProps.color ?? "currentColor"), size = prop($$props, "size", 19, () => globalProps.size ?? 24), width = prop($$props, "width", 19, size), height = prop($$props, "height", 19, size), strokeWidth = prop($$props, "strokeWidth", 19, () => globalProps.strokeWidth ?? 2), absoluteStrokeWidth = prop($$props, "absoluteStrokeWidth", 19, () => globalProps.absoluteStrokeWidth ?? false), nonScalingStroke = prop($$props, "nonScalingStroke", 19, () => globalProps.nonScalingStroke ?? false), iconNode = prop($$props, "iconNode", 19, () => []), icon = prop($$props, "icon", 19, () => ({ node: iconNode(), aliases: [], size: 24 })), props = /* @__PURE__ */ rest_props($$props, rest_excludes$15);
   const hasAccessibleProp = /* @__PURE__ */ user_derived(() => Boolean($$props.children) || hasA11yProp(props));
   const $$d = /* @__PURE__ */ user_derived(() => buildLucideIconNode(icon(), {
     color: color(),
@@ -12938,7 +12938,7 @@ function Icon($$anchor, $$props) {
   append($$anchor, svg2);
   pop();
 }
-const __iconData$L = {
+const __iconData$O = {
   "name": "arrow-left-right",
   "size": 24,
   "node": [
@@ -12948,9 +12948,68 @@ const __iconData$L = {
     ["path", { "d": "M20 17H4" }]
   ]
 };
+__iconData$O.node;
+var rest_excludes$14 = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+function Arrow_left_right($$anchor, $$props) {
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$14);
+  Icon($$anchor, spread_props(() => props, {
+    get icon() {
+      return __iconData$O;
+    }
+  }));
+}
+const __iconData$N = {
+  "name": "arrow-right",
+  "size": 24,
+  "node": [
+    ["path", { "d": "M5 12h14" }],
+    ["path", { "d": "m12 5 7 7-7 7" }]
+  ]
+};
+__iconData$N.node;
+var rest_excludes$13 = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+function Arrow_right($$anchor, $$props) {
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$13);
+  Icon($$anchor, spread_props(() => props, {
+    get icon() {
+      return __iconData$N;
+    }
+  }));
+}
+const __iconData$M = {
+  "name": "arrow-up",
+  "size": 24,
+  "node": [
+    ["path", { "d": "m5 12 7-7 7 7" }],
+    ["path", { "d": "M12 19V5" }]
+  ]
+};
+__iconData$M.node;
+var rest_excludes$12 = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+function Arrow_up($$anchor, $$props) {
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$12);
+  Icon($$anchor, spread_props(() => props, {
+    get icon() {
+      return __iconData$M;
+    }
+  }));
+}
+const __iconData$L = {
+  "name": "book-open",
+  "size": 24,
+  "node": [
+    ["path", { "d": "M12 5v16" }],
+    [
+      "path",
+      {
+        "d": "M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"
+      }
+    ]
+  ]
+};
 __iconData$L.node;
 var rest_excludes$11 = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Arrow_left_right($$anchor, $$props) {
+function Book_open($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$11);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -12959,16 +13018,13 @@ function Arrow_left_right($$anchor, $$props) {
   }));
 }
 const __iconData$K = {
-  "name": "arrow-right",
+  "name": "check",
   "size": 24,
-  "node": [
-    ["path", { "d": "M5 12h14" }],
-    ["path", { "d": "m12 5 7 7-7 7" }]
-  ]
+  "node": [["path", { "d": "M20 6 9 17l-5-5" }]]
 };
 __iconData$K.node;
 var rest_excludes$10 = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Arrow_right($$anchor, $$props) {
+function Check($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$10);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -12977,16 +13033,13 @@ function Arrow_right($$anchor, $$props) {
   }));
 }
 const __iconData$J = {
-  "name": "arrow-up",
+  "name": "chevron-down",
   "size": 24,
-  "node": [
-    ["path", { "d": "m5 12 7-7 7 7" }],
-    ["path", { "d": "M12 19V5" }]
-  ]
+  "node": [["path", { "d": "m6 9 6 6 6-6" }]]
 };
 __iconData$J.node;
 var rest_excludes$$ = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Arrow_up($$anchor, $$props) {
+function Chevron_down($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$$);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -12995,13 +13048,13 @@ function Arrow_up($$anchor, $$props) {
   }));
 }
 const __iconData$I = {
-  "name": "check",
+  "name": "chevron-left",
   "size": 24,
-  "node": [["path", { "d": "M20 6 9 17l-5-5" }]]
+  "node": [["path", { "d": "m15 18-6-6 6-6" }]]
 };
 __iconData$I.node;
 var rest_excludes$_ = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Check($$anchor, $$props) {
+function Chevron_left($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$_);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -13010,13 +13063,13 @@ function Check($$anchor, $$props) {
   }));
 }
 const __iconData$H = {
-  "name": "chevron-down",
+  "name": "chevron-right",
   "size": 24,
-  "node": [["path", { "d": "m6 9 6 6 6-6" }]]
+  "node": [["path", { "d": "m9 18 6-6-6-6" }]]
 };
 __iconData$H.node;
 var rest_excludes$Z = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Chevron_down($$anchor, $$props) {
+function Chevron_right($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Z);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -13025,36 +13078,6 @@ function Chevron_down($$anchor, $$props) {
   }));
 }
 const __iconData$G = {
-  "name": "chevron-left",
-  "size": 24,
-  "node": [["path", { "d": "m15 18-6-6 6-6" }]]
-};
-__iconData$G.node;
-var rest_excludes$Y = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Chevron_left($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Y);
-  Icon($$anchor, spread_props(() => props, {
-    get icon() {
-      return __iconData$G;
-    }
-  }));
-}
-const __iconData$F = {
-  "name": "chevron-right",
-  "size": 24,
-  "node": [["path", { "d": "m9 18 6-6-6-6" }]]
-};
-__iconData$F.node;
-var rest_excludes$X = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Chevron_right($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$X);
-  Icon($$anchor, spread_props(() => props, {
-    get icon() {
-      return __iconData$F;
-    }
-  }));
-}
-const __iconData$E = {
   "name": "clipboard-paste",
   "size": 24,
   "node": [
@@ -13073,17 +13096,46 @@ const __iconData$E = {
     ]
   ]
 };
-__iconData$E.node;
-var rest_excludes$W = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$G.node;
+var rest_excludes$Y = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Clipboard_paste($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$W);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Y);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$E;
+      return __iconData$G;
     }
   }));
 }
-const __iconData$D = {
+const __iconData$F = {
+  "name": "cloud-off",
+  "size": 24,
+  "node": [
+    [
+      "path",
+      {
+        "d": "M10.94 5.274A7 7 0 0 1 15.71 10h1.79a4.5 4.5 0 0 1 4.222 6.057"
+      }
+    ],
+    [
+      "path",
+      {
+        "d": "M18.796 18.81A4.5 4.5 0 0 1 17.5 19H9A7 7 0 0 1 5.79 5.78"
+      }
+    ],
+    ["path", { "d": "m2 2 20 20" }]
+  ]
+};
+__iconData$F.node;
+var rest_excludes$X = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+function Cloud_off($$anchor, $$props) {
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$X);
+  Icon($$anchor, spread_props(() => props, {
+    get icon() {
+      return __iconData$F;
+    }
+  }));
+}
+const __iconData$E = {
   "name": "cloud",
   "size": 24,
   "node": [
@@ -13093,17 +13145,17 @@ const __iconData$D = {
     ]
   ]
 };
-__iconData$D.node;
-var rest_excludes$V = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$E.node;
+var rest_excludes$W = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Cloud($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$V);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$W);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$D;
+      return __iconData$E;
     }
   }));
 }
-const __iconData$C = {
+const __iconData$D = {
   "name": "combine",
   "size": 24,
   "node": [
@@ -13121,17 +13173,17 @@ const __iconData$C = {
     ]
   ]
 };
-__iconData$C.node;
-var rest_excludes$U = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$D.node;
+var rest_excludes$V = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Combine($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$U);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$V);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$C;
+      return __iconData$D;
     }
   }));
 }
-const __iconData$B = {
+const __iconData$C = {
   "name": "copy",
   "size": 24,
   "node": [
@@ -13154,17 +13206,17 @@ const __iconData$B = {
     ]
   ]
 };
-__iconData$B.node;
-var rest_excludes$T = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$C.node;
+var rest_excludes$U = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Copy($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$T);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$U);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$B;
+      return __iconData$C;
     }
   }));
 }
-const __iconData$A = {
+const __iconData$B = {
   "name": "diamond",
   "size": 24,
   "node": [
@@ -13176,17 +13228,17 @@ const __iconData$A = {
     ]
   ]
 };
-__iconData$A.node;
-var rest_excludes$S = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$B.node;
+var rest_excludes$T = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Diamond($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$S);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$T);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$A;
+      return __iconData$B;
     }
   }));
 }
-const __iconData$z = {
+const __iconData$A = {
   "name": "download",
   "size": 24,
   "node": [
@@ -13195,17 +13247,17 @@ const __iconData$z = {
     ["path", { "d": "m7 10 5 5 5-5" }]
   ]
 };
-__iconData$z.node;
-var rest_excludes$R = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$A.node;
+var rest_excludes$S = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Download($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$R);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$S);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$z;
+      return __iconData$A;
     }
   }));
 }
-const __iconData$y = {
+const __iconData$z = {
   "name": "eighth-notes",
   "size": 24,
   "node": [
@@ -13220,17 +13272,17 @@ const __iconData$y = {
   ],
   "aliases": ["music"]
 };
-__iconData$y.node;
-var rest_excludes$Q = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$z.node;
+var rest_excludes$R = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Eighth_notes($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Q);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$R);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$y;
+      return __iconData$z;
     }
   }));
 }
-const __iconData$x = {
+const __iconData$y = {
   "name": "file-text",
   "size": 24,
   "node": [
@@ -13246,17 +13298,17 @@ const __iconData$x = {
     ["path", { "d": "M16 17H8" }]
   ]
 };
-__iconData$x.node;
-var rest_excludes$P = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$y.node;
+var rest_excludes$Q = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function File_text($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$P);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$Q);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$x;
+      return __iconData$y;
     }
   }));
 }
-const __iconData$w = {
+const __iconData$x = {
   "name": "file",
   "size": 24,
   "node": [
@@ -13269,17 +13321,17 @@ const __iconData$w = {
     ["path", { "d": "M14 2v5a1 1 0 0 0 1 1h5" }]
   ]
 };
-__iconData$w.node;
-var rest_excludes$O = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$x.node;
+var rest_excludes$P = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function File$1($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$O);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$P);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$w;
+      return __iconData$x;
     }
   }));
 }
-const __iconData$v = {
+const __iconData$w = {
   "name": "film",
   "size": 24,
   "node": [
@@ -13296,17 +13348,17 @@ const __iconData$v = {
     ["path", { "d": "M17 16.5h4" }]
   ]
 };
-__iconData$v.node;
-var rest_excludes$N = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$w.node;
+var rest_excludes$O = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Film($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$N);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$O);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$v;
+      return __iconData$w;
     }
   }));
 }
-const __iconData$u = {
+const __iconData$v = {
   "name": "folder-open",
   "size": 24,
   "node": [
@@ -13318,17 +13370,17 @@ const __iconData$u = {
     ]
   ]
 };
-__iconData$u.node;
-var rest_excludes$M = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$v.node;
+var rest_excludes$N = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Folder_open($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$M);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$N);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$u;
+      return __iconData$v;
     }
   }));
 }
-const __iconData$t = {
+const __iconData$u = {
   "name": "folder",
   "size": 24,
   "node": [
@@ -13340,17 +13392,17 @@ const __iconData$t = {
     ]
   ]
 };
-__iconData$t.node;
-var rest_excludes$L = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$u.node;
+var rest_excludes$M = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Folder($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$L);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$M);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$t;
+      return __iconData$u;
     }
   }));
 }
-const __iconData$s = {
+const __iconData$t = {
   "name": "git-branch",
   "size": 24,
   "node": [
@@ -13359,17 +13411,17 @@ const __iconData$s = {
     ["circle", { "cx": "6", "cy": "18", "r": "3" }]
   ]
 };
-__iconData$s.node;
-var rest_excludes$K = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$t.node;
+var rest_excludes$L = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Git_branch($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$K);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$L);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$s;
+      return __iconData$t;
     }
   }));
 }
-const __iconData$r = {
+const __iconData$s = {
   "name": "hard-drive",
   "size": 24,
   "node": [
@@ -13384,17 +13436,17 @@ const __iconData$r = {
     ["path", { "d": "M6 16h.01" }]
   ]
 };
-__iconData$r.node;
-var rest_excludes$J = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$s.node;
+var rest_excludes$K = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Hard_drive($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$J);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$K);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$r;
+      return __iconData$s;
     }
   }));
 }
-const __iconData$q = {
+const __iconData$r = {
   "name": "image",
   "size": 24,
   "node": [
@@ -13413,17 +13465,17 @@ const __iconData$q = {
     ["path", { "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" }]
   ]
 };
-__iconData$q.node;
-var rest_excludes$I = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$r.node;
+var rest_excludes$J = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Image($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$I);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$J);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$q;
+      return __iconData$r;
     }
   }));
 }
-const __iconData$p = {
+const __iconData$q = {
   "name": "info",
   "size": 24,
   "node": [
@@ -13432,17 +13484,17 @@ const __iconData$p = {
     ["path", { "d": "M12 8h.01" }]
   ]
 };
-__iconData$p.node;
-var rest_excludes$H = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$q.node;
+var rest_excludes$I = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Info($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$H);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$I);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$p;
+      return __iconData$q;
     }
   }));
 }
-const __iconData$o = {
+const __iconData$p = {
   "name": "maximize-2",
   "size": 24,
   "node": [
@@ -13452,17 +13504,17 @@ const __iconData$o = {
     ["path", { "d": "M9 21H3v-6" }]
   ]
 };
-__iconData$o.node;
-var rest_excludes$G = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$p.node;
+var rest_excludes$H = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Maximize_2($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$G);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$H);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$o;
+      return __iconData$p;
     }
   }));
 }
-const __iconData$n = {
+const __iconData$o = {
   "name": "message-square",
   "size": 24,
   "node": [
@@ -13474,17 +13526,17 @@ const __iconData$n = {
     ]
   ]
 };
-__iconData$n.node;
-var rest_excludes$F = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$o.node;
+var rest_excludes$G = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Message_square($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$F);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$G);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$n;
+      return __iconData$o;
     }
   }));
 }
-const __iconData$m = {
+const __iconData$n = {
   "name": "minimize-2",
   "size": 24,
   "node": [
@@ -13494,9 +13546,24 @@ const __iconData$m = {
     ["path", { "d": "M4 14h6v6" }]
   ]
 };
+__iconData$n.node;
+var rest_excludes$F = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+function Minimize_2($$anchor, $$props) {
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$F);
+  Icon($$anchor, spread_props(() => props, {
+    get icon() {
+      return __iconData$n;
+    }
+  }));
+}
+const __iconData$m = {
+  "name": "minus",
+  "size": 24,
+  "node": [["path", { "d": "M5 12h14" }]]
+};
 __iconData$m.node;
 var rest_excludes$E = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Minimize_2($$anchor, $$props) {
+function Minus($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$E);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -13505,21 +13572,6 @@ function Minimize_2($$anchor, $$props) {
   }));
 }
 const __iconData$l = {
-  "name": "minus",
-  "size": 24,
-  "node": [["path", { "d": "M5 12h14" }]]
-};
-__iconData$l.node;
-var rest_excludes$D = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Minus($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$D);
-  Icon($$anchor, spread_props(() => props, {
-    get icon() {
-      return __iconData$l;
-    }
-  }));
-}
-const __iconData$k = {
   "name": "moon",
   "size": 24,
   "node": [
@@ -13531,17 +13583,17 @@ const __iconData$k = {
     ]
   ]
 };
-__iconData$k.node;
-var rest_excludes$C = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$l.node;
+var rest_excludes$D = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Moon($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$C);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$D);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$k;
+      return __iconData$l;
     }
   }));
 }
-const __iconData$j = {
+const __iconData$k = {
   "name": "panel-left-close",
   "size": 24,
   "node": [
@@ -13554,17 +13606,17 @@ const __iconData$j = {
   ],
   "aliases": ["sidebar-close"]
 };
-__iconData$j.node;
-var rest_excludes$B = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$k.node;
+var rest_excludes$C = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Panel_left_close($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$B);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$C);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$j;
+      return __iconData$k;
     }
   }));
 }
-const __iconData$i = {
+const __iconData$j = {
   "name": "panel-left-open",
   "size": 24,
   "node": [
@@ -13577,17 +13629,17 @@ const __iconData$i = {
   ],
   "aliases": ["sidebar-open"]
 };
-__iconData$i.node;
-var rest_excludes$A = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+__iconData$j.node;
+var rest_excludes$B = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
 function Panel_left_open($$anchor, $$props) {
-  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$A);
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$B);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
-      return __iconData$i;
+      return __iconData$j;
     }
   }));
 }
-const __iconData$h = {
+const __iconData$i = {
   "name": "paperclip",
   "size": 24,
   "node": [
@@ -13599,9 +13651,32 @@ const __iconData$h = {
     ]
   ]
 };
+__iconData$i.node;
+var rest_excludes$A = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
+function Paperclip($$anchor, $$props) {
+  let props = /* @__PURE__ */ rest_props($$props, rest_excludes$A);
+  Icon($$anchor, spread_props(() => props, {
+    get icon() {
+      return __iconData$i;
+    }
+  }));
+}
+const __iconData$h = {
+  "name": "pencil",
+  "size": 24,
+  "node": [
+    [
+      "path",
+      {
+        "d": "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+      }
+    ],
+    ["path", { "d": "m15 5 4 4" }]
+  ]
+};
 __iconData$h.node;
 var rest_excludes$z = /* @__PURE__ */ new Set(["$$slots", "$$events", "$$legacy"]);
-function Paperclip($$anchor, $$props) {
+function Pencil($$anchor, $$props) {
   let props = /* @__PURE__ */ rest_props($$props, rest_excludes$z);
   Icon($$anchor, spread_props(() => props, {
     get icon() {
@@ -22964,11 +23039,11 @@ var root_7$5 = /* @__PURE__ */ from_html(`<label class="h3-weight svelte-qiiy62"
 var root_8$5 = /* @__PURE__ */ from_html(`<strong class="h3-resource-title svelte-qiiy62"> </strong> <div class="h3-heading svelte-qiiy62"><span class="svelte-qiiy62">生效段</span><div class="row"><!><!></div></div> <div class="h3-segment-picks svelte-qiiy62"></div> <!> <hr class="svelte-qiiy62"/>`, 1);
 var root_9$5 = /* @__PURE__ */ from_html(`<!> <!> <div class="h3-resource-list svelte-qiiy62"></div>`, 1);
 var root_10$5 = /* @__PURE__ */ from_html(`<!><!><!>`, 1);
-var root_11$4 = /* @__PURE__ */ from_html(`<!>刷新`, 1);
-var root_12$4 = /* @__PURE__ */ from_html(`<!> <details class="settings-group"><summary>模型配置</summary><div class="settings-fields"><!><div class="row"><!><!></div></div></details> <!> <!> <div class="h3-two svelte-qiiy62"></div> <details class="settings-group"><summary>SelfLift</summary><div class="settings-fields"></div></details> <details class="settings-group"><summary>高级设置</summary><div class="settings-fields"></div></details>`, 1);
-var root_13$4 = /* @__PURE__ */ from_html(`<!>关键帧`, 1);
-var root_14$4 = /* @__PURE__ */ from_html(`<!>切分`, 1);
-var root_15$4 = /* @__PURE__ */ from_html(`<!>合并`, 1);
+var root_11$5 = /* @__PURE__ */ from_html(`<!>刷新`, 1);
+var root_12$5 = /* @__PURE__ */ from_html(`<!> <details class="settings-group"><summary>模型配置</summary><div class="settings-fields"><!><div class="row"><!><!></div></div></details> <!> <!> <div class="h3-two svelte-qiiy62"></div> <details class="settings-group"><summary>SelfLift</summary><div class="settings-fields"></div></details> <details class="settings-group"><summary>高级设置</summary><div class="settings-fields"></div></details>`, 1);
+var root_13$5 = /* @__PURE__ */ from_html(`<!>关键帧`, 1);
+var root_14$5 = /* @__PURE__ */ from_html(`<!>切分`, 1);
+var root_15$5 = /* @__PURE__ */ from_html(`<!>合并`, 1);
 var root_16$4 = /* @__PURE__ */ from_html(`<span> </span>`);
 var root_17$3 = /* @__PURE__ */ from_html(`<button><span class="h3-edge left svelte-qiiy62" data-edge="left"></span><input type="checkbox" class="svelte-qiiy62"/><span class="h3-clip-copy svelte-qiiy62"><strong class="svelte-qiiy62"> </strong><small class="svelte-qiiy62"> </small></span><span class="h3-edge right svelte-qiiy62" data-edge="right"></span></button>`);
 var root_18$3 = /* @__PURE__ */ from_html(`<button class="h3-context svelte-qiiy62"></button>`);
@@ -22983,7 +23058,7 @@ var root_26$2 = /* @__PURE__ */ from_html(`<button class="h3-resource-bar svelte
 var root_27$2 = /* @__PURE__ */ from_html(`<div class="h3-lane h3-resource svelte-qiiy62"><span class="h3-label svelte-qiiy62"> </span><div class="h3-track svelte-qiiy62"></div></div>`);
 var root_28$2 = /* @__PURE__ */ from_html(`<span class="h3-audio-carry svelte-qiiy62"></span>`);
 var root_29$2 = /* @__PURE__ */ from_html(`<button> </button><!>`, 1);
-var root_30$1 = /* @__PURE__ */ from_html(`<div class="h3-workbench svelte-qiiy62" aria-label="H3 时间轴工作台"><nav class="h3-mobile-tabs svelte-qiiy62" aria-label="H3 视图"><!><!></nav> <div class="h3-top svelte-qiiy62"><div class="h3-stage svelte-qiiy62"><!></div> <!> <aside class="h3-inspector svelte-qiiy62"><nav class="h3-inspector-tabs svelte-qiiy62" aria-label="时间轴属性"></nav> <div class="h3-property-scroll svelte-qiiy62"><!></div></aside></div> <!> <section class="h3-timeline svelte-qiiy62" aria-label="视频时间轴"><div class="h3-tools svelte-qiiy62"><!><!><!><!><span class="h3-tool-spacer svelte-qiiy62"></span><label class="h3-duration svelte-qiiy62">总长<!>s</label><div class="h3-auto svelte-qiiy62"><select aria-label="自动分段方式" class="svelte-qiiy62"><option>运动上下文</option><option>末帧续写</option><option>上下文＋淡化</option><option>独立分镜</option><option>最长单段</option></select><!><!></div></div> <input hidden="" type="file" accept="image/*"/> <div class="h3-legend svelte-qiiy62"><span class="svelte-qiiy62"><i class="h3-blue svelte-qiiy62"></i>交叠引用</span><span class="svelte-qiiy62"><i class="h3-orange svelte-qiiy62"></i>图像混合</span><span class="svelte-qiiy62"><i class="h3-gray svelte-qiiy62"></i>补齐裁剪</span></div> <div class="h3-ruler-row svelte-qiiy62"><span class="h3-label svelte-qiiy62">24 fps</span><div class="h3-track h3-ruler svelte-qiiy62" role="slider" aria-label="视频播放位置" tabindex="0"></div></div> <div class="h3-tracks svelte-qiiy62"><div class="h3-lane svelte-qiiy62"><span class="h3-label svelte-qiiy62">分段</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-lane h3-transition svelte-qiiy62"><span class="h3-label svelte-qiiy62">衔接</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-lane h3-anchors svelte-qiiy62"><span class="h3-label svelte-qiiy62">锚点</span><div class="h3-track svelte-qiiy62"><!><!></div></div> <!> <div class="h3-lane h3-audio svelte-qiiy62"><span class="h3-label svelte-qiiy62">音频</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-playhead-area svelte-qiiy62"><span class="h3-playhead svelte-qiiy62"></span></div></div> <div class="h3-timeline-footer svelte-qiiy62"><!><!><span> </span><span class="h3-edit-notice svelte-qiiy62" role="status"> </span></div></section></div>`);
+var root_30$2 = /* @__PURE__ */ from_html(`<div class="h3-workbench svelte-qiiy62" aria-label="H3 时间轴工作台"><nav class="h3-mobile-tabs svelte-qiiy62" aria-label="H3 视图"><!><!></nav> <div class="h3-top svelte-qiiy62"><div class="h3-stage svelte-qiiy62"><!></div> <!> <aside class="h3-inspector svelte-qiiy62"><nav class="h3-inspector-tabs svelte-qiiy62" aria-label="时间轴属性"></nav> <div class="h3-property-scroll svelte-qiiy62"><!></div></aside></div> <!> <section class="h3-timeline svelte-qiiy62" aria-label="视频时间轴"><div class="h3-tools svelte-qiiy62"><!><!><!><!><span class="h3-tool-spacer svelte-qiiy62"></span><label class="h3-duration svelte-qiiy62">总长<!>s</label><div class="h3-auto svelte-qiiy62"><select aria-label="自动分段方式" class="svelte-qiiy62"><option>运动上下文</option><option>末帧续写</option><option>上下文＋淡化</option><option>独立分镜</option><option>最长单段</option></select><!><!></div></div> <input hidden="" type="file" accept="image/*"/> <div class="h3-legend svelte-qiiy62"><span class="svelte-qiiy62"><i class="h3-blue svelte-qiiy62"></i>交叠引用</span><span class="svelte-qiiy62"><i class="h3-orange svelte-qiiy62"></i>图像混合</span><span class="svelte-qiiy62"><i class="h3-gray svelte-qiiy62"></i>补齐裁剪</span></div> <div class="h3-ruler-row svelte-qiiy62"><span class="h3-label svelte-qiiy62">24 fps</span><div class="h3-track h3-ruler svelte-qiiy62" role="slider" aria-label="视频播放位置" tabindex="0"></div></div> <div class="h3-tracks svelte-qiiy62"><div class="h3-lane svelte-qiiy62"><span class="h3-label svelte-qiiy62">分段</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-lane h3-transition svelte-qiiy62"><span class="h3-label svelte-qiiy62">衔接</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-lane h3-anchors svelte-qiiy62"><span class="h3-label svelte-qiiy62">锚点</span><div class="h3-track svelte-qiiy62"><!><!></div></div> <!> <div class="h3-lane h3-audio svelte-qiiy62"><span class="h3-label svelte-qiiy62">音频</span><div class="h3-track svelte-qiiy62"></div></div> <div class="h3-playhead-area svelte-qiiy62"><span class="h3-playhead svelte-qiiy62"></span></div></div> <div class="h3-timeline-footer svelte-qiiy62"><!><!><span> </span><span class="h3-edit-notice svelte-qiiy62" role="status"> </span></div></section></div>`);
 function H3Timeline($$anchor, $$props) {
   push($$props, true);
   let values = prop($$props, "values", 15), playhead = prop($$props, "playhead", 15, 0), hasPreview = prop($$props, "hasPreview", 3, false);
@@ -23323,7 +23398,7 @@ function H3Timeline($$anchor, $$props) {
       set(notice, "浏览器需要剪贴板读取权限");
     }
   }
-  var div = root_30$1();
+  var div = root_30$2();
   let styles;
   var nav = child(div);
   var node = child(nav);
@@ -23885,7 +23960,7 @@ function H3Timeline($$anchor, $$props) {
       append($$anchor2, fragment_14);
     };
     var consequent_10 = ($$anchor2) => {
-      var fragment_15 = root_12$4();
+      var fragment_15 = root_12$5();
       var node_28 = first_child(fragment_15);
       {
         let $0 = /* @__PURE__ */ user_derived(() => field("output_type"));
@@ -23930,7 +24005,7 @@ function H3Timeline($$anchor, $$props) {
         variant: "outline",
         onclick: () => act("refresh"),
         children: ($$anchor3, $$slotProps) => {
-          var fragment_17 = root_11$4();
+          var fragment_17 = root_11$5();
           var node_31 = first_child(fragment_17);
           Refresh_cw(node_31, { size: 13 });
           append($$anchor3, fragment_17);
@@ -24070,7 +24145,7 @@ function H3Timeline($$anchor, $$props) {
     },
     onclick: () => picker.click(),
     children: ($$anchor2, $$slotProps) => {
-      var fragment_21 = root_13$4();
+      var fragment_21 = root_13$5();
       var node_37 = first_child(fragment_21);
       Plus(node_37, { size: 13 });
       append($$anchor2, fragment_21);
@@ -24086,7 +24161,7 @@ function H3Timeline($$anchor, $$props) {
     },
     onclick: split,
     children: ($$anchor2, $$slotProps) => {
-      var fragment_22 = root_14$4();
+      var fragment_22 = root_14$5();
       var node_39 = first_child(fragment_22);
       Scissors(node_39, { size: 13 });
       append($$anchor2, fragment_22);
@@ -24104,7 +24179,7 @@ function H3Timeline($$anchor, $$props) {
       },
       onclick: merge,
       children: ($$anchor2, $$slotProps) => {
-        var fragment_23 = root_15$4();
+        var fragment_23 = root_15$5();
         var node_41 = first_child(fragment_23);
         Combine(node_41, { size: 13 });
         append($$anchor2, fragment_23);
@@ -24573,11 +24648,11 @@ var root_7$4 = /* @__PURE__ */ from_html(`<details class="run-info"><summary>运
 var root_8$4 = /* @__PURE__ */ from_html(`<div><!></div> <div class="generation-bottom"><!><div class="output-status"><div class="row"><i></i><span role="status"> </span></div><span title="点击生成至最终图片显示"> </span></div> <!> <!></div>`, 1);
 var root_9$4 = /* @__PURE__ */ from_html(`<section class="generation-output"><div class="output-toolbar"><div class="segmented"><!><!></div><div class="row"><!><!></div></div> <!></section>`);
 var root_10$4 = /* @__PURE__ */ from_html(`<!>参数`, 1);
-var root_11$3 = /* @__PURE__ */ from_html(`<i class="status-dot pulse"></i>`);
-var root_12$3 = /* @__PURE__ */ from_html(`<!>预览与历史<!>`, 1);
-var root_13$3 = /* @__PURE__ */ from_html(`<!>刷新模型列表`, 1);
-var root_14$3 = /* @__PURE__ */ from_html(`<div><!></div>`);
-var root_15$3 = /* @__PURE__ */ from_html(`<div class="wide"><!></div>`);
+var root_11$4 = /* @__PURE__ */ from_html(`<i class="status-dot pulse"></i>`);
+var root_12$4 = /* @__PURE__ */ from_html(`<!>预览与历史<!>`, 1);
+var root_13$4 = /* @__PURE__ */ from_html(`<!>刷新模型列表`, 1);
+var root_14$4 = /* @__PURE__ */ from_html(`<div><!></div>`);
+var root_15$4 = /* @__PURE__ */ from_html(`<div class="wide"><!></div>`);
 var root_16$3 = /* @__PURE__ */ from_html(`<details class="settings-group" open=""><summary> <!></summary><div class="parameter-grid"><!> <!></div></details>`);
 var root_17$2 = /* @__PURE__ */ from_html(`<details class="settings-group"><summary>高级设置<!></summary><div class="settings-fields"></div></details>`);
 var root_18$2 = /* @__PURE__ */ from_html(`<nav class="mobile-generation-tabs" aria-label="生成视图"><!><!></nav> <section class="generation-controls"><div class="controls-scroll"><details class="models-panel"><summary><!><span>模型配置</span><!></summary><div class="settings-fields"><!><div class="row"><!><!></div></div></details> <div class="generation-prompts"></div> <!> <!></div></section> <!>`, 1);
@@ -24996,13 +25071,13 @@ function WorkflowView($$anchor, $$props) {
           },
           onclick: () => set(mobileView, "preview"),
           children: ($$anchor3, $$slotProps) => {
-            var fragment_14 = root_12$3();
+            var fragment_14 = root_12$4();
             var node_18 = first_child(fragment_14);
             Image(node_18, { size: 16 });
             var node_19 = sibling(node_18, 2);
             {
               var consequent_7 = ($$anchor4) => {
-                var i_1 = root_11$3();
+                var i_1 = root_11$4();
                 append($$anchor4, i_1);
               };
               if_block(node_19, ($$render) => {
@@ -25047,7 +25122,7 @@ function WorkflowView($$anchor, $$props) {
         size: "sm",
         onclick: () => act("refresh"),
         children: ($$anchor3, $$slotProps) => {
-          var fragment_16 = root_13$3();
+          var fragment_16 = root_13$4();
           var node_24 = first_child(fragment_16);
           Refresh_cw(node_24, { size: 13 });
           append($$anchor3, fragment_16);
@@ -25073,7 +25148,7 @@ function WorkflowView($$anchor, $$props) {
       }
       var div_13 = sibling(details_1, 2);
       each(div_13, 21, () => get(fields).filter((f) => f.area === "prompts"), index$1, ($$anchor3, field) => {
-        var div_14 = root_14$3();
+        var div_14 = root_14$4();
         let classes_3;
         var node_26 = child(div_14);
         {
@@ -25111,7 +25186,7 @@ function WorkflowView($$anchor, $$props) {
         var node_29 = child(div_15);
         {
           var consequent_8 = ($$anchor4) => {
-            var div_16 = root_15$3();
+            var div_16 = root_15$4();
             var node_30 = child(div_16);
             ResolutionControls(node_30, {
               get presets() {
@@ -25135,7 +25210,7 @@ function WorkflowView($$anchor, $$props) {
         }
         var node_31 = sibling(node_29, 2);
         each(node_31, 17, () => get(parameterFields2).filter((f) => (f.section || "参数") === get(group)), index$1, ($$anchor4, field) => {
-          var div_17 = root_14$3();
+          var div_17 = root_14$4();
           let classes_4;
           var node_32 = child(div_17);
           Field(node_32, {
@@ -29452,11 +29527,11 @@ var root_7$3 = /* @__PURE__ */ from_html(`<div class="chat-images"></div>`);
 var root_8$3 = /* @__PURE__ */ from_html(`<!> `, 1);
 var root_9$3 = /* @__PURE__ */ from_html(`<div class="message user-message"><div class="message-label">你</div><div class="user-bubble"><!><!></div> <div class="message-actions"><!><!></div></div>`);
 var root_10$3 = /* @__PURE__ */ from_html(`<details class="thinking"><summary>思考过程 <!></summary><!><div class="message-actions"><!></div></details>`);
-var root_11$2 = /* @__PURE__ */ from_html(`<div class="tool-section-heading"><small>执行结果</small><!></div><pre> </pre>`, 1);
-var root_12$2 = /* @__PURE__ */ from_html(`<details class="tool-call"><summary><!><strong> </strong><span class="tool-summary"> </span><!><!></summary><div class="tool-body"><div class="tool-section-heading"><small>参数</small><!></div><pre> </pre><!></div></details>`);
-var root_13$2 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
-var root_14$2 = /* @__PURE__ */ from_html(`<!>从这里分支`, 1);
-var root_15$2 = /* @__PURE__ */ from_html(`<div class="message-actions"><!><!></div>`);
+var root_11$3 = /* @__PURE__ */ from_html(`<div class="tool-section-heading"><small>执行结果</small><!></div><pre> </pre>`, 1);
+var root_12$3 = /* @__PURE__ */ from_html(`<details class="tool-call"><summary><!><strong> </strong><span class="tool-summary"> </span><!><!></summary><div class="tool-body"><div class="tool-section-heading"><small>参数</small><!></div><pre> </pre><!></div></details>`);
+var root_13$3 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
+var root_14$3 = /* @__PURE__ */ from_html(`<!>从这里分支`, 1);
+var root_15$3 = /* @__PURE__ */ from_html(`<div class="message-actions"><!><!></div>`);
 var root_16$2 = /* @__PURE__ */ from_html(`<div class="message assistant-message"><div class="message-label"><span class="mini-pi">π</span> Pi</div> <!> <!> <!></div>`);
 var root_17$1 = /* @__PURE__ */ from_html(`<div class="sent-attachment svelte-1j1sikj"><img/><!></div>`);
 var root_18$1 = /* @__PURE__ */ from_html(`<span class="error-text"> </span><!>`, 1);
@@ -29471,9 +29546,9 @@ var root_26$1 = /* @__PURE__ */ from_html(`<div class="slash-menu"><!><!></div>`
 var root_27$1 = /* @__PURE__ */ from_html(`<!><!><!>`, 1);
 var root_28$1 = /* @__PURE__ */ from_html(`<div class="composer-footer"><span> </span></div>`);
 var root_29$1 = /* @__PURE__ */ from_html(`<p class="hint"> </p>`);
-var root_30 = /* @__PURE__ */ from_html(`<details class="settings-group"><summary> </summary><div class="settings-fields"></div></details>`);
-var root_31 = /* @__PURE__ */ from_html(`<div class="resource-row"><div><strong> </strong></div><!></div>`);
-var root_32 = /* @__PURE__ */ from_html(`<!>重载资源`, 1);
+var root_30$1 = /* @__PURE__ */ from_html(`<details class="settings-group"><summary> </summary><div class="settings-fields"></div></details>`);
+var root_31$1 = /* @__PURE__ */ from_html(`<div class="resource-row"><div><strong> </strong></div><!></div>`);
+var root_32$1 = /* @__PURE__ */ from_html(`<!>重载资源`, 1);
 var root_33 = /* @__PURE__ */ from_html(`<div class="skill-card"><strong> </strong><div class="row"><!><!></div></div>`);
 var root_34 = /* @__PURE__ */ from_html(`<div class="empty-resource">暂无 Skill</div>`);
 var root_35 = /* @__PURE__ */ from_html(`<p role="status"> </p>`);
@@ -29946,7 +30021,7 @@ function ChatView($$anchor, $$props) {
             };
             var consequent_8 = ($$anchor5) => {
               const result = /* @__PURE__ */ user_derived(() => get(messages).find((m) => m.role === "toolResult" && m.toolCallId === get(part).id));
-              var details_1 = root_12$2();
+              var details_1 = root_12$3();
               var summary_1 = child(details_1);
               var node_23 = child(summary_1);
               Terminal(node_23, { size: 14 });
@@ -29993,7 +30068,7 @@ function ChatView($$anchor, $$props) {
               var node_28 = sibling(pre);
               {
                 var consequent_7 = ($$anchor6) => {
-                  var fragment_13 = root_11$2();
+                  var fragment_13 = root_11$3();
                   var div_18 = first_child(fragment_13);
                   var node_29 = sibling(child(div_18));
                   Button(node_29, {
@@ -30043,7 +30118,7 @@ function ChatView($$anchor, $$props) {
         var node_31 = sibling(node_17, 2);
         {
           var consequent_9 = ($$anchor4) => {
-            var p_1 = root_13$2();
+            var p_1 = root_13$3();
             var text_16 = only_child(p_1, true);
             template_effect(() => set_text(text_16, get(message).errorMessage));
             append($$anchor4, p_1);
@@ -30055,7 +30130,7 @@ function ChatView($$anchor, $$props) {
         var node_32 = sibling(node_31, 2);
         {
           var consequent_12 = ($$anchor4) => {
-            var div_19 = root_15$2();
+            var div_19 = root_15$3();
             var node_33 = child(div_19);
             Button(node_33, {
               variant: "ghost",
@@ -30096,7 +30171,7 @@ function ChatView($$anchor, $$props) {
                   },
                   onclick: () => act("navigate", { entry: entryFor(get(message)).id }),
                   children: ($$anchor6, $$slotProps) => {
-                    var fragment_19 = root_14$2();
+                    var fragment_19 = root_14$3();
                     var node_36 = first_child(fragment_19);
                     Git_branch(node_36, { size: 12 });
                     append($$anchor6, fragment_19);
@@ -30462,7 +30537,7 @@ function ChatView($$anchor, $$props) {
   var node_63 = sibling(node_62, 2);
   {
     var consequent_24 = ($$anchor2) => {
-      var p_2 = root_13$2();
+      var p_2 = root_13$3();
       var text_30 = only_child(p_2, true);
       template_effect(() => set_text(text_30, $$props.panel.message));
       append($$anchor2, p_2);
@@ -30532,7 +30607,7 @@ function ChatView($$anchor, $$props) {
             ],
             index$1,
             ($$anchor4, group) => {
-              var details_2 = root_30();
+              var details_2 = root_30$1();
               var summary_2 = child(details_2);
               var text_34 = only_child(summary_2, true);
               var div_38 = sibling(summary_2);
@@ -30565,7 +30640,7 @@ function ChatView($$anchor, $$props) {
           var fragment_33 = comment();
           var node_70 = first_child(fragment_33);
           each(node_70, 17, () => pi().tools || [], index$1, ($$anchor4, tool) => {
-            var div_39 = root_31();
+            var div_39 = root_31$1();
             var div_40 = child(div_39);
             var strong_1 = child(div_40);
             var text_35 = only_child(strong_1, true);
@@ -30605,7 +30680,7 @@ function ChatView($$anchor, $$props) {
             },
             onclick: () => act("reload"),
             children: ($$anchor4, $$slotProps) => {
-              var fragment_35 = root_32();
+              var fragment_35 = root_32$1();
               var node_73 = first_child(fragment_35);
               Refresh_cw(node_73, { size: 13 });
               append($$anchor4, fragment_35);
@@ -30776,7 +30851,7 @@ function ChatView($$anchor, $$props) {
           }
           var node_88 = sibling(node_86, 2);
           each(node_88, 17, () => pi().diagnostics || [], index$1, ($$anchor4, diagnostic) => {
-            var p_6 = root_13$2();
+            var p_6 = root_13$3();
             var text_44 = only_child(p_6, true);
             template_effect(($0) => set_text(text_44, $0), [() => get(diagnostic).message || String(get(diagnostic))]);
             append($$anchor4, p_6);
@@ -31161,47 +31236,66 @@ function Tabs_list($$anchor, $$props) {
 }
 function bytes(value) {
   if (!value) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
   const scale = Math.min(Math.floor(Math.log(value) / Math.log(1024)), 4);
   return `${(value / 1024 ** scale).toFixed(scale ? 1 : 0)} ${units[scale]}`;
 }
 const taskStatus = { queued: "等待中", running: "传输中", completed: "已完成", failed: "失败", cancelled: "已停止" };
-var root_1$2 = /* @__PURE__ */ from_html(`<i></i>`);
-var root_2$2 = /* @__PURE__ */ from_html(`<p class="drive-mount-hint svelte-1ml1ipk">在 Colab 的「文件」栏挂载云端硬盘后，点击刷新目录。</p>`);
-var root_3$2 = /* @__PURE__ */ from_html(`<p class="drive-mount-hint svelte-1ml1ipk"> </p>`);
-var root_4$2 = /* @__PURE__ */ from_html(`<option> </option>`);
-var root_5$2 = /* @__PURE__ */ from_html(`<p class="empty-resource">读取目录…</p>`);
-var root_6$2 = /* @__PURE__ */ from_html(`<div><input type="checkbox"/> <button class="file-entry-name"><!><span> </span></button><small> </small></div>`);
-var root_7$2 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
-var root_8$2 = /* @__PURE__ */ from_html(`<div class="empty-resource"><!><p>此目录为空</p></div>`);
-var root_9$2 = /* @__PURE__ */ from_html(` <!>`, 1);
-var root_10$2 = /* @__PURE__ */ from_html(`<section class="file-pane"><div class="file-pane-heading"><div class="row"><!><h2> </h2><!></div></div> <!> <div class="file-navigation"><!><select><option> </option><!><!></select><!></div> <div class="file-table-head"><label><input type="checkbox" aria-label="全选文件"/>名称</label><span>大小</span></div> <div class="file-table"><!> <!> <!></div> <div class="file-pane-footer"><div class="file-selection"><span> </span><p> </p></div><!></div></section>`);
+var root_1$2 = /* @__PURE__ */ from_html(`<span><i class="svelte-1ml1ipk"></i> </span>`);
+var root_2$2 = /* @__PURE__ */ from_html(`<button type="button" class="svelte-1ml1ipk"> </button>`);
+var root_3$2 = /* @__PURE__ */ from_html(`<nav class="pane-roots svelte-1ml1ipk" aria-label="常用目录"></nav>`);
+var root_4$2 = /* @__PURE__ */ from_html(`<!>刷新目录`, 1);
+var root_5$2 = /* @__PURE__ */ from_html(`<div class="pane-empty unmounted svelte-1ml1ipk"><span class="empty-icon svelte-1ml1ipk"><!></span> <strong class="svelte-1ml1ipk">连接 Google Drive</strong> <p class="svelte-1ml1ipk">在 Colab 左侧「文件」面板挂载云端硬盘，再刷新目录。</p> <!></div>`);
+var root_6$2 = /* @__PURE__ */ from_html(`<span aria-current="page" class="svelte-1ml1ipk"> </span>`);
+var root_7$2 = /* @__PURE__ */ from_html(`<!> <!>`, 1);
+var root_8$2 = /* @__PURE__ */ from_html(`<div class="pane-empty svelte-1ml1ipk" role="status">正在读取目录…</div>`);
+var root_9$2 = /* @__PURE__ */ from_html(`<div class="pane-empty svelte-1ml1ipk" role="status"><p class="error-text svelte-1ml1ipk"> </p><!></div>`);
+var root_10$2 = /* @__PURE__ */ from_html(`<div class="pane-empty svelte-1ml1ipk"><!><strong class="svelte-1ml1ipk">此目录为空</strong></div>`);
+var root_11$2 = /* @__PURE__ */ from_html(`<div><input type="checkbox" class="svelte-1ml1ipk"/> <button type="button" class="file-name svelte-1ml1ipk"><!> <span class="svelte-1ml1ipk"> </span></button> <span class="file-size svelte-1ml1ipk"> </span></div>`);
+var root_12$2 = /* @__PURE__ */ from_html(`<small class="svelte-1ml1ipk"> </small>`);
+var root_13$2 = /* @__PURE__ */ from_html(` <!>`, 1);
+var root_14$2 = /* @__PURE__ */ from_html(`<div class="pane-location svelte-1ml1ipk"><!> <nav class="breadcrumbs svelte-1ml1ipk" aria-label="当前目录"></nav> <!></div> <div class="file-columns svelte-1ml1ipk"><label class="svelte-1ml1ipk"><input type="checkbox" aria-label="全选文件" class="svelte-1ml1ipk"/> 名称</label> <span>大小</span></div> <div class="file-list svelte-1ml1ipk"><!></div> <footer class="pane-footer svelte-1ml1ipk"><div class="selection svelte-1ml1ipk"><span> </span> <!></div> <!></footer>`, 1);
+var root_15$2 = /* @__PURE__ */ from_html(`<section class="file-pane svelte-1ml1ipk"><header class="pane-heading svelte-1ml1ipk"><div class="pane-title svelte-1ml1ipk"><span class="pane-icon svelte-1ml1ipk"><!></span> <h2 class="svelte-1ml1ipk"> </h2></div> <!> <!></header> <!></section>`);
 function FilePane($$anchor, $$props) {
   push($$props, true);
   let pane = prop($$props, "pane", 19, () => ({})), target = prop($$props, "target", 19, () => ({}));
   let selected = /* @__PURE__ */ state$1(proxy([]));
   let directory = "";
+  let drive = /* @__PURE__ */ user_derived(() => $$props.name === "drive");
   let entries2 = /* @__PURE__ */ user_derived(() => pane().entries || []);
-  let parent = /* @__PURE__ */ user_derived(() => (pane().breadcrumbs || []).at(-2));
-  let targetPath = /* @__PURE__ */ user_derived(() => target().path || "");
+  let selectable = /* @__PURE__ */ user_derived(() => get(entries2).filter((entry) => entry.copyable !== false));
+  let crumbs = /* @__PURE__ */ user_derived(() => pane().breadcrumbs || []);
+  let parent = /* @__PURE__ */ user_derived(() => get(crumbs).at(-2));
+  let targetLabel = /* @__PURE__ */ user_derived(() => get(drive) ? "运行时" : "Drive");
+  let location = /* @__PURE__ */ user_derived(() => pane().location || (get(crumbs).length === 1 ? "root" : ""));
   const navigate = (entry_id) => $$props.send({ action: "navigate", pane: $$props.name, entry_id });
+  const refresh = () => $$props.send({ action: "refresh", pane: $$props.name });
   user_effect(() => {
     if (directory !== pane().directory_id) {
       directory = pane().directory_id;
       set(selected, [], true);
     }
   });
-  function toggle(entry, checked) {
+  function toggle(id, checked) {
     set(
       selected,
-      checked ? [...get(selected), entry.id] : get(selected).filter((id) => id !== entry.id),
+      checked ? [...get(selected), id] : get(selected).filter((item) => item !== id),
       true
     );
   }
-  var section = root_10$2();
-  var div = child(section);
-  var div_1 = child(div);
-  var node = child(div_1);
+  function copy2() {
+    $$props.send({
+      action: "transfer",
+      entry_ids: [...get(selected)],
+      target_id: target().directory_id
+    });
+    set(selected, [], true);
+  }
+  var section = root_15$2();
+  var header = child(section);
+  var div = child(header);
+  var span = child(div);
+  var node = child(span);
   {
     var consequent = ($$anchor2) => {
       Cloud($$anchor2, { size: 17 });
@@ -31210,299 +31304,355 @@ function FilePane($$anchor, $$props) {
       Hard_drive($$anchor2, { size: 17 });
     };
     if_block(node, ($$render) => {
-      if ($$props.name === "drive") $$render(consequent);
+      if (get(drive)) $$render(consequent);
       else $$render(alternate, -1);
     });
   }
-  var h2 = sibling(node);
+  var h2 = sibling(span, 2);
   var text2 = only_child(h2, true);
-  var node_1 = sibling(h2);
+  var node_1 = sibling(div, 2);
   {
     var consequent_1 = ($$anchor2) => {
-      var i_1 = root_1$2();
+      var span_1 = root_1$2();
       let classes;
+      var text_1 = sibling(child(span_1), 1, true);
       template_effect(() => {
-        classes = set_class(i_1, 1, "status-dot", null, classes, { disconnected: !$$props.connected });
-        set_attribute(i_1, "title", $$props.connected ? "Drive 已连接" : "Drive 连接待就绪");
-        set_attribute(i_1, "aria-label", $$props.connected ? "Drive 已连接" : "Drive 连接待就绪");
+        classes = set_class(span_1, 1, "connection svelte-1ml1ipk", null, classes, { connected: $$props.connected });
+        set_text(text_1, $$props.connected ? "已挂载" : "未挂载");
       });
-      append($$anchor2, i_1);
+      append($$anchor2, span_1);
     };
     if_block(node_1, ($$render) => {
-      if ($$props.name === "drive") $$render(consequent_1);
+      if (get(drive)) $$render(consequent_1);
     });
   }
-  var node_2 = sibling(div, 2);
+  var node_2 = sibling(node_1, 2);
   {
     var consequent_2 = ($$anchor2) => {
-      var p = root_2$2();
-      append($$anchor2, p);
-    };
-    var consequent_3 = ($$anchor2) => {
-      var p_1 = root_3$2();
-      var text_1 = only_child(p_1, true);
-      template_effect(() => {
-        set_attribute(p_1, "title", $$props.driveDirectory);
-        set_text(text_1, $$props.driveDirectory);
+      var nav = root_3$2();
+      each(nav, 21, () => pane().roots, (root2) => root2.id, ($$anchor3, root2) => {
+        var button = root_2$2();
+        var text_2 = only_child(button, true);
+        template_effect(() => {
+          set_attribute(button, "aria-pressed", get(location) === get(root2).id);
+          button.disabled = pane().loading;
+          set_text(text_2, get(root2).id === "root" ? "根目录" : get(root2).label);
+        });
+        delegated("click", button, () => $$props.send({ action: "root", pane: $$props.name, root: get(root2).id }));
+        append($$anchor3, button);
       });
-      append($$anchor2, p_1);
+      append($$anchor2, nav);
     };
     if_block(node_2, ($$render) => {
-      if ($$props.name === "drive" && !$$props.connected) $$render(consequent_2);
-      else if ($$props.name === "drive" && $$props.driveDirectory) $$render(consequent_3, 1);
+      if (!get(drive) && pane().roots?.length > 1) $$render(consequent_2);
     });
   }
-  var div_2 = sibling(node_2, 2);
-  var node_3 = child(div_2);
+  var node_3 = sibling(header, 2);
   {
-    let $0 = /* @__PURE__ */ user_derived(() => !get(parent) || pane().loading);
-    Button(node_3, {
-      variant: "outline",
-      size: "icon-sm",
-      "aria-label": "上一级",
-      get disabled() {
-        return get($0);
-      },
-      onclick: () => navigate(get(parent).id),
-      children: ($$anchor2, $$slotProps) => {
-        Arrow_up($$anchor2, { size: 14 });
-      },
-      $$slots: { default: true }
-    });
-  }
-  var select = sibling(node_3);
-  var option = child(select);
-  var text_2 = only_child(option, true);
-  var option_value = {};
-  var node_4 = sibling(option);
-  each(node_4, 17, () => pane().roots || [], index$1, ($$anchor2, root2) => {
-    var option_1 = root_4$2();
-    var text_3 = only_child(option_1);
-    var option_1_value = {};
-    template_effect(() => {
-      set_text(text_3, `常用 · ${get(root2).label ?? ""}`);
-      if (option_1_value !== (option_1_value = "root:" + get(root2).id)) {
-        option_1.value = option_1.__value = option_1_value;
-      }
-    });
-    append($$anchor2, option_1);
-  });
-  var node_5 = sibling(node_4);
-  each(node_5, 17, () => (pane().breadcrumbs || []).slice(0, -1), index$1, ($$anchor2, crumb) => {
-    var option_2 = root_4$2();
-    var text_4 = only_child(option_2, true);
-    var option_2_value = {};
-    template_effect(() => {
-      set_text(text_4, get(crumb).label);
-      if (option_2_value !== (option_2_value = get(crumb).id)) {
-        option_2.value = (option_2.__value = option_2_value) ?? "";
-      }
-    });
-    append($$anchor2, option_2);
-  });
-  var select_value;
-  init_select(select);
-  var node_6 = sibling(select);
-  Button(node_6, {
-    size: "icon-sm",
-    variant: "ghost",
-    "aria-label": "刷新目录",
-    get disabled() {
-      return pane().loading;
-    },
-    onclick: () => $$props.send({ action: "refresh", pane: $$props.name }),
-    children: ($$anchor2, $$slotProps) => {
-      Refresh_cw($$anchor2, { size: 15 });
-    },
-    $$slots: { default: true }
-  });
-  var div_3 = sibling(div_2, 2);
-  var label = child(div_3);
-  var input = child(label);
-  var div_4 = sibling(div_3, 2);
-  var node_7 = child(div_4);
-  {
-    var consequent_4 = ($$anchor2) => {
-      var p_2 = root_5$2();
-      append($$anchor2, p_2);
-    };
-    if_block(node_7, ($$render) => {
-      if (pane().loading) $$render(consequent_4);
-    });
-  }
-  var node_8 = sibling(node_7, 2);
-  each(node_8, 17, () => get(entries2), index$1, ($$anchor2, entry) => {
-    var div_5 = root_6$2();
-    let classes_1;
-    var input_1 = child(div_5);
-    var button = sibling(input_1, 2);
-    var node_9 = child(button);
-    {
-      var consequent_5 = ($$anchor3) => {
-        Folder($$anchor3, { size: 17, class: "folder-icon" });
-      };
-      var alternate_1 = ($$anchor3) => {
-        File$1($$anchor3, { size: 16 });
-      };
-      if_block(node_9, ($$render) => {
-        if (get(entry).kind === "directory") $$render(consequent_5);
-        else $$render(alternate_1, -1);
+    var consequent_3 = ($$anchor2) => {
+      var div_1 = root_5$2();
+      var span_2 = child(div_1);
+      var node_4 = child(span_2);
+      Cloud_off(node_4, { size: 22 });
+      var node_5 = sibling(span_2, 6);
+      Button(node_5, {
+        size: "sm",
+        variant: "outline",
+        onclick: refresh,
+        get disabled() {
+          return pane().loading;
+        },
+        children: ($$anchor3, $$slotProps) => {
+          var fragment_2 = root_4$2();
+          var node_6 = first_child(fragment_2);
+          Refresh_cw(node_6, { size: 14 });
+          append($$anchor3, fragment_2);
+        },
+        $$slots: { default: true }
       });
-    }
-    var span = sibling(node_9);
-    var text_5 = only_child(span, true);
-    var small = sibling(button);
-    var text_6 = only_child(small, true);
-    template_effect(
-      ($0, $1, $2) => {
-        classes_1 = set_class(div_5, 1, "file-entry", null, classes_1, { selected: $0 });
-        set_attribute(input_1, "aria-label", "选择 " + get(entry).name);
-        set_checked(input_1, $1);
-        input_1.disabled = pane().loading || get(entry).copyable === false;
-        set_attribute(button, "title", get(entry).name);
-        set_text(text_5, get(entry).name);
-        set_text(text_6, $2);
-      },
-      [
-        () => get(selected).includes(get(entry).id),
-        () => get(selected).includes(get(entry).id),
-        () => get(entry).kind === "directory" ? "文件夹" : bytes(get(entry).size)
-      ]
-    );
-    delegated("change", input_1, (e) => toggle(get(entry), e.currentTarget.checked));
-    delegated("click", button, () => get(entry).kind === "directory" ? navigate(get(entry).id) : toggle(get(entry), !get(selected).includes(get(entry).id)));
-    append($$anchor2, div_5);
-  });
-  var node_10 = sibling(node_8, 2);
-  {
-    var consequent_6 = ($$anchor2) => {
-      var p_3 = root_7$2();
-      var text_7 = only_child(p_3, true);
-      template_effect(() => set_text(text_7, pane().error));
-      append($$anchor2, p_3);
+      append($$anchor2, div_1);
     };
-    var consequent_7 = ($$anchor2) => {
-      var div_6 = root_8$2();
-      var node_11 = child(div_6);
-      Folder(node_11, { size: 25 });
-      append($$anchor2, div_6);
-    };
-    if_block(node_10, ($$render) => {
-      if (pane().error && ($$props.name !== "drive" || $$props.connected)) $$render(consequent_6);
-      else if (!pane().loading && !get(entries2).length && ($$props.name !== "drive" || $$props.connected)) $$render(consequent_7, 1);
-    });
-  }
-  var div_7 = sibling(div_4, 2);
-  var div_8 = child(div_7);
-  var span_1 = child(div_8);
-  var text_8 = only_child(span_1, true);
-  var p_4 = sibling(span_1);
-  var text_9 = only_child(p_4);
-  var node_12 = sibling(div_8);
-  {
-    let $0 = /* @__PURE__ */ user_derived(() => !get(selected).length || !$$props.connected || !target().canReceive || pane().loading || target().loading);
-    Button(node_12, {
-      class: "copy-button",
-      get title() {
-        return get(targetPath);
-      },
-      get disabled() {
-        return get($0);
-      },
-      onclick: () => {
-        $$props.send({
-          action: "transfer",
-          entry_ids: [...get(selected)],
-          target_id: target().directory_id
+    var alternate_4 = ($$anchor2) => {
+      var fragment_3 = root_14$2();
+      var div_2 = first_child(fragment_3);
+      var node_7 = child(div_2);
+      {
+        let $0 = /* @__PURE__ */ user_derived(() => !get(parent) || pane().loading);
+        Button(node_7, {
+          size: "icon-sm",
+          variant: "ghost",
+          "aria-label": "上一级",
+          title: "上一级",
+          get disabled() {
+            return get($0);
+          },
+          onclick: () => navigate(get(parent).id),
+          children: ($$anchor3, $$slotProps) => {
+            Arrow_up($$anchor3, { size: 15 });
+          },
+          $$slots: { default: true }
         });
-        set(selected, [], true);
-      },
-      children: ($$anchor2, $$slotProps) => {
-        var fragment_6 = root_9$2();
-        var text_10 = first_child(fragment_6);
-        var node_13 = sibling(text_10);
-        Arrow_right(node_13, { size: 14 });
-        template_effect(() => set_text(text_10, `复制到 ${$$props.name === "drive" ? "运行时" : "Drive"} `));
-        append($$anchor2, fragment_6);
-      },
-      $$slots: { default: true }
+      }
+      var nav_1 = sibling(node_7, 2);
+      each(nav_1, 23, () => get(crumbs), (crumb) => crumb.id, ($$anchor3, crumb, index2) => {
+        var fragment_5 = root_7$2();
+        var node_8 = first_child(fragment_5);
+        {
+          var consequent_4 = ($$anchor4) => {
+            Chevron_right($$anchor4, { size: 12 });
+          };
+          if_block(node_8, ($$render) => {
+            if (get(index2)) $$render(consequent_4);
+          });
+        }
+        var node_9 = sibling(node_8, 2);
+        {
+          var consequent_5 = ($$anchor4) => {
+            var span_3 = root_6$2();
+            var text_3 = only_child(span_3, true);
+            template_effect(() => set_text(text_3, get(crumb).label));
+            append($$anchor4, span_3);
+          };
+          var alternate_1 = ($$anchor4) => {
+            var button_1 = root_2$2();
+            var text_4 = only_child(button_1, true);
+            template_effect(() => {
+              button_1.disabled = pane().loading;
+              set_text(text_4, get(crumb).label);
+            });
+            delegated("click", button_1, () => navigate(get(crumb).id));
+            append($$anchor4, button_1);
+          };
+          if_block(node_9, ($$render) => {
+            if (get(index2) === get(crumbs).length - 1) $$render(consequent_5);
+            else $$render(alternate_1, -1);
+          });
+        }
+        append($$anchor3, fragment_5);
+      });
+      var node_10 = sibling(nav_1, 2);
+      Button(node_10, {
+        size: "icon-sm",
+        variant: "ghost",
+        "aria-label": "刷新目录",
+        title: "刷新目录",
+        get disabled() {
+          return pane().loading;
+        },
+        onclick: refresh,
+        children: ($$anchor3, $$slotProps) => {
+          Refresh_cw($$anchor3, { size: 15 });
+        },
+        $$slots: { default: true }
+      });
+      var div_3 = sibling(div_2, 2);
+      var label = child(div_3);
+      var input = child(label);
+      var div_4 = sibling(div_3, 2);
+      var node_11 = child(div_4);
+      {
+        var consequent_6 = ($$anchor3) => {
+          var div_5 = root_8$2();
+          append($$anchor3, div_5);
+        };
+        var consequent_7 = ($$anchor3) => {
+          var div_6 = root_9$2();
+          var p = child(div_6);
+          var text_5 = only_child(p, true);
+          var node_12 = sibling(p);
+          Button(node_12, {
+            size: "sm",
+            variant: "outline",
+            onclick: refresh,
+            children: ($$anchor4, $$slotProps) => {
+              var text_6 = text$1("重试");
+              append($$anchor4, text_6);
+            },
+            $$slots: { default: true }
+          });
+          template_effect(() => set_text(text_5, pane().error));
+          append($$anchor3, div_6);
+        };
+        var consequent_8 = ($$anchor3) => {
+          var div_7 = root_10$2();
+          var node_13 = child(div_7);
+          Folder(node_13, { size: 24 });
+          append($$anchor3, div_7);
+        };
+        var alternate_3 = ($$anchor3) => {
+          var fragment_8 = comment();
+          var node_14 = first_child(fragment_8);
+          each(node_14, 17, () => get(entries2), (entry) => entry.id, ($$anchor4, entry) => {
+            var div_8 = root_11$2();
+            let classes_1;
+            var input_1 = child(div_8);
+            var button_2 = sibling(input_1, 2);
+            var node_15 = child(button_2);
+            {
+              var consequent_9 = ($$anchor5) => {
+                Folder($$anchor5, { size: 16 });
+              };
+              var alternate_2 = ($$anchor5) => {
+                File$1($$anchor5, { size: 15 });
+              };
+              if_block(node_15, ($$render) => {
+                if (get(entry).kind === "directory") $$render(consequent_9);
+                else $$render(alternate_2, -1);
+              });
+            }
+            var span_4 = sibling(node_15, 2);
+            var text_7 = only_child(span_4, true);
+            var span_5 = sibling(button_2, 2);
+            var text_8 = only_child(span_5, true);
+            template_effect(
+              ($0, $1, $2) => {
+                classes_1 = set_class(div_8, 1, "file-row svelte-1ml1ipk", null, classes_1, { selected: $0 });
+                set_attribute(input_1, "aria-label", "选择 " + get(entry).name);
+                set_checked(input_1, $1);
+                input_1.disabled = get(entry).copyable === false;
+                set_attribute(button_2, "title", get(entry).name);
+                button_2.disabled = get(entry).kind !== "directory" && get(entry).copyable === false;
+                set_text(text_7, get(entry).name);
+                set_text(text_8, $2);
+              },
+              [
+                () => get(selected).includes(get(entry).id),
+                () => get(selected).includes(get(entry).id),
+                () => get(entry).kind === "directory" ? "文件夹" : bytes(get(entry).size)
+              ]
+            );
+            delegated("change", input_1, (event2) => toggle(get(entry).id, event2.currentTarget.checked));
+            delegated("click", button_2, () => get(entry).kind === "directory" ? navigate(get(entry).id) : toggle(get(entry).id, !get(selected).includes(get(entry).id)));
+            append($$anchor4, div_8);
+          });
+          append($$anchor3, fragment_8);
+        };
+        if_block(node_11, ($$render) => {
+          if (pane().loading) $$render(consequent_6);
+          else if (pane().error) $$render(consequent_7, 1);
+          else if (!get(entries2).length) $$render(consequent_8, 2);
+          else $$render(alternate_3, -1);
+        });
+      }
+      var footer = sibling(div_4, 2);
+      var div_9 = child(footer);
+      var span_6 = child(div_9);
+      var text_9 = only_child(span_6, true);
+      var node_16 = sibling(span_6, 2);
+      {
+        var consequent_10 = ($$anchor3) => {
+          var small = root_12$2();
+          var text_10 = only_child(small, true);
+          template_effect(() => {
+            set_attribute(small, "title", target().path || "");
+            set_text(text_10, target().canReceive ? target().path : "请选择可写的目标目录");
+          });
+          append($$anchor3, small);
+        };
+        if_block(node_16, ($$render) => {
+          if (get(selected).length) $$render(consequent_10);
+        });
+      }
+      var node_17 = sibling(div_9, 2);
+      {
+        let $0 = /* @__PURE__ */ user_derived(() => get(selected).length && $$props.connected && target().canReceive ? "default" : "outline");
+        let $1 = /* @__PURE__ */ user_derived(() => !get(selected).length || !$$props.connected || !target().canReceive || pane().loading || target().loading);
+        let $2 = /* @__PURE__ */ user_derived(() => !$$props.connected ? "请先挂载 Google Drive" : target().path);
+        Button(node_17, {
+          size: "sm",
+          get variant() {
+            return get($0);
+          },
+          get disabled() {
+            return get($1);
+          },
+          get title() {
+            return get($2);
+          },
+          onclick: copy2,
+          children: ($$anchor3, $$slotProps) => {
+            var fragment_11 = root_13$2();
+            var text_11 = first_child(fragment_11);
+            var node_18 = sibling(text_11);
+            Arrow_right(node_18, { size: 14 });
+            template_effect(() => set_text(text_11, `复制到 ${get(targetLabel) ?? ""}`));
+            append($$anchor3, fragment_11);
+          },
+          $$slots: { default: true }
+        });
+      }
+      template_effect(() => {
+        set_attribute(nav_1, "title", pane().path);
+        input.disabled = !get(selectable).length || pane().loading;
+        set_checked(input, !!get(selected).length && get(selected).length === get(selectable).length);
+        set_attribute(div_4, "aria-label", get(drive) ? "Drive 目录内容" : "运行时目录内容");
+        set_attribute(div_4, "aria-busy", !!pane().loading);
+        set_text(text_9, get(selected).length ? "已选 " + get(selected).length + " 项" : get(entries2).length + " 项");
+      });
+      delegated("change", input, (event2) => set(selected, event2.currentTarget.checked ? get(selectable).map((entry) => entry.id) : [], true));
+      append($$anchor2, fragment_3);
+    };
+    if_block(node_3, ($$render) => {
+      if (get(drive) && !$$props.connected) $$render(consequent_3);
+      else $$render(alternate_4, -1);
     });
   }
-  template_effect(
-    ($0, $1) => {
-      set_attribute(section, "aria-label", $$props.name === "drive" ? "Drive 文件" : "运行时文件");
-      set_text(text2, $$props.name === "drive" ? "Google Drive" : "运行时");
-      set_attribute(select, "aria-label", $$props.name + "目录");
-      select.disabled = pane().loading;
-      set_text(text_2, $0);
-      if (option_value !== (option_value = pane().directory_id || "")) {
-        option.value = (option.__value = option_value) ?? "";
-      }
-      if (select_value !== (select_value = pane().directory_id || "")) {
-        select.value = (select.__value = select_value) ?? "", select_option(select, select_value);
-      }
-      set_checked(input, $1);
-      set_attribute(div_4, "aria-label", $$props.name === "drive" ? "Drive 目录内容" : "运行时目录内容");
-      set_text(text_8, get(selected).length ? `已选 ${get(selected).length} / ${get(entries2).length} 项` : `${get(entries2).length} 项`);
-      set_attribute(p_4, "title", get(targetPath));
-      set_text(text_9, `目标 · ${(get(targetPath) || "选择目标目录") ?? ""}`);
-    },
-    [
-      () => (pane().breadcrumbs || []).map((i) => i.label).join("/") || "当前位置",
-      () => !!get(selected).length && get(selected).length === get(entries2).filter((e) => e.copyable !== false).length
-    ]
-  );
-  delegated("change", select, (e) => {
-    const v = e.currentTarget.value;
-    v.startsWith("root:") ? $$props.send({ action: "root", pane: $$props.name, root: v.slice(5) }) : navigate(v);
+  template_effect(() => {
+    set_attribute(section, "aria-label", get(drive) ? "Drive 文件" : "运行时文件");
+    set_text(text2, get(drive) ? "Google Drive" : "运行时");
   });
-  delegated("change", input, (e) => set(
-    selected,
-    e.currentTarget.checked ? get(entries2).filter((e2) => e2.copyable !== false).map((e2) => e2.id) : [],
-    true
-  ));
   append($$anchor, section);
   pop();
 }
-delegate(["change", "click"]);
+delegate(["click", "change"]);
 var root$1 = /* @__PURE__ */ from_html(`<!>传输`, 1);
-var root_1$1 = /* @__PURE__ */ from_html(`<!>传输记录`, 1);
-var root_2$1 = /* @__PURE__ */ from_html(`<!><!><!>`, 1);
-var root_3$1 = /* @__PURE__ */ from_html(`<!>新增快捷复制`, 1);
-var root_4$1 = /* @__PURE__ */ from_html(`<!>Google Drive<i></i>`, 1);
-var root_5$1 = /* @__PURE__ */ from_html(`<!>运行时`, 1);
-var root_6$1 = /* @__PURE__ */ from_html(`<div><!></div>`);
-var root_7$1 = /* @__PURE__ */ from_html(`<nav class="file-pane-tabs" aria-label="文件位置"><!><!></nav><div class="transfer-panes"></div>`, 1);
-var root_8$1 = /* @__PURE__ */ from_html(`<!> `, 1);
-var root_9$1 = /* @__PURE__ */ from_html(`<!>管理`, 1);
-var root_10$1 = /* @__PURE__ */ from_html(`<div class="surface shortcut-card"><div class="row"><!><h3> </h3><!></div><p class="path-text"> </p><div class="row"><!><!></div></div>`);
-var root_11$1 = /* @__PURE__ */ from_html(`<div class="empty-resource">暂无快捷操作</div>`);
-var root_12$1 = /* @__PURE__ */ from_html(`<div class="shortcut-search"><!><!></div><div class="shortcut-grid"></div>`, 1);
-var root_13$1 = /* @__PURE__ */ from_html(`<p class="hint history-storage svelte-1mvl52" role="status">记录暂存在内存中。检查运行时可用空间后刷新目录。</p>`);
-var root_14$1 = /* @__PURE__ */ from_html(`<p class="hint history-storage svelte-1mvl52">记录保存在当前 Colab 运行时。挂载可写的 Google Drive 后刷新 Drive 目录，可跨运行时保留记录。</p>`);
-var root_15$1 = /* @__PURE__ */ from_html(`<p class="path-text"> </p>`);
-var root_16$1 = /* @__PURE__ */ from_html(`<p class="error-text"> </p>`);
-var root_17 = /* @__PURE__ */ from_html(`<div class="transfer-record"><div class="transfer-record-details svelte-1mvl52"><strong> </strong> <p class="hint"> <!><!></p> <!> <!></div> <!> <!> <!></div>`);
-var root_18 = /* @__PURE__ */ from_html(`<p class="empty-resource">暂无传输记录</p>`);
-var root_19 = /* @__PURE__ */ from_html(`<!> <div class="surface transfer-history"></div>`, 1);
-var root_20 = /* @__PURE__ */ from_html(`<div class="files-tabs"><!><!></div> <!> <!> <!>`, 1);
-var root_21 = /* @__PURE__ */ from_html(`<code> </code>`);
-var root_22 = /* @__PURE__ */ from_html(`<div class="field wide"><span>配套来源</span><!></div>`);
-var root_23 = /* @__PURE__ */ from_html(`<label class="field wide"><span>HF 仓库或文件地址</span><!></label> <label class="field wide"><span>文件范围（多个规则用逗号分隔）</span><!></label> <label class="field"><span>版本</span><!></label> <!>`, 1);
-var root_24 = /* @__PURE__ */ from_html(`<label class="field"><span>内容</span><select><option>文件</option><option>文件夹 · 包含子目录</option></select></label><label class="field"><span>Drive 相对路径</span><!></label>`, 1);
-var root_25 = /* @__PURE__ */ from_html(`<section class="surface shortcut-editor"><h2>快捷操作设置</h2><div class="parameter-grid"><label class="field"><span>名称</span><!></label><label class="field"><span>复制方向</span><select><option>HF → 本机</option><option>Drive → 本机</option><option>本机 → Drive</option></select></label><!><label class="field wide"><span> </span><!></label></div><div class="row"><!><!><!></div></section>`);
-var root_26 = /* @__PURE__ */ from_html(`<div class="file-notice" role="status"><span> </span><!></div>`);
-var root_27 = /* @__PURE__ */ from_html(`<div class="surface transfer-task"><div class="row"><strong> </strong><span> </span><!></div><!></div>`);
-var root_28 = /* @__PURE__ */ from_html(`<section class="transfer-queue"><h3>正在传输</h3><!></section>`);
-var root_29 = /* @__PURE__ */ from_html(`<article class="files-workspace page-padding" aria-label="文件传输"><!> <!> <!> <!></article>`);
+var root_1$1 = /* @__PURE__ */ from_html(`<!>快捷复制`, 1);
+var root_2$1 = /* @__PURE__ */ from_html(`<!>传输记录`, 1);
+var root_3$1 = /* @__PURE__ */ from_html(`<!> <!> <!>`, 1);
+var root_4$1 = /* @__PURE__ */ from_html(`<!>新增快捷复制`, 1);
+var root_5$1 = /* @__PURE__ */ from_html(`<div class="file-notice svelte-1mvl52" role="status"><span class="svelte-1mvl52"> </span> <!></div>`);
+var root_6$1 = /* @__PURE__ */ from_html(`<!>Google Drive`, 1);
+var root_7$1 = /* @__PURE__ */ from_html(`<!>运行时`, 1);
+var root_8$1 = /* @__PURE__ */ from_html(`<div><!></div>`);
+var root_9$1 = /* @__PURE__ */ from_html(`<nav class="pane-switch svelte-1mvl52" aria-label="文件位置"><!> <!></nav> <div></div>`, 1);
+var root_10$1 = /* @__PURE__ */ from_html(`<code> </code>`);
+var root_11$1 = /* @__PURE__ */ from_html(`<div class="field wide"><span>配套来源</span> <!></div>`);
+var root_12$1 = /* @__PURE__ */ from_html(`<label class="field wide"><span>HF 仓库或文件链接</span><!></label> <label class="field"><span>文件范围</span><!></label> <label class="field"><span>版本</span><!></label> <!>`, 1);
+var root_13$1 = /* @__PURE__ */ from_html(`<label class="field"><span>内容</span> <select><option>文件</option><option>文件夹（包含子目录）</option></select></label> <label class="field"><span>Drive 相对路径</span><!></label>`, 1);
+var root_14$1 = /* @__PURE__ */ from_html(`<section class="shortcut-editor svelte-1mvl52" aria-label="快捷复制设置"><div class="section-heading svelte-1mvl52"><h2 class="svelte-1mvl52"> </h2> <!></div> <div class="parameter-grid svelte-1mvl52"><label class="field"><span>名称</span><!></label> <label class="field"><span>来源与方向</span> <select><option>Hugging Face → 运行时</option><option>Drive → 运行时</option><option>运行时 → Drive</option></select></label> <!> <label class="field wide"><span> </span> <!></label></div> <div class="editor-actions svelte-1mvl52"><!> <div class="row"><!> <!></div></div></section>`);
+var root_15$1 = /* @__PURE__ */ from_html(`<!>编辑`, 1);
+var root_16$1 = /* @__PURE__ */ from_html(`<!> `, 1);
+var root_17 = /* @__PURE__ */ from_html(`<div class="record svelte-1mvl52"><div class="record-meta svelte-1mvl52"><strong class="svelte-1mvl52"> </strong> <p class="svelte-1mvl52"> </p> <p class="record-path svelte-1mvl52"> </p></div> <div class="record-actions svelte-1mvl52"><!> <!></div></div>`);
+var root_18 = /* @__PURE__ */ from_html(`<div class="panel-empty svelte-1mvl52">没有符合搜索条件的快捷项。</div>`);
+var root_19 = /* @__PURE__ */ from_html(`<label class="shortcut-search svelte-1mvl52"><!><!></label> <div class="records svelte-1mvl52"></div>`, 1);
+var root_20 = /* @__PURE__ */ from_html(`<div class="panel-empty svelte-1mvl52"><span class="empty-icon svelte-1mvl52"><!></span> <strong class="svelte-1mvl52">暂无快捷复制</strong> <!></div>`);
+var root_21 = /* @__PURE__ */ from_html(`<p class="storage-note svelte-1mvl52">快捷项保存在当前运行时。挂载可写的 Drive 后，刷新 Drive 目录即可同步。</p>`);
+var root_22 = /* @__PURE__ */ from_html(`<p class="storage-note svelte-1mvl52" role="status">记录暂存在内存中。检查运行时可用空间后刷新目录。</p>`);
+var root_23 = /* @__PURE__ */ from_html(`<p class="storage-note svelte-1mvl52">传输记录保存在当前运行时。挂载可写的 Drive 后，刷新 Drive 目录即可同步。</p>`);
+var root_24 = /* @__PURE__ */ from_html(`<p class="record-path svelte-1mvl52"> </p>`);
+var root_25 = /* @__PURE__ */ from_html(`<p class="error-text svelte-1mvl52"> </p>`);
+var root_26 = /* @__PURE__ */ from_html(`<div class="record svelte-1mvl52"><div class="record-meta svelte-1mvl52"><strong class="svelte-1mvl52"> </strong> <p class="svelte-1mvl52"> <!><!></p> <!> <!></div> <div class="record-actions svelte-1mvl52"><span> </span> <!> <!></div></div>`);
+var root_27 = /* @__PURE__ */ from_html(`<div class="panel-empty svelte-1mvl52"><!><strong class="svelte-1mvl52">暂无传输记录</strong></div>`);
+var root_28 = /* @__PURE__ */ from_html(`<!> <div class="records svelte-1mvl52"></div>`, 1);
+var root_29 = /* @__PURE__ */ from_html(`<div class="view-bar svelte-1mvl52"><!> <!></div> <!> <!> <!> <!>`, 1);
+var root_30 = /* @__PURE__ */ from_html(`<div class="queue-record svelte-1mvl52"><div class="row"><strong class="svelte-1mvl52"> </strong> <small class="svelte-1mvl52"> </small> <!></div> <!></div>`);
+var root_31 = /* @__PURE__ */ from_html(`<section class="transfer-queue svelte-1mvl52" aria-label="正在传输"><h2 class="svelte-1mvl52">正在传输</h2> <!></section>`);
+var root_32 = /* @__PURE__ */ from_html(`<article class="files-workspace svelte-1mvl52" aria-label="文件传输"><!> <!></article>`);
 function FilesView($$anchor, $$props) {
   push($$props, true);
   let files = prop($$props, "files", 19, () => ({}));
   let tab = /* @__PURE__ */ state$1("transfer");
+  let mobilePane = /* @__PURE__ */ state$1("local");
   let query = /* @__PURE__ */ state$1("");
   let editing = /* @__PURE__ */ state$1(false);
   let draft = /* @__PURE__ */ state$1(proxy({}));
   const act = (command) => $$props.send("files", { command });
+  let recipes = /* @__PURE__ */ user_derived(() => files().recipes || []);
+  let shortcuts = /* @__PURE__ */ user_derived(() => get(recipes).toReversed().filter((item) => [item.label, item.local_path, item.drive_path, item.repo_id].join(" ").toLowerCase().includes(get(query).trim().toLowerCase())));
+  let activeTasks = /* @__PURE__ */ user_derived(() => (files().tasks || []).filter((task) => ["running", "queued"].includes(task.status)));
+  let history = /* @__PURE__ */ user_derived(() => (files().tasks || []).filter((task) => !["running", "queued"].includes(task.status)).toReversed());
+  let hfDraft = /* @__PURE__ */ user_derived(() => get(draft).source_provider === "huggingface");
+  let canSave = /* @__PURE__ */ user_derived(() => !!get(draft).local_path?.trim() && (get(hfDraft) ? !!get(draft).hf_url?.trim() : !!get(draft).label?.trim() && !!get(draft).drive_path?.trim()));
   function editShortcut(record) {
     const source2 = record.hf_sources?.[0] || {};
     set(
@@ -31517,21 +31667,27 @@ function FilesView($$anchor, $$props) {
     );
     set(editing, true);
   }
+  function addShortcut() {
+    editShortcut({
+      label: "",
+      source_provider: "huggingface",
+      direction: "download",
+      source_kind: "file",
+      drive_path: "",
+      local_path: files().model_directory || ""
+    });
+  }
   function saveShortcut(replay = false) {
     act({ action: "save_recipe", recipe: { ...get(draft) }, replay });
     set(editing, false);
   }
-  let mobilePane = /* @__PURE__ */ state$1("drive");
-  let shortcuts = /* @__PURE__ */ user_derived(() => (files().recipes || []).toReversed().filter((i) => [i.label, i.local_path, i.drive_path, i.repo_id].join(" ").toLowerCase().includes(get(query).toLowerCase())));
-  let activeTasks = /* @__PURE__ */ user_derived(() => (files().tasks || []).filter((t) => ["running", "queued"].includes(t.status)));
-  let history = /* @__PURE__ */ user_derived(() => (files().tasks || []).filter((t) => !["running", "queued"].includes(t.status)).toReversed());
-  const sourceLabel = (task) => {
-    if (task.source === "huggingface") return "Hugging Face 下载";
+  function sourceLabel(task) {
+    if (task.source === "huggingface") return "Hugging Face";
     if (task.direction === "copy") return "Drive 复制";
     return task.direction === "download" ? "Drive 下载" : "上传至 Drive";
-  };
+  }
   const displayTime = new Intl.DateTimeFormat("zh-CN", { dateStyle: "short", timeStyle: "short" });
-  var article = root_29();
+  var article = root_32();
   var node = child(article);
   component(node, () => Tabs, ($$anchor2, Tabs_Root) => {
     Tabs_Root($$anchor2, {
@@ -31543,13 +31699,15 @@ function FilesView($$anchor, $$props) {
         set(tab, $$value, true);
       },
       children: ($$anchor3, $$slotProps) => {
-        var fragment = root_20();
+        var fragment = root_29();
         var div = first_child(fragment);
         var node_1 = child(div);
         component(node_1, () => Tabs_list, ($$anchor4, Tabs_List) => {
           Tabs_List($$anchor4, {
+            variant: "line",
+            "aria-label": "文件与传输",
             children: ($$anchor5, $$slotProps2) => {
-              var fragment_1 = root_2$1();
+              var fragment_1 = root_3$1();
               var node_2 = first_child(fragment_1);
               component(node_2, () => Tabs_trigger, ($$anchor6, Tabs_Trigger) => {
                 Tabs_Trigger($$anchor6, {
@@ -31557,32 +31715,34 @@ function FilesView($$anchor, $$props) {
                   children: ($$anchor7, $$slotProps3) => {
                     var fragment_2 = root$1();
                     var node_3 = first_child(fragment_2);
-                    Arrow_left_right(node_3, { size: 14 });
+                    Arrow_left_right(node_3, { size: 15 });
                     append($$anchor7, fragment_2);
                   },
                   $$slots: { default: true }
                 });
               });
-              var node_4 = sibling(node_2);
+              var node_4 = sibling(node_2, 2);
               component(node_4, () => Tabs_trigger, ($$anchor6, Tabs_Trigger_1) => {
                 Tabs_Trigger_1($$anchor6, {
                   value: "shortcuts",
                   children: ($$anchor7, $$slotProps3) => {
-                    var text2 = text$1("快捷复制");
-                    append($$anchor7, text2);
+                    var fragment_3 = root_1$1();
+                    var node_5 = first_child(fragment_3);
+                    Book_open(node_5, { size: 15 });
+                    append($$anchor7, fragment_3);
                   },
                   $$slots: { default: true }
                 });
               });
-              var node_5 = sibling(node_4);
-              component(node_5, () => Tabs_trigger, ($$anchor6, Tabs_Trigger_2) => {
+              var node_6 = sibling(node_4, 2);
+              component(node_6, () => Tabs_trigger, ($$anchor6, Tabs_Trigger_2) => {
                 Tabs_Trigger_2($$anchor6, {
                   value: "history",
                   children: ($$anchor7, $$slotProps3) => {
-                    var fragment_3 = root_1$1();
-                    var node_6 = first_child(fragment_3);
-                    Rotate_ccw_clock(node_6, { size: 14 });
-                    append($$anchor7, fragment_3);
+                    var fragment_4 = root_2$1();
+                    var node_7 = first_child(fragment_4);
+                    Rotate_ccw_clock(node_7, { size: 15 });
+                    append($$anchor7, fragment_4);
                   },
                   $$slots: { default: true }
                 });
@@ -31592,45 +31752,72 @@ function FilesView($$anchor, $$props) {
             $$slots: { default: true }
           });
         });
-        var node_7 = sibling(node_1);
+        var node_8 = sibling(node_1, 2);
         {
           var consequent = ($$anchor4) => {
             Button($$anchor4, {
               size: "sm",
-              onclick: () => editShortcut({
-                label: "",
-                source_provider: "huggingface",
-                direction: "download",
-                source_kind: "file",
-                drive_path: "",
-                local_path: files().model_directory || ""
-              }),
+              onclick: addShortcut,
+              get disabled() {
+                return get(editing);
+              },
               children: ($$anchor5, $$slotProps2) => {
-                var fragment_5 = root_3$1();
-                var node_8 = first_child(fragment_5);
-                Plus(node_8, { size: 14 });
-                append($$anchor5, fragment_5);
+                var fragment_6 = root_4$1();
+                var node_9 = first_child(fragment_6);
+                Plus(node_9, { size: 15 });
+                append($$anchor5, fragment_6);
               },
               $$slots: { default: true }
             });
           };
-          if_block(node_7, ($$render) => {
-            if (get(tab) === "shortcuts") $$render(consequent);
+          if_block(node_8, ($$render) => {
+            if (get(tab) === "shortcuts" && (get(recipes).length || get(editing))) $$render(consequent);
           });
         }
-        var node_9 = sibling(div, 2);
-        component(node_9, () => Tabs_content, ($$anchor4, Tabs_Content) => {
+        var node_10 = sibling(div, 2);
+        {
+          var consequent_2 = ($$anchor4) => {
+            var div_1 = root_5$1();
+            var span = child(div_1);
+            var text2 = only_child(span, true);
+            var node_11 = sibling(span, 2);
+            {
+              var consequent_1 = ($$anchor5) => {
+                Button($$anchor5, {
+                  size: "sm",
+                  variant: "outline",
+                  onclick: () => act({ action: "undo" }),
+                  children: ($$anchor6, $$slotProps2) => {
+                    var text_1 = text$1("撤销删除");
+                    append($$anchor6, text_1);
+                  },
+                  $$slots: { default: true }
+                });
+              };
+              if_block(node_11, ($$render) => {
+                if (files().can_undo) $$render(consequent_1);
+              });
+            }
+            template_effect(() => set_text(text2, files().error || files().message || files().notice));
+            append($$anchor4, div_1);
+          };
+          if_block(node_10, ($$render) => {
+            if (files().error || files().message || files().notice || files().can_undo) $$render(consequent_2);
+          });
+        }
+        var node_12 = sibling(node_10, 2);
+        component(node_12, () => Tabs_content, ($$anchor4, Tabs_Content) => {
           Tabs_Content($$anchor4, {
             class: "transfer-view",
             value: "transfer",
             children: ($$anchor5, $$slotProps2) => {
-              var fragment_6 = root_7$1();
-              var nav = first_child(fragment_6);
-              var node_10 = child(nav);
+              var fragment_8 = root_9$1();
+              var nav = first_child(fragment_8);
+              var node_13 = child(nav);
               {
                 let $0 = /* @__PURE__ */ user_derived(() => get(mobilePane) === "drive" ? "secondary" : "ghost");
                 let $1 = /* @__PURE__ */ user_derived(() => get(mobilePane) === "drive");
-                Button(node_10, {
+                Button(node_13, {
                   get variant() {
                     return get($0);
                   },
@@ -31639,25 +31826,19 @@ function FilesView($$anchor, $$props) {
                   },
                   onclick: () => set(mobilePane, "drive"),
                   children: ($$anchor6, $$slotProps3) => {
-                    var fragment_7 = root_4$1();
-                    var node_11 = first_child(fragment_7);
-                    Cloud(node_11, { size: 17 });
-                    var i_1 = sibling(node_11, 2);
-                    let classes;
-                    template_effect(() => {
-                      classes = set_class(i_1, 1, "status-dot", null, classes, { disconnected: !files().connected });
-                      set_attribute(i_1, "aria-label", files().connected ? "Drive 已连接" : "Drive 连接待就绪");
-                    });
-                    append($$anchor6, fragment_7);
+                    var fragment_9 = root_6$1();
+                    var node_14 = first_child(fragment_9);
+                    Cloud(node_14, { size: 15 });
+                    append($$anchor6, fragment_9);
                   },
                   $$slots: { default: true }
                 });
               }
-              var node_12 = sibling(node_10);
+              var node_15 = sibling(node_13, 2);
               {
                 let $0 = /* @__PURE__ */ user_derived(() => get(mobilePane) === "local" ? "secondary" : "ghost");
                 let $1 = /* @__PURE__ */ user_derived(() => get(mobilePane) === "local");
-                Button(node_12, {
+                Button(node_15, {
                   get variant() {
                     return get($0);
                   },
@@ -31666,23 +31847,24 @@ function FilesView($$anchor, $$props) {
                   },
                   onclick: () => set(mobilePane, "local"),
                   children: ($$anchor6, $$slotProps3) => {
-                    var fragment_8 = root_5$1();
-                    var node_13 = first_child(fragment_8);
-                    Hard_drive(node_13, { size: 17 });
-                    append($$anchor6, fragment_8);
+                    var fragment_10 = root_7$1();
+                    var node_16 = first_child(fragment_10);
+                    Hard_drive(node_16, { size: 15 });
+                    append($$anchor6, fragment_10);
                   },
                   $$slots: { default: true }
                 });
               }
-              var div_1 = sibling(nav);
-              each(div_1, 20, () => ["drive", "local"], index$1, ($$anchor6, name) => {
-                var div_2 = root_6$1();
+              var div_2 = sibling(nav, 2);
+              let classes;
+              each(div_2, 20, () => ["drive", "local"], (name) => name, ($$anchor6, name) => {
+                var div_3 = root_8$1();
                 let classes_1;
-                var node_14 = child(div_2);
+                var node_17 = child(div_3);
                 {
                   let $0 = /* @__PURE__ */ user_derived(() => files().panes?.[name] || {});
                   let $1 = /* @__PURE__ */ user_derived(() => files().panes?.[name === "drive" ? "local" : "drive"] || {});
-                  FilePane(node_14, {
+                  FilePane(node_17, {
                     get name() {
                       return name;
                     },
@@ -31695,251 +31877,510 @@ function FilesView($$anchor, $$props) {
                     get connected() {
                       return files().connected;
                     },
-                    get driveDirectory() {
-                      return files().drive_directory;
-                    },
                     send: act
                   });
                 }
-                template_effect(() => classes_1 = set_class(div_2, 1, "file-pane-slot", null, classes_1, { "mobile-hidden": get(mobilePane) !== name }));
-                append($$anchor6, div_2);
+                template_effect(() => classes_1 = set_class(div_3, 1, "pane-slot svelte-1mvl52", null, classes_1, { "mobile-hidden": get(mobilePane) !== name }));
+                append($$anchor6, div_3);
               });
-              append($$anchor5, fragment_6);
+              template_effect(() => classes = set_class(div_2, 1, "transfer-panes svelte-1mvl52", null, classes, { unmounted: !files().connected }));
+              append($$anchor5, fragment_8);
             },
             $$slots: { default: true }
           });
         });
-        var node_15 = sibling(node_9, 2);
-        component(node_15, () => Tabs_content, ($$anchor4, Tabs_Content_1) => {
+        var node_18 = sibling(node_12, 2);
+        component(node_18, () => Tabs_content, ($$anchor4, Tabs_Content_1) => {
           Tabs_Content_1($$anchor4, {
+            class: "files-list-view",
             value: "shortcuts",
             children: ($$anchor5, $$slotProps2) => {
-              var fragment_9 = root_12$1();
-              var div_3 = first_child(fragment_9);
-              var node_16 = child(div_3);
-              Search(node_16, { size: 16 });
-              var node_17 = sibling(node_16);
-              Input(node_17, {
-                "aria-label": "搜索快捷复制",
-                placeholder: "搜索名称或目录…",
-                get value() {
-                  return get(query);
-                },
-                set value($$value) {
-                  set(query, $$value, true);
-                }
-              });
-              var div_4 = sibling(div_3);
-              each(
-                div_4,
-                21,
-                () => get(shortcuts),
-                index$1,
-                ($$anchor6, item) => {
-                  var div_5 = root_10$1();
-                  var div_6 = child(div_5);
-                  var node_18 = child(div_6);
-                  Arrow_left_right(node_18, { size: 17 });
-                  var h3 = sibling(node_18);
-                  var text_1 = only_child(h3, true);
-                  var node_19 = sibling(h3);
-                  Badge(node_19, {
-                    variant: "secondary",
+              var fragment_11 = root_3$1();
+              var node_19 = first_child(fragment_11);
+              {
+                var consequent_7 = ($$anchor6) => {
+                  var section = root_14$1();
+                  var div_4 = child(section);
+                  var h2 = child(div_4);
+                  var text_2 = only_child(h2, true);
+                  var node_20 = sibling(h2, 2);
+                  Button(node_20, {
+                    size: "icon-sm",
+                    variant: "ghost",
+                    "aria-label": "收起设置",
+                    onclick: () => set(editing, false),
                     children: ($$anchor7, $$slotProps3) => {
-                      var text_2 = text$1();
-                      template_effect(() => set_text(text_2, get(item).source_provider === "huggingface" ? "HF → 本机" : get(item).direction === "download" ? "Drive → 运行时" : "运行时 → Drive"));
-                      append($$anchor7, text_2);
+                      X($$anchor7, { size: 17 });
                     },
                     $$slots: { default: true }
                   });
-                  var p = sibling(div_6);
-                  var text_3 = only_child(p, true);
-                  var div_7 = sibling(p);
-                  var node_20 = child(div_7);
+                  var div_5 = sibling(div_4, 2);
+                  var label = child(div_5);
+                  var node_21 = sibling(child(label));
+                  Input(node_21, {
+                    get value() {
+                      return get(draft).label;
+                    },
+                    set value($$value) {
+                      get(draft).label = $$value;
+                    }
+                  });
+                  var label_1 = sibling(label, 2);
+                  var select = sibling(child(label_1), 2);
+                  var option = child(select);
+                  option.value = option.__value = "huggingface";
+                  var option_1 = sibling(option);
+                  option_1.value = option_1.__value = "download";
+                  var option_2 = sibling(option_1);
+                  option_2.value = option_2.__value = "upload";
+                  var select_value;
+                  init_select(select);
+                  var node_22 = sibling(label_1, 2);
                   {
-                    let $0 = /* @__PURE__ */ user_derived(() => get(item).source_provider !== "huggingface" && !files().connected);
-                    Button(node_20, {
+                    var consequent_4 = ($$anchor7) => {
+                      var fragment_13 = root_12$1();
+                      var label_2 = first_child(fragment_13);
+                      var node_23 = sibling(child(label_2));
+                      Input(node_23, {
+                        placeholder: "owner/repo",
+                        get value() {
+                          return get(draft).hf_url;
+                        },
+                        set value($$value) {
+                          get(draft).hf_url = $$value;
+                        }
+                      });
+                      var label_3 = sibling(label_2, 2);
+                      var node_24 = sibling(child(label_3));
+                      Input(node_24, {
+                        placeholder: "留空下载全部",
+                        get value() {
+                          return get(draft).hf_patterns;
+                        },
+                        set value($$value) {
+                          get(draft).hf_patterns = $$value;
+                        }
+                      });
+                      var label_4 = sibling(label_3, 2);
+                      var node_25 = sibling(child(label_4));
+                      Input(node_25, {
+                        get value() {
+                          return get(draft).hf_revision;
+                        },
+                        set value($$value) {
+                          get(draft).hf_revision = $$value;
+                        }
+                      });
+                      var node_26 = sibling(label_4, 2);
+                      {
+                        var consequent_3 = ($$anchor8) => {
+                          var div_6 = root_11$1();
+                          var node_27 = sibling(child(div_6), 2);
+                          each(node_27, 17, () => get(draft).hf_sources.slice(1), index$1, ($$anchor9, source2) => {
+                            var code = root_10$1();
+                            var text_3 = only_child(code);
+                            template_effect(($0) => set_text(text_3, `${get(source2).repo_id ?? ""} · ${$0 ?? ""}`), [() => get(source2).allow_patterns?.join(", ") || "全部文件"]);
+                            append($$anchor9, code);
+                          });
+                          append($$anchor8, div_6);
+                        };
+                        if_block(node_26, ($$render) => {
+                          if (get(draft).hf_sources?.length > 1) $$render(consequent_3);
+                        });
+                      }
+                      append($$anchor7, fragment_13);
+                    };
+                    var alternate = ($$anchor7) => {
+                      var fragment_14 = root_13$1();
+                      var label_5 = first_child(fragment_14);
+                      var select_1 = sibling(child(label_5), 2);
+                      var option_3 = child(select_1);
+                      option_3.value = option_3.__value = "file";
+                      var option_4 = sibling(option_3);
+                      option_4.value = option_4.__value = "directory";
+                      init_select(select_1);
+                      var label_6 = sibling(label_5, 2);
+                      var node_28 = sibling(child(label_6));
+                      Input(node_28, {
+                        placeholder: "model/文件名",
+                        get value() {
+                          return get(draft).drive_path;
+                        },
+                        set value($$value) {
+                          get(draft).drive_path = $$value;
+                        }
+                      });
+                      bind_select_value(select_1, () => get(draft).source_kind, ($$value) => get(draft).source_kind = $$value);
+                      append($$anchor7, fragment_14);
+                    };
+                    if_block(node_22, ($$render) => {
+                      if (get(hfDraft)) $$render(consequent_4);
+                      else $$render(alternate, -1);
+                    });
+                  }
+                  var label_7 = sibling(node_22, 2);
+                  var span_1 = child(label_7);
+                  var text_4 = only_child(span_1, true);
+                  var node_29 = sibling(span_1, 2);
+                  Input(node_29, {
+                    get value() {
+                      return get(draft).local_path;
+                    },
+                    set value($$value) {
+                      get(draft).local_path = $$value;
+                    }
+                  });
+                  var div_7 = sibling(div_5, 2);
+                  var node_30 = child(div_7);
+                  {
+                    var consequent_5 = ($$anchor7) => {
+                      Button($$anchor7, {
+                        size: "sm",
+                        variant: "ghost",
+                        onclick: () => {
+                          act({ action: "delete_recipe", id: get(draft).id });
+                          set(editing, false);
+                        },
+                        children: ($$anchor8, $$slotProps3) => {
+                          var text_5 = text$1("删除快捷复制");
+                          append($$anchor8, text_5);
+                        },
+                        $$slots: { default: true }
+                      });
+                    };
+                    if_block(node_30, ($$render) => {
+                      if (get(draft).id) $$render(consequent_5);
+                    });
+                  }
+                  var div_8 = sibling(node_30, 2);
+                  var node_31 = child(div_8);
+                  {
+                    let $0 = /* @__PURE__ */ user_derived(() => get(hfDraft) ? "outline" : "default");
+                    let $1 = /* @__PURE__ */ user_derived(() => !get(canSave));
+                    Button(node_31, {
                       size: "sm",
-                      get disabled() {
+                      get variant() {
                         return get($0);
                       },
-                      onclick: () => act({ action: "replay", ids: [get(item).id] }),
+                      get disabled() {
+                        return get($1);
+                      },
+                      onclick: () => saveShortcut(),
                       children: ($$anchor7, $$slotProps3) => {
-                        var fragment_11 = root_8$1();
-                        var node_21 = first_child(fragment_11);
-                        Play(node_21, { size: 13 });
-                        var text_4 = sibling(node_21, 1, true);
-                        template_effect(() => set_text(text_4, get(item).source_provider === "huggingface" ? "复制到本机" : "复制"));
-                        append($$anchor7, fragment_11);
+                        var text_6 = text$1("保存");
+                        append($$anchor7, text_6);
                       },
                       $$slots: { default: true }
                     });
                   }
-                  var node_22 = sibling(node_20);
-                  Button(node_22, {
+                  var node_32 = sibling(node_31, 2);
+                  {
+                    var consequent_6 = ($$anchor7) => {
+                      {
+                        let $0 = /* @__PURE__ */ user_derived(() => !get(canSave));
+                        Button($$anchor7, {
+                          size: "sm",
+                          get disabled() {
+                            return get($0);
+                          },
+                          onclick: () => saveShortcut(true),
+                          children: ($$anchor8, $$slotProps3) => {
+                            var text_7 = text$1("保存并下载");
+                            append($$anchor8, text_7);
+                          },
+                          $$slots: { default: true }
+                        });
+                      }
+                    };
+                    if_block(node_32, ($$render) => {
+                      if (get(hfDraft)) $$render(consequent_6);
+                    });
+                  }
+                  template_effect(() => {
+                    set_text(text_2, get(draft).id ? "编辑快捷复制" : "新增快捷复制");
+                    if (select_value !== (select_value = get(hfDraft) ? "huggingface" : get(draft).direction)) {
+                      select.value = (select.__value = select_value) ?? "", select_option(select, select_value);
+                    }
+                    set_text(text_4, get(draft).direction === "upload" ? "运行时源路径" : "运行时目标目录");
+                  });
+                  delegated("change", select, (event2) => {
+                    const value = event2.currentTarget.value;
+                    get(draft).source_provider = value === "huggingface" ? "huggingface" : "drive";
+                    get(draft).direction = value === "upload" ? "upload" : "download";
+                  });
+                  append($$anchor6, section);
+                };
+                if_block(node_19, ($$render) => {
+                  if (get(editing)) $$render(consequent_7);
+                });
+              }
+              var node_33 = sibling(node_19, 2);
+              {
+                var consequent_8 = ($$anchor6) => {
+                  var fragment_17 = root_19();
+                  var label_8 = first_child(fragment_17);
+                  var node_34 = child(label_8);
+                  Search(node_34, { size: 15 });
+                  var node_35 = sibling(node_34);
+                  Input(node_35, {
+                    "aria-label": "搜索快捷复制",
+                    placeholder: "搜索名称、来源或路径",
+                    get value() {
+                      return get(query);
+                    },
+                    set value($$value) {
+                      set(query, $$value, true);
+                    }
+                  });
+                  var div_9 = sibling(label_8, 2);
+                  each(
+                    div_9,
+                    21,
+                    () => get(shortcuts),
+                    (item) => item.id,
+                    ($$anchor7, item) => {
+                      const hf = /* @__PURE__ */ user_derived(() => get(item).source_provider === "huggingface");
+                      const missingPath = /* @__PURE__ */ user_derived(() => !get(hf) && !get(item).drive_path);
+                      var div_10 = root_17();
+                      var div_11 = child(div_10);
+                      var strong = child(div_11);
+                      var text_8 = only_child(strong, true);
+                      var p = sibling(strong, 2);
+                      var text_9 = only_child(p, true);
+                      var p_1 = sibling(p, 2);
+                      var text_10 = only_child(p_1, true);
+                      var div_12 = sibling(div_11, 2);
+                      var node_36 = child(div_12);
+                      {
+                        let $0 = /* @__PURE__ */ user_derived(() => "编辑 " + get(item).label);
+                        Button(node_36, {
+                          size: "sm",
+                          variant: "ghost",
+                          get "aria-label"() {
+                            return get($0);
+                          },
+                          onclick: () => editShortcut(get(item)),
+                          children: ($$anchor8, $$slotProps3) => {
+                            var fragment_18 = root_15$1();
+                            var node_37 = first_child(fragment_18);
+                            Pencil(node_37, { size: 15 });
+                            append($$anchor8, fragment_18);
+                          },
+                          $$slots: { default: true }
+                        });
+                      }
+                      var node_38 = sibling(node_36, 2);
+                      {
+                        let $0 = /* @__PURE__ */ user_derived(() => get(missingPath) || !get(hf) && !files().connected);
+                        Button(node_38, {
+                          size: "sm",
+                          variant: "outline",
+                          get disabled() {
+                            return get($0);
+                          },
+                          onclick: () => act({ action: "replay", ids: [get(item).id] }),
+                          children: ($$anchor8, $$slotProps3) => {
+                            var fragment_19 = root_16$1();
+                            var node_39 = first_child(fragment_19);
+                            Play(node_39, { size: 14 });
+                            var text_11 = sibling(node_39, 1, true);
+                            template_effect(() => set_text(text_11, get(hf) ? "下载" : "复制"));
+                            append($$anchor8, fragment_19);
+                          },
+                          $$slots: { default: true }
+                        });
+                      }
+                      template_effect(() => {
+                        set_text(text_8, get(item).label);
+                        set_text(text_9, get(hf) ? get(item).repo_id || get(item).hf_url : get(missingPath) ? "需补齐 Drive 相对路径" : "Drive · " + get(item).drive_path);
+                        set_attribute(p_1, "title", get(item).local_path);
+                        set_text(text_10, get(item).local_path);
+                      });
+                      append($$anchor7, div_10);
+                    },
+                    ($$anchor7) => {
+                      var div_13 = root_18();
+                      append($$anchor7, div_13);
+                    }
+                  );
+                  append($$anchor6, fragment_17);
+                };
+                var consequent_9 = ($$anchor6) => {
+                  var div_14 = root_20();
+                  var span_2 = child(div_14);
+                  var node_40 = child(span_2);
+                  Book_open(node_40, { size: 21 });
+                  var node_41 = sibling(span_2, 4);
+                  Button(node_41, {
                     size: "sm",
-                    variant: "outline",
-                    onclick: () => editShortcut(get(item)),
+                    onclick: addShortcut,
                     children: ($$anchor7, $$slotProps3) => {
-                      var fragment_12 = root_9$1();
-                      var node_23 = first_child(fragment_12);
-                      Settings_2(node_23, { size: 13 });
-                      append($$anchor7, fragment_12);
+                      var fragment_20 = root_4$1();
+                      var node_42 = first_child(fragment_20);
+                      Plus(node_42, { size: 15 });
+                      append($$anchor7, fragment_20);
                     },
                     $$slots: { default: true }
                   });
-                  template_effect(() => {
-                    set_attribute(h3, "title", get(item).source_kind === "directory" ? "文件夹 · 包含子目录" : "文件");
-                    set_text(text_1, get(item).label);
-                    set_text(text_3, get(item).local_path);
-                  });
-                  append($$anchor6, div_5);
-                },
-                ($$anchor6) => {
-                  var div_8 = root_11$1();
-                  append($$anchor6, div_8);
-                }
-              );
-              append($$anchor5, fragment_9);
+                  append($$anchor6, div_14);
+                };
+                if_block(node_33, ($$render) => {
+                  if (get(recipes).length) $$render(consequent_8);
+                  else if (!get(editing)) $$render(consequent_9, 1);
+                });
+              }
+              var node_43 = sibling(node_33, 2);
+              {
+                var consequent_10 = ($$anchor6) => {
+                  var p_2 = root_21();
+                  append($$anchor6, p_2);
+                };
+                if_block(node_43, ($$render) => {
+                  if (files().shortcut_storage === "runtime") $$render(consequent_10);
+                });
+              }
+              append($$anchor5, fragment_11);
             },
             $$slots: { default: true }
           });
         });
-        var node_24 = sibling(node_15, 2);
-        component(node_24, () => Tabs_content, ($$anchor4, Tabs_Content_2) => {
+        var node_44 = sibling(node_18, 2);
+        component(node_44, () => Tabs_content, ($$anchor4, Tabs_Content_2) => {
           Tabs_Content_2($$anchor4, {
+            class: "files-list-view",
             value: "history",
             children: ($$anchor5, $$slotProps2) => {
-              var fragment_13 = root_19();
-              var node_25 = first_child(fragment_13);
+              var fragment_21 = root_28();
+              var node_45 = first_child(fragment_21);
               {
-                var consequent_1 = ($$anchor6) => {
-                  var p_1 = root_13$1();
-                  append($$anchor6, p_1);
+                var consequent_11 = ($$anchor6) => {
+                  var p_3 = root_22();
+                  append($$anchor6, p_3);
                 };
-                var consequent_2 = ($$anchor6) => {
-                  var p_2 = root_14$1();
-                  append($$anchor6, p_2);
+                var consequent_12 = ($$anchor6) => {
+                  var p_4 = root_23();
+                  append($$anchor6, p_4);
                 };
-                if_block(node_25, ($$render) => {
-                  if (files().history_storage === "memory") $$render(consequent_1);
-                  else if (files().history_storage === "runtime") $$render(consequent_2, 1);
+                if_block(node_45, ($$render) => {
+                  if (files().history_storage === "memory") $$render(consequent_11);
+                  else if (files().history_storage === "runtime") $$render(consequent_12, 1);
                 });
               }
-              var div_9 = sibling(node_25, 2);
+              var div_15 = sibling(node_45, 2);
               each(
-                div_9,
+                div_15,
                 21,
                 () => get(history),
                 (task) => task.id,
                 ($$anchor6, task) => {
-                  var div_10 = root_17();
-                  var div_11 = child(div_10);
-                  var strong = child(div_11);
-                  var text_5 = only_child(strong, true);
-                  var p_3 = sibling(strong, 2);
-                  var text_6 = child(p_3);
-                  var node_26 = sibling(text_6);
+                  var div_16 = root_26();
+                  var div_17 = child(div_16);
+                  var strong_1 = child(div_17);
+                  var text_12 = only_child(strong_1, true);
+                  var p_5 = sibling(strong_1, 2);
+                  var text_13 = child(p_5);
+                  var node_46 = sibling(text_13);
                   {
-                    var consequent_3 = ($$anchor7) => {
-                      var text_7 = text$1();
-                      template_effect(($0) => set_text(text_7, `· ${$0 ?? ""}`), [() => bytes(get(task).bytes)]);
-                      append($$anchor7, text_7);
+                    var consequent_13 = ($$anchor7) => {
+                      var text_14 = text$1();
+                      template_effect(($0) => set_text(text_14, `· ${$0 ?? ""}`), [() => bytes(get(task).bytes)]);
+                      append($$anchor7, text_14);
                     };
-                    if_block(node_26, ($$render) => {
-                      if (get(task).bytes) $$render(consequent_3);
+                    if_block(node_46, ($$render) => {
+                      if (get(task).bytes) $$render(consequent_13);
                     });
                   }
-                  var node_27 = sibling(node_26);
+                  var node_47 = sibling(node_46);
                   {
-                    var consequent_4 = ($$anchor7) => {
-                      var text_8 = text$1();
-                      template_effect(($0) => set_text(text_8, `· ${$0 ?? ""}`), [() => displayTime.format(get(task).finished_at * 1e3)]);
-                      append($$anchor7, text_8);
+                    var consequent_14 = ($$anchor7) => {
+                      var text_15 = text$1();
+                      template_effect(($0) => set_text(text_15, `· ${$0 ?? ""}`), [() => displayTime.format(get(task).finished_at * 1e3)]);
+                      append($$anchor7, text_15);
                     };
-                    if_block(node_27, ($$render) => {
-                      if (get(task).finished_at) $$render(consequent_4);
+                    if_block(node_47, ($$render) => {
+                      if (get(task).finished_at) $$render(consequent_14);
                     });
                   }
-                  var node_28 = sibling(p_3, 2);
+                  var node_48 = sibling(p_5, 2);
                   {
-                    var consequent_5 = ($$anchor7) => {
-                      var p_4 = root_15$1();
-                      var text_9 = only_child(p_4, true);
-                      template_effect(() => set_text(text_9, get(task).target_path || get(task).local_path));
-                      append($$anchor7, p_4);
+                    var consequent_15 = ($$anchor7) => {
+                      var p_6 = root_24();
+                      var text_16 = only_child(p_6, true);
+                      template_effect(() => {
+                        set_attribute(p_6, "title", get(task).target_path || get(task).local_path);
+                        set_text(text_16, get(task).target_path || get(task).local_path);
+                      });
+                      append($$anchor7, p_6);
                     };
-                    if_block(node_28, ($$render) => {
-                      if (get(task).target_path || get(task).local_path) $$render(consequent_5);
+                    if_block(node_48, ($$render) => {
+                      if (get(task).target_path || get(task).local_path) $$render(consequent_15);
                     });
                   }
-                  var node_29 = sibling(node_28, 2);
+                  var node_49 = sibling(node_48, 2);
                   {
-                    var consequent_6 = ($$anchor7) => {
-                      var p_5 = root_16$1();
-                      var text_10 = only_child(p_5, true);
-                      template_effect(() => set_text(text_10, get(task).error));
-                      append($$anchor7, p_5);
+                    var consequent_16 = ($$anchor7) => {
+                      var p_7 = root_25();
+                      var text_17 = only_child(p_7, true);
+                      template_effect(() => set_text(text_17, get(task).error));
+                      append($$anchor7, p_7);
                     };
-                    if_block(node_29, ($$render) => {
-                      if (get(task).error) $$render(consequent_6);
+                    if_block(node_49, ($$render) => {
+                      if (get(task).error) $$render(consequent_16);
                     });
                   }
-                  var node_30 = sibling(div_11, 2);
-                  Badge(node_30, {
-                    variant: "secondary",
-                    children: ($$anchor7, $$slotProps3) => {
-                      var text_11 = text$1();
-                      template_effect(() => set_text(text_11, taskStatus[get(task).status]));
-                      append($$anchor7, text_11);
-                    },
-                    $$slots: { default: true }
-                  });
-                  var node_31 = sibling(node_30, 2);
+                  var div_18 = sibling(div_17, 2);
+                  var span_3 = child(div_18);
+                  let classes_2;
+                  var text_18 = only_child(span_3, true);
+                  var node_50 = sibling(span_3, 2);
                   {
-                    var consequent_7 = ($$anchor7) => {
+                    var consequent_17 = ($$anchor7) => {
                       Button($$anchor7, {
                         size: "sm",
                         variant: "outline",
                         onclick: () => act({ action: "retry", task_id: get(task).id }),
                         children: ($$anchor8, $$slotProps3) => {
-                          var text_12 = text$1("重试");
-                          append($$anchor8, text_12);
+                          var text_19 = text$1("重试");
+                          append($$anchor8, text_19);
                         },
                         $$slots: { default: true }
                       });
                     };
                     var d = /* @__PURE__ */ user_derived(() => ["failed", "cancelled"].includes(get(task).status) && get(task).retryable);
-                    if_block(node_31, ($$render) => {
-                      if (get(d)) $$render(consequent_7);
+                    if_block(node_50, ($$render) => {
+                      if (get(d)) $$render(consequent_17);
                     });
                   }
-                  var node_32 = sibling(node_31, 2);
-                  Button(node_32, {
+                  var node_51 = sibling(node_50, 2);
+                  Button(node_51, {
                     size: "sm",
                     variant: "ghost",
                     onclick: () => act({ action: "delete_task", id: get(task).id }),
                     children: ($$anchor7, $$slotProps3) => {
-                      var text_13 = text$1("删除记录");
-                      append($$anchor7, text_13);
+                      var text_20 = text$1("删除记录");
+                      append($$anchor7, text_20);
                     },
                     $$slots: { default: true }
                   });
                   template_effect(
                     ($0) => {
-                      set_text(text_5, get(task).name);
-                      set_text(text_6, $0);
+                      set_text(text_12, get(task).name);
+                      set_text(text_13, $0);
+                      classes_2 = set_class(span_3, 1, "record-status svelte-1mvl52", null, classes_2, { completed: get(task).status === "completed" });
+                      set_text(text_18, taskStatus[get(task).status]);
                     },
                     [() => sourceLabel(get(task))]
                   );
-                  append($$anchor6, div_10);
+                  append($$anchor6, div_16);
                 },
                 ($$anchor6) => {
-                  var p_6 = root_18();
-                  append($$anchor6, p_6);
+                  var div_19 = root_27();
+                  var node_52 = child(div_19);
+                  Rotate_ccw_clock(node_52, { size: 23 });
+                  append($$anchor6, div_19);
                 }
               );
-              append($$anchor5, fragment_13);
+              append($$anchor5, fragment_21);
             },
             $$slots: { default: true }
           });
@@ -31949,277 +32390,45 @@ function FilesView($$anchor, $$props) {
       $$slots: { default: true }
     });
   });
-  var node_33 = sibling(node, 2);
+  var node_53 = sibling(node, 2);
   {
-    var consequent_12 = ($$anchor2) => {
-      var section = root_25();
-      var div_12 = sibling(child(section));
-      var label = child(div_12);
-      var node_34 = sibling(child(label));
-      Input(node_34, {
-        get value() {
-          return get(draft).label;
-        },
-        set value($$value) {
-          get(draft).label = $$value;
-        }
-      });
-      var label_1 = sibling(label);
-      var select = sibling(child(label_1));
-      var option = child(select);
-      option.value = option.__value = "huggingface";
-      var option_1 = sibling(option);
-      option_1.value = option_1.__value = "download";
-      var option_2 = sibling(option_1);
-      option_2.value = option_2.__value = "upload";
-      var select_value;
-      init_select(select);
-      var node_35 = sibling(label_1);
-      {
-        var consequent_9 = ($$anchor3) => {
-          var fragment_18 = root_23();
-          var label_2 = first_child(fragment_18);
-          var node_36 = sibling(child(label_2));
-          Input(node_36, {
-            placeholder: "owner/repo 或 https://huggingface.co/.../resolve/main/file",
-            get value() {
-              return get(draft).hf_url;
-            },
-            set value($$value) {
-              get(draft).hf_url = $$value;
-            }
-          });
-          var label_3 = sibling(label_2, 2);
-          var node_37 = sibling(child(label_3));
-          Input(node_37, {
-            placeholder: "例如 IQ3_S/*.gguf；留空复制全部",
-            get value() {
-              return get(draft).hf_patterns;
-            },
-            set value($$value) {
-              get(draft).hf_patterns = $$value;
-            }
-          });
-          var label_4 = sibling(label_3, 2);
-          var node_38 = sibling(child(label_4));
-          Input(node_38, {
-            get value() {
-              return get(draft).hf_revision;
-            },
-            set value($$value) {
-              get(draft).hf_revision = $$value;
-            }
-          });
-          var node_39 = sibling(label_4, 2);
-          {
-            var consequent_8 = ($$anchor4) => {
-              var div_13 = root_22();
-              var node_40 = sibling(child(div_13));
-              each(node_40, 17, () => get(draft).hf_sources.slice(1), index$1, ($$anchor5, source2) => {
-                var code = root_21();
-                var text_14 = only_child(code);
-                template_effect(($0) => set_text(text_14, `${get(source2).repo_id ?? ""} · ${$0 ?? ""}`), [() => get(source2).allow_patterns?.join(", ") || "全部文件"]);
-                append($$anchor5, code);
-              });
-              append($$anchor4, div_13);
-            };
-            if_block(node_39, ($$render) => {
-              if (get(draft).hf_sources?.length > 1) $$render(consequent_8);
-            });
-          }
-          append($$anchor3, fragment_18);
-        };
-        var alternate = ($$anchor3) => {
-          var fragment_19 = root_24();
-          var label_5 = first_child(fragment_19);
-          var select_1 = sibling(child(label_5));
-          var option_3 = child(select_1);
-          option_3.value = option_3.__value = "file";
-          var option_4 = sibling(option_3);
-          option_4.value = option_4.__value = "directory";
-          init_select(select_1);
-          var label_6 = sibling(label_5);
-          var node_41 = sibling(child(label_6));
-          Input(node_41, {
-            placeholder: "例如 models/diffusion_models",
-            get value() {
-              return get(draft).drive_path;
-            },
-            set value($$value) {
-              get(draft).drive_path = $$value;
-            }
-          });
-          bind_select_value(select_1, () => get(draft).source_kind, ($$value) => get(draft).source_kind = $$value);
-          append($$anchor3, fragment_19);
-        };
-        if_block(node_35, ($$render) => {
-          if (get(draft).source_provider === "huggingface") $$render(consequent_9);
-          else $$render(alternate, -1);
-        });
-      }
-      var label_7 = sibling(node_35);
-      var span = child(label_7);
-      var text_15 = only_child(span, true);
-      var node_42 = sibling(span);
-      Input(node_42, {
-        get value() {
-          return get(draft).local_path;
-        },
-        set value($$value) {
-          get(draft).local_path = $$value;
-        }
-      });
-      var div_14 = sibling(div_12);
-      var node_43 = child(div_14);
-      {
-        var consequent_10 = ($$anchor3) => {
-          {
-            let $0 = /* @__PURE__ */ user_derived(() => !get(draft).hf_url.trim() || !get(draft).local_path.trim());
-            Button($$anchor3, {
-              get disabled() {
-                return get($0);
-              },
-              onclick: () => saveShortcut(true),
-              children: ($$anchor4, $$slotProps) => {
-                var text_16 = text$1("保存并复制");
-                append($$anchor4, text_16);
-              },
-              $$slots: { default: true }
-            });
-          }
-        };
-        var alternate_1 = ($$anchor3) => {
-          Button($$anchor3, {
-            onclick: () => saveShortcut(),
-            children: ($$anchor4, $$slotProps) => {
-              var text_17 = text$1("保存快捷操作");
-              append($$anchor4, text_17);
-            },
-            $$slots: { default: true }
-          });
-        };
-        if_block(node_43, ($$render) => {
-          if (get(draft).source_provider === "huggingface") $$render(consequent_10);
-          else $$render(alternate_1, -1);
-        });
-      }
-      var node_44 = sibling(node_43);
-      {
-        var consequent_11 = ($$anchor3) => {
-          Button($$anchor3, {
-            variant: "destructive",
-            onclick: () => {
-              act({ action: "delete_recipe", id: get(draft).id });
-              set(editing, false);
-            },
-            children: ($$anchor4, $$slotProps) => {
-              var text_18 = text$1("删除快捷操作");
-              append($$anchor4, text_18);
-            },
-            $$slots: { default: true }
-          });
-        };
-        if_block(node_44, ($$render) => {
-          if (get(draft).id) $$render(consequent_11);
-        });
-      }
-      var node_45 = sibling(node_44);
-      Button(node_45, {
-        variant: "ghost",
-        onclick: () => set(editing, false),
-        children: ($$anchor3, $$slotProps) => {
-          var text_19 = text$1("收起");
-          append($$anchor3, text_19);
-        },
-        $$slots: { default: true }
-      });
-      template_effect(() => {
-        if (select_value !== (select_value = get(draft).source_provider === "huggingface" ? "huggingface" : get(draft).direction)) {
-          select.value = (select.__value = select_value) ?? "", select_option(select, select_value);
-        }
-        set_text(text_15, get(draft).source_provider === "huggingface" ? "运行时目标目录" : "运行时完整路径");
-      });
-      delegated("change", select, (event2) => {
-        const value = event2.currentTarget.value;
-        get(draft).source_provider = value === "huggingface" ? "huggingface" : "drive";
-        get(draft).direction = value === "upload" ? "upload" : "download";
-      });
-      append($$anchor2, section);
-    };
-    if_block(node_33, ($$render) => {
-      if (get(editing)) $$render(consequent_12);
-    });
-  }
-  var node_46 = sibling(node_33, 2);
-  {
-    var consequent_14 = ($$anchor2) => {
-      var div_15 = root_26();
-      var span_1 = child(div_15);
-      var text_20 = only_child(span_1, true);
-      var node_47 = sibling(span_1);
-      {
-        var consequent_13 = ($$anchor3) => {
-          Button($$anchor3, {
-            variant: "outline",
-            size: "sm",
-            onclick: () => act({ action: "undo" }),
-            children: ($$anchor4, $$slotProps) => {
-              var text_21 = text$1("撤销删除");
-              append($$anchor4, text_21);
-            },
-            $$slots: { default: true }
-          });
-        };
-        if_block(node_47, ($$render) => {
-          if (files().can_undo) $$render(consequent_13);
-        });
-      }
-      template_effect(() => set_text(text_20, files().error || files().message || files().notice));
-      append($$anchor2, div_15);
-    };
-    if_block(node_46, ($$render) => {
-      if (files().error || files().message || files().notice || files().can_undo) $$render(consequent_14);
-    });
-  }
-  var node_48 = sibling(node_46, 2);
-  {
-    var consequent_15 = ($$anchor2) => {
-      var section_1 = root_28();
-      var node_49 = sibling(child(section_1));
-      each(node_49, 17, () => get(activeTasks), index$1, ($$anchor3, task) => {
-        var div_16 = root_27();
-        var div_17 = child(div_16);
-        var strong_1 = child(div_17);
-        var text_22 = only_child(strong_1, true);
-        var span_2 = sibling(strong_1);
-        var text_23 = only_child(span_2);
-        var node_50 = sibling(span_2);
-        Button(node_50, {
+    var consequent_18 = ($$anchor2) => {
+      var section_1 = root_31();
+      var node_54 = sibling(child(section_1), 2);
+      each(node_54, 17, () => get(activeTasks), (task) => task.id, ($$anchor3, task) => {
+        var div_20 = root_30();
+        var div_21 = child(div_20);
+        var strong_2 = child(div_21);
+        var text_21 = only_child(strong_2, true);
+        var small = sibling(strong_2, 2);
+        var text_22 = only_child(small);
+        var node_55 = sibling(small, 2);
+        Button(node_55, {
           size: "sm",
           variant: "ghost",
           onclick: () => act({ action: "cancel", task_id: get(task).id }),
           children: ($$anchor4, $$slotProps) => {
-            var text_24 = text$1("停止");
-            append($$anchor4, text_24);
+            var text_23 = text$1("停止");
+            append($$anchor4, text_23);
           },
           $$slots: { default: true }
         });
-        var node_51 = sibling(div_17);
+        var node_56 = sibling(div_21, 2);
         {
           let $0 = /* @__PURE__ */ user_derived(() => get(task).total || 1);
-          Progress(node_51, {
-            get max() {
-              return get($0);
-            },
+          Progress(node_56, {
             get value() {
               return get(task).bytes;
+            },
+            get max() {
+              return get($0);
             }
           });
         }
         template_effect(
           ($0, $1, $2) => {
-            set_text(text_22, get(task).name);
-            set_text(text_23, `${$0 ?? ""} / ${$1 ?? ""}${$2 ?? ""}`);
+            set_text(text_21, get(task).name);
+            set_text(text_22, `${$0 ?? ""} / ${$1 ?? ""}${$2 ?? ""}`);
           },
           [
             () => bytes(get(task).bytes),
@@ -32227,12 +32436,12 @@ function FilesView($$anchor, $$props) {
             () => get(task).speed ? " · " + bytes(get(task).speed) + "/s" : ""
           ]
         );
-        append($$anchor3, div_16);
+        append($$anchor3, div_20);
       });
       append($$anchor2, section_1);
     };
-    if_block(node_48, ($$render) => {
-      if (get(activeTasks).length) $$render(consequent_15);
+    if_block(node_53, ($$render) => {
+      if (get(activeTasks).length) $$render(consequent_18);
     });
   }
   append($$anchor, article);

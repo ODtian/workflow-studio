@@ -134,6 +134,9 @@ class TransferController:
         self.tasks = []
         self.jobs = {}
         self.positions = {side: Entry(side, (), 'directory') for side in ('drive', 'local')}
+        models = self.local_roots.get('models')
+        if models and models.is_relative_to(self.local_roots['root']) and models.is_dir():
+            self.positions['local'] = Entry('local', models.relative_to(self.local_roots['root']).parts, 'directory')
         self.navigation = dict.fromkeys(self.positions, 0)
         self.closed = False
         self.state = {'connected': self.connected(), 'notice': '', 'panes': {}}
@@ -171,7 +174,9 @@ class TransferController:
         for index in range(len(folder.parts) + 1):
             ancestor = Entry(side, folder.parts[:index], 'directory')
             crumbs.append({'id': self._register(ancestor), 'label': ancestor.name or label})
+        location = next((key for key, root in self.local_roots.items() if str(root) == path), '') if side == 'local' else 'root'
         return {'roots': [{'id': key, 'label': label if key == 'root' else LABELS.get(key, key)} for key in roots],
+                'location': location,
                 'directory_id': self._register(folder), 'breadcrumbs': crumbs, 'path': path,
                 'entries': children, 'loading': loading, 'canReceive': writable, 'error': error}
 
