@@ -42,6 +42,8 @@ ComfyUI 通过 Colab 预览打开。Studio 面板直接显示在 Colab 单元格
 
 ### 设置与结果
 
+ComfyUI 启动时挂载 Google Drive，并从「Workflow Studio/ComfyUI/user」读取设置和工作流。自定义节点的 Git 仓库和提交记录在同目录的 `plugins.json`。新运行时启动时会 clone 节点源码到本地，并安装其 `requirements.txt`。ComfyUI 每次启动时会更新 Git 插件清单。
+
 工作台的参数、快捷项和资源存放在 Colab 运行时。可在启动时通过 `start_studio(state_directory=...)` 指定已挂载 Drive 下的设置目录。模型、输入和生成结果可在文件面板复制到 Drive。
 
 ## 文件

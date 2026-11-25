@@ -1,5 +1,7 @@
 """Keep ComfyUI's request checks compatible with a Colab preview."""
+import logging
 import os
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from aiohttp import web
@@ -41,5 +43,16 @@ if origin:
             break
     else:
         raise RuntimeError("Could not find ComfyUI's origin middleware")
+
+manifest = os.environ.get("WORKFLOW_STUDIO_COMFY_PLUGINS")
+if manifest:
+    import folder_paths
+    from comfy_plugins import remember_plugins
+
+    try:
+        nodes = Path(folder_paths.__file__).resolve().parent / "custom_nodes"
+        remember_plugins(nodes, Path(manifest))
+    except (OSError, ValueError):
+        logging.exception("ComfyUI 插件清单保存失败")
 
 NODE_CLASS_MAPPINGS = {}

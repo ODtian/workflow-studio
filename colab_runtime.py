@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -68,6 +69,28 @@ def _preview_origin(output, port):
     return f"{preview.scheme}://{preview.netloc}"
 
 
+def _comfy_profile():
+    drive = ROOT.parent / "drive" / "MyDrive"
+    if not drive.is_dir():
+        try:
+            drive = mount_drive()
+        except Exception as exc:
+            print(f"ComfyUI 使用临时配置目录（Drive 挂载失败：{exc}）。")
+            return None
+    profile = drive / "Workflow Studio" / "ComfyUI"
+    local_user = COMFY / "user"
+    saved_user = profile / "user"
+    saved_user.mkdir(parents=True, exist_ok=True)
+    for source in local_user.rglob("*"):
+        if not source.is_file() or source.is_symlink() or source.name.startswith("comfyui.db"):
+            continue
+        destination = saved_user / source.relative_to(local_user)
+        if not destination.exists():
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+    return profile
+
+
 def start_comfy():
     """Start ComfyUI, run a model-free preview workflow and display the Colab link."""
     from google.colab import output
@@ -81,8 +104,28 @@ def start_comfy():
         raise RuntimeError(f"Colab 预览扩展路径已被占用: {extension}")
     env = {**os.environ, "WORKFLOW_STUDIO_COMFY_ORIGIN": _preview_origin(output, COMFY_PORT)}
     device_args = [] if torch.cuda.is_available() else ["--cpu"]
+    profile_args = []
+    process = _processes.get("comfyui")
+    if process is None or process.poll() is not None:
+        profile = _comfy_profile()
+        nodes = COMFY / "custom_nodes"
+        if profile is not None:
+            from comfy_plugins import restore_plugins
+
+            manifest = profile / "plugins.json"
+            restore_plugins(nodes, manifest)
+            env["WORKFLOW_STUDIO_COMFY_PLUGINS"] = str(manifest)
+            env["PYTHONPATH"] = os.pathsep.join(filter(None, (str(STUDIO), env.get("PYTHONPATH"))))
+            profile_args = ["--user-directory", str(profile / "user"),
+                            "--database-url", f"sqlite:///{COMFY / 'user' / 'comfyui.db'}"]
+            (COMFY / "user").mkdir(exist_ok=True)
+            print("ComfyUI 持久配置：", profile)
+        requirements = sorted(nodes.glob("*/requirements.txt"))
+        if requirements:
+            subprocess.run([sys.executable, "-m", "pip", "install", "--quiet",
+                            *(arg for path in requirements for arg in ("-r", str(path)))], check=True, cwd=COMFY)
     _start("comfyui", ["main.py", "--listen", "127.0.0.1", "--port", str(COMFY_PORT),
-                     "--disable-auto-launch", *device_args], COMFY, COMFY_PORT, env=env)
+                     "--disable-auto-launch", *profile_args, *device_args], COMFY, COMFY_PORT, env=env)
     prompt = {
         "1": {"class_type": "EmptyImage", "inputs": {"width": 64, "height": 64, "batch_size": 1, "color": 0}},
         "2": {"class_type": "PreviewImage", "inputs": {"images": ["1", 0]}},
