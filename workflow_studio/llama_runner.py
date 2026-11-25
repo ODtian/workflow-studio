@@ -12,20 +12,16 @@ import subprocess
 import sys
 import time
 from functools import lru_cache
+from studio_paths import model_directory
 from template_parameters import thinking_field, reasoning_field, template_options
 from gguf_roles import profile as gguf_profile, validate_files
 from tool_protocol import visible_text, parse_calls
 
 ROOT = Path(__file__).parent
-MODELS = Path(os.environ.get("WORKFLOW_MODELS_DIR", "/tmp/molab-comfy-runtime/models"
-                          if Path("/marimo").exists() else ROOT / "models"))
+MODELS = model_directory()
 _loaded = globals().get('_loaded')
 _loaded_key = globals().get('_loaded_key')
 _library = globals().get('_library')
-MODEL_DIRECTORY = "Qwen3.8-27B-Uncensored-GGUF"
-DEFAULT_MODEL = MODEL_DIRECTORY + "/Qwen3.8-27B-Uncensored-OrcaRouter-Q8_0.gguf"
-DEFAULT_MTP = MODEL_DIRECTORY + "/MTP/Qwen3.8-27B-Uncensored-OrcaRouter-MTP-Q8_0.gguf"
-DEFAULT_MMPROJ = MODEL_DIRECTORY + "/AUX/mmproj-Qwen3.8-27B-Uncensored-OrcaRouter-BF16.gguf"
 
 
 def model_files():

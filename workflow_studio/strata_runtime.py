@@ -1,11 +1,13 @@
 """Official Strata 0.2.10 control and CUDA 13 DeepSeek engine packages."""
 from pathlib import Path
 import json
+import os
 import sys
 import tarfile
+from tempfile import gettempdir
 import urllib.request
 
-ROOT = Path("/tmp/molab-comfy-runtime/strata")
+ROOT = Path(os.environ.get("WORKFLOW_WORKSPACE", Path(gettempdir()) / "workflow-studio-runtime")) / "strata"
 CONTROL = ROOT / "control"
 ENGINE = ROOT / "engine" / "strata-dsv41"
 QWEN_ENGINE = ROOT / "qwen-engine" / "strata"

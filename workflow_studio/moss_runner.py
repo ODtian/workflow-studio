@@ -5,6 +5,7 @@ import importlib.util
 from importlib.metadata import version
 import os
 from pathlib import Path
+from studio_paths import model_directory
 import secrets
 import shutil
 import subprocess
@@ -14,8 +15,7 @@ import time
 
 ROOT = Path(__file__).parent
 CORE_VERSION = '0.42.0'
-MODELS = Path(os.environ.get("WORKFLOW_MODELS_DIR", "/tmp/molab-comfy-runtime/models"
-                          if Path("/marimo").exists() else ROOT / "models"))
+MODELS = model_directory()
 CORE = Path(os.environ.get("WORKFLOW_COMFY_ROOT", ROOT / f"runtime/comfy-core-{CORE_VERSION}"))
 _loaded = None
 _loaded_key = None
@@ -35,10 +35,6 @@ def model_files():
         files[folder] = sorted(p.relative_to(directory).as_posix()
                                for p in directory.rglob("*.safetensors") if p.is_file())
     return files
-
-
-def preferred(files, *words):
-    return next((f for f in files if all(w in f.lower() for w in words)), files[0] if files else "")
 
 
 def prepare_core(ctx, *, spark=False):

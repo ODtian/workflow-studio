@@ -7,7 +7,7 @@ import json
 import secrets
 import time
 
-from moss_runner import MODELS, model_files, prepare_core, preferred
+from moss_runner import MODELS, model_files, prepare_core
 from content_store import enabled, read_bytes, write_bytes
 
 _components = {}

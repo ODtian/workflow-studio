@@ -12,9 +12,7 @@ SOURCE = Path(__file__).parent
 
 
 def get_studio(workspace=None):
-    from dotenv import load_dotenv
     workspace = Path(workspace or Path.cwd()).resolve()
-    load_dotenv(workspace / '.env')
     runtime = Path(tempfile.gettempdir()) / 'workflow-studio-runtime'
     runtime.mkdir(exist_ok=True)
     (runtime / 'input').mkdir(exist_ok=True)
@@ -24,7 +22,7 @@ def get_studio(workspace=None):
             sys.path.insert(0, str(directory))
     os.environ['WORKFLOW_WORKSPACE'] = str(runtime)
     os.environ['WORKFLOW_GZIP_CONTENT'] = '1'
-    os.environ.setdefault('WORKFLOW_MODELS_DIR', str(Path(tempfile.gettempdir()) / 'molab-comfy-runtime/models'))
+    os.environ.setdefault('WORKFLOW_MODELS_DIR', str(workspace / 'models'))
     os.environ.setdefault('WORKFLOW_COMFY_ROOT', str(Path(tempfile.gettempdir()) / 'workflow-studio-comfy-core-0.42.0'))
     import workspace_store
     output = workspace_store.CONTENT_DIR / 'media'

@@ -1,5 +1,5 @@
 """MiniMax H3: images, multimodal references and a segmented video timeline."""
-from h3_runner import MODELS, h3_files, preferred, run_h3
+from h3_runner import MODELS, h3_files, run_h3
 from runtime_options import sampling_options
 from size_presets import common_size_presets
 from h3_selflift import fields as selflift_fields
@@ -17,13 +17,13 @@ SPEC = {
     "ready": all((_files["diffusion_models"], _files["text_encoders"], _video_vaes, _audio_vaes)),
     "fields": [
         {"key": "model", "label": "H3 模型", "type": "select", "area": "models",
-         "options": _files["diffusion_models"], "default": preferred(_files["diffusion_models"], "hybrid")},
+         "options": _files["diffusion_models"], "default": next(iter(_files["diffusion_models"]), "")},
         {"key": "text_encoder", "label": "文本编码器", "type": "select", "area": "models",
-         "options": _files["text_encoders"], "default": preferred(_files["text_encoders"], "32b")},
+         "options": _files["text_encoders"], "default": next(iter(_files["text_encoders"]), "")},
         {"key": "vae", "label": "视频 VAE", "type": "select", "area": "models",
-         "options": _video_vaes, "default": preferred(_video_vaes, "convrot")},
+         "options": _video_vaes, "default": next(iter(_video_vaes), "")},
         {"key": "audio_vae", "label": "音频 VAE", "type": "select", "area": "models",
-         "options": _audio_vaes, "default": preferred(_audio_vaes, "fp32")},
+         "options": _audio_vaes, "default": next(iter(_audio_vaes), "")},
         {"key": "output_type", "label": "输出", "type": "select", "section": "生成",
          "options": [{"label": "图片", "value": "image"}, {"label": "视频", "value": "video"}], "default": "image"},
         {"key": "prompt", "label": "提示词", "type": "textarea", "area": "prompts", "rows": 3, "default": "一个土豆"},

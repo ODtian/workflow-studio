@@ -1,67 +1,37 @@
-"""Adapt the existing Drive transfer queue to the Studio component UI."""
-import sys
-import os
+"""Connect the Studio file panel to its transfer queue."""
 from pathlib import Path
 import threading
 import uuid
-from content_store import enabled
-
-
-def connect_drive():
-    from persistent_drive_auth import connect_from_secrets, has_persistent_secret
-    if not has_persistent_secret():
-        return None
-    import httplib2
-    from google_auth_httplib2 import AuthorizedHttp
-    from googleapiclient.discovery import build
-    from transfer_core import GoogleDriveProvider
-
-    def service(credentials):
-        return build("drive", "v3", http=AuthorizedHttp(credentials, http=httplib2.Http(timeout=30)),
-                     cache_discovery=False)
-    value = connect_from_secrets(service_factory=service)
-    return GoogleDriveProvider(value) if value is not None else None
+from studio_paths import model_directory
+from transfer_core import TransferController, TransferError
 
 
 class FilesBridge:
-    def __init__(self, owner, controller=None, store=None, provider_factory=None, authorization_factory=None):
+    def __init__(self, owner):
+        import workspace_store
+        from hf_downloads import HuggingFaceDownloads
+
         self.owner = owner
-        if store is None:
-            import workspace_store as store
-        self.store = store
-        if controller is None:
-            from transfer_core import TransferController
-            session = getattr(sys.modules.get("transfer_widget"), "_SESSION", None)
-            controller = session.controller if session and not session.controller.closed else None
-            if controller is None:
-                from transfer_core import LOCAL_ROOTS
-                roots = {**LOCAL_ROOTS, 'output':Path(os.environ['WORKFLOW_OUTPUT_DIR'])} if enabled() else None
-                controller = TransferController(None, local_roots=roots, provider_factory=provider_factory or connect_drive)
-        self.controller = controller
-        self.authorization_factory = authorization_factory
-        self.hidden_tasks = getattr(controller, "studio_hidden_tasks", set())
-        self.undo = getattr(controller, "studio_undo", [])
-        controller.studio_hidden_tasks = self.hidden_tasks
-        controller.studio_undo = self.undo
+        self.store = workspace_store
+        self.models = model_directory()
+        roots = {"root": Path(self.models.anchor), "models": self.models,
+                 "input": owner.workflow_dir.parent / "input", "output": owner.output_dir}
+        self.controller = TransferController(None, local_roots=roots, on_change=self.publish)
+        self.hidden_tasks = set()
+        self.undo = []
         self.message = ""
         self.drive_setup = None
         self.drive_auth = {'phase': 'idle', 'url': '', 'error': ''}
-        if not hasattr(controller, "tools_listeners"):
-            controller.tools_listeners = []
-        controller.tools_listeners.append(self.publish)
-        from hf_downloads import bind
-        self.hf_downloads = bind(self)
+        self.hf_downloads = HuggingFaceDownloads(self)
         self.publish()
-        if not any(self.controller.state["panes"][name].get("entries") for name in ("drive", "local")):
-            self.controller.start()
+        self.controller.start()
 
-    def publish(self):
-        value = self.controller.snapshot()
+    def publish(self, value=None):
+        if value is None:
+            value = self.controller.snapshot()
         saved = self.store.read()
         value.update(recipes=saved["copies"], message=self.message, drive_auth=dict(self.drive_auth),
-                     can_undo=bool(self.undo or saved.get("copy_trash")))
-        value['drive_auth']['storage_description'] = getattr(self.owner, 'authorization_storage',
-            '首次授权保存在本 Notebook 的 Secrets，后续打开自动重连。')
+                     model_directory=str(self.models), can_undo=bool(self.undo or saved.get("copy_trash")))
         value["tasks"] = [task for task in value["tasks"] if task["id"] not in self.hidden_tasks]
         self.owner.files = value
 
@@ -72,10 +42,18 @@ class FilesBridge:
             self.publish()
             return
         if action == 'drive_connect':
-            from persistent_drive_auth import DriveAuthorization
-            self.drive_setup = (self.authorization_factory or DriveAuthorization)()
-            self.drive_auth = {'phase': 'pending', 'url': self.drive_setup.begin(), 'error': ''}
+            from drive_auth import DriveAuthorization
+            if self.drive_auth['phase'] == 'working':
+                return
+            try:
+                self.drive_setup = DriveAuthorization()
+                self.drive_auth = {'phase': 'pending', 'url': self.drive_setup.begin(), 'error': ''}
+            except Exception:
+                self.drive_setup = None
+                self.drive_auth = {'phase': 'error', 'url': '', 'error': '无法生成 Google Drive 授权链接，请重试。'}
         elif action == 'drive_authorize':
+            if self.drive_setup is None or self.drive_auth['phase'] != 'pending':
+                return
             self.drive_auth = {'phase': 'working', 'url': '', 'error': ''}
             threading.Thread(target=self.authorize_drive, args=(command['code'],), daemon=True).start()
         elif action == "save_recipe":
@@ -114,15 +92,14 @@ class FilesBridge:
         self.publish()
 
     def authorize_drive(self, code):
-        from persistent_drive_auth import DriveAuthError
         try:
-            self.drive_setup.complete(code)
-            self.controller.provider = None
+            self.controller.connect(self.drive_setup.complete(code))
             self.drive_auth = {'phase': 'complete', 'url': '', 'error': ''}
-            self.message = 'Drive 授权已保存，正在读取目录。'
-            self.controller.handle({'action': 'root', 'pane': 'drive', 'root': 'root', 'request_id': uuid.uuid4().hex})
-        except DriveAuthError as exc:
+            self.message = 'Drive 已连接，正在读取目录。'
+        except TransferError as exc:
             self.drive_auth = {'phase': 'error', 'url': '', 'error': str(exc)}
+        except Exception:
+            self.drive_auth = {'phase': 'error', 'url': '', 'error': '授权未完成，请重新获取授权链接。'}
         finally:
             self.drive_setup = None
             self.publish()
@@ -133,10 +110,9 @@ class FilesBridge:
             for record in self.store.read()["copies"]:
                 if record["id"] in ids:
                     if record.get("source_provider") == "huggingface":
-                        from hf_downloads import replay_recipe
                         self.message = "正在从 Hugging Face 复制到 " + record["local_path"]
                         self.publish()
-                        replay_recipe(record)
+                        self.hf_downloads.download(record)
                         self.message = "复制完成：" + record["local_path"]
                         self.controller._schedule_navigation("local", self.controller.positions["local"])
                         self.publish()
@@ -154,4 +130,5 @@ class FilesBridge:
         self.publish()
 
     def close(self):
-        self.controller.tools_listeners.remove(self.publish)
+        self.hf_downloads.close()
+        self.controller.close()

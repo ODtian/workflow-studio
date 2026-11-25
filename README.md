@@ -2,7 +2,7 @@
 
 在 marimo / Molab 中运行图像工作流、LLM 对话与 Google Drive 文件传输。
 
-LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama。默认模型为 OrcaRouter Qwen3.8-27B Uncensored Q8_0，配套独立 MTP 草稿头和 BF16 图像投影器。支持图片输入、Thinking、多轮分支与流式输出。默认上下文 32768 tokens、MTP 2 步。
+LLM 通过 llama-cpp-python 0.3.36 在 notebook 进程内直接调用 libllama。支持本地 GGUF、可选 MTP 草稿头与图像投影器、Thinking、多轮分支与流式输出。
 
 对话层使用 Pi coding agent SDK 1.4.0。Python 通过 JSONL 标准输入输出管道连接常驻 Node 子进程，Pi 的自定义 provider 调回 notebook 内的 llama.cpp 实例。前端显示 Pi 会话、生成状态、Thinking 和首字时间。当前分支的聊天记录由 Pi SessionManager 重建为模型上下文。
 
@@ -25,9 +25,9 @@ studio_panel = load_studio()
 mo.ui.anywidget(studio_panel)
 ```
 
-Git 更新和初始化由 `studio_entry.py` 执行，每次调用更新临时目录中的 `main` 源码后加载 MOSS、MiniMax H3 和 Pi 面板。Notebook 的持久缓存保存页面配置，Secrets 保存 Drive 授权配置。
+Git 更新和初始化由 `studio_entry.py` 执行。Notebook 的持久缓存保存页面配置。
 
-模型存放在 `model_dir/LLM/`。公开模型目录记录下载仓库、固定版本与文件大小；notebook 的 `workspace_store` 中可保存自己的 Drive 模型清单，运行时优先使用该清单恢复权重。公开仓库保存工作流源码和前端资源。
+模型配置从运行时的模型目录扫描已有文件。`LLM/` 存放 GGUF，`diffusion_models/`、`text_encoders/` 和 `vae/` 存放对应的图像或视频权重。通过「文件与传输 → 快捷复制 → 新增快捷复制 → HF → 本机」填写 Hugging Face 来源和目标目录，点击「保存并复制」下载权重。
 
 ### 在 Google Colab 启动
 
@@ -41,9 +41,9 @@ start_comfy()
 start_studio()
 ```
 
-两个入口由 Colab 提供预览，共用 `/content/workflow-studio-colab/ComfyUI/models` 中的模型。CPU 可验证启动和接口，生成任务需要按工作流要求选择 GPU 并准备模型。运行时回收前，请下载需要保留的文件。
+两个入口由 Colab 提供预览，共用与仓库检出目录并列的 `ComfyUI/models`。CPU 可验证启动和接口，生成任务需要按工作流要求选择 GPU 并准备模型。运行时回收前，请下载需要保留的文件。
 
-首次使用时，在“文件与传输”点击“连接 Google Drive”，打开 Google 授权页，将返回的一次性授权码填入工作台并点击“完成连接”。授权保存在本 Notebook 的 Secrets 中。后续启动通过 `persistent_drive_auth.connect_from_secrets()` 自动连接，授权失效时从页面重新连接。
+在「文件与传输」点击「连接 Google Drive」，用自己的账号在 Google 页面授权，将一次性授权码填回工作台并点击「完成连接」。Drive 面板从当前账号的「我的云端硬盘」开始浏览。授权只在当前工作台会话内有效。
 
 ## 内容存储
 
@@ -57,7 +57,7 @@ marimo 输出缓存与会话快照交由平台正常管理。
 
 - `studio_bootstrap.py`：从 Git 源码启动面板，准备临时运行目录并加载 Notebook 配置。
 - `workspace_store.py`：Notebook 页面配置的 gzip 读写。
-- `persistent_drive_auth.py`：通过 Notebook Secrets 恢复 Drive 连接。
+- `workflow_studio/drive_auth.py`：处理工作台会话内的 Drive 授权。
 - `workflow_studio/llama_runner.py`：进程内 GGUF 加载、模型恢复、图片及流式对话。
 - `workflow_studio/pi_runner.py`、`pi_bridge/`：Pi 会话与本地推理的管道适配。
 - `studio_workflows/`：工作区使用的默认工作流。

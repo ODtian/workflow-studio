@@ -1,9 +1,7 @@
 """Editable durable copy recipes; every replay uses current guarded entries."""
-import hashlib
 import os
 from pathlib import Path
 import re
-import time
 import uuid
 import workspace_store as store
 
@@ -17,7 +15,7 @@ def remember(controller, source, target):
         old=next((r for r in state['copies'] if (r['direction'],r['drive_id'],r['local_path'])==key),None)
         if old is None:
             old={'id':uuid.uuid4().hex,'label':source.name,'direction':direction,
-                 'drive_id':remote.remote_id,'local_path':path,'enabled':True,'name':source.name}
+                 'drive_id':remote.remote_id,'local_path':path}
             state['copies'].append(old)
         old['source_kind']=source.kind
         return old['id']
@@ -47,7 +45,7 @@ def save_recipe(value):
             companions=old.get("hf_sources",[])[1:] if old.get("source_provider")=="huggingface" else []
             old.update(label=value.get("label","").strip() or source["repo_id"],
                        source_provider="huggingface",direction="download",drive_id="",
-                       source_kind="directory",enabled=True,repo_id=source["repo_id"],
+                       source_kind="directory",repo_id=source["repo_id"],
                        hf_url=value.get("hf_url",source["repo_id"]),local_path=str(path),
                        hf_sources=[source,*companions])
             return old["id"]
@@ -62,7 +60,7 @@ def save_recipe(value):
         if old is None:
             old={'id':uuid.uuid4().hex}
             state['copies'].append(old)
-        old.update(label=label,source_provider='drive',direction=direction,drive_id=remote,local_path=str(path),enabled=bool(value.get('enabled',True)),source_kind=value.get('source_kind','file'))
+        old.update(label=label,source_provider='drive',direction=direction,drive_id=remote,local_path=str(path),source_kind=value.get('source_kind','file'))
         return old['id']
     return store.edit(save)
 
@@ -109,31 +107,3 @@ def resolve(controller, recipe):
             source=Entry('local','root',parts,'file',path.name,size=info.st_size,fp=fingerprint(info))
         target=remote_entry(controller,recipe['drive_id'],'directory')
     return source,target
-
-def replay(controller, ids, *, skip_existing=True):
-    from transfer_core import local_file, checksum_matches, TransferError
-    selected=[r for r in store.read()['copies'] if r['id'] in ids and r.get('enabled',True)]
-    if not selected: raise ValueError('请选择复制记录')
-    skipped=0
-    for recipe in selected:
-        while True:
-            with controller.lock:
-                if controller.closed: raise ValueError('复制会话已结束')
-                active=sum(t['status'] in ('queued','running') for t in controller.tasks)
-            if active<16: break
-            time.sleep(.3)
-        source,target=resolve(controller,recipe)
-        if source.kind=='file' and skip_existing and recipe['direction']=='download':
-            meta=controller._validate_drive(source)
-            try:
-                with local_file(controller.local_roots['root'],target.parts+(source.name,)) as (stream, info):
-                    size=info.st_size
-                    if size==source.size:
-                        md5,sha=hashlib.md5(),hashlib.sha256()
-                        while block:=stream.read(8*1024*1024): md5.update(block);sha.update(block)
-                        if checksum_matches(meta,size,md5.hexdigest(),sha.hexdigest()):
-                            skipped+=1
-                            continue
-            except TransferError: pass
-        controller._enqueue({'entry_ids':[controller._register(source)],'target_id':controller._register(target)})
-    return f'已加入复制队列；{skipped} 个完整文件已复用。' if skipped else '已加入复制队列。'

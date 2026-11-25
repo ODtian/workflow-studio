@@ -1,4 +1,4 @@
-"""Bounded, explicit server-side Drive/Molab copies. No UI credentials or sync.
+"""Bounded, explicit server-side copies between Drive and the runtime.
 
 Only transfer/retry custom messages enqueue writes. Listing and construction are
 read-only. Roots and bookmarks do not create directories or constrain copy direction.
@@ -21,12 +21,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
 SCHEMA = 'general-files-v2'
-DRIVE_ROOTS = {'root': 'root', 'models': '15hWuax1e3-jKpYMRR8JlnbFpC6huMbAe',
-               'results': '1XedAN9O0OzkdFvkqqeWdXHMZ08qXXmht'}
-LOCAL_ROOTS = {'root': Path('/'), 'models': Path(os.environ.get('WORKFLOW_MODELS_DIR', '/tmp/molab-comfy-runtime/models')),
-               'input': Path('/tmp/workflow-studio-runtime/input'),
-               'output': Path('/tmp/workflow-studio-runtime/content/media')}
-LABELS = {'root': '/', 'models': '模型目录', 'results': '结果目录', 'input': '输入目录', 'output': '输出目录'}
+LABELS = {'models': '模型目录', 'input': '输入目录', 'output': '输出目录'}
 FOLDER = 'application/vnd.google-apps.folder'
 CHUNK = 32 * 1024 * 1024
 MAX_PARALLEL = 4
@@ -310,11 +305,10 @@ def checksum_matches(metadata, size, md5, sha256):
 
 
 class TransferController:
-    def __init__(self, provider, *, local_roots=None, on_change=None, provider_factory=None):
+    def __init__(self, provider, *, local_roots, on_change=None):
         self.schema = SCHEMA
         self.provider = provider
-        self.provider_factory = provider_factory
-        supplied = dict(local_roots or LOCAL_ROOTS)
+        supplied = dict(local_roots)
         if 'root' not in supplied:
             # Compatibility for old offline fixtures; production always uses /.
             common = os.path.commonpath([str(Path(v).absolute()) for v in supplied.values()])
@@ -328,20 +322,16 @@ class TransferController:
         self._bookmarks, self._directory_writable = {'drive': {}, 'local': {}}, {}
         self.seen_requests = set()
         self.closed = False
-        self.transfers = ThreadPoolExecutor(max_workers=MAX_PARALLEL, thread_name_prefix='molab-transfer')
-        self.reads = ThreadPoolExecutor(max_workers=2, thread_name_prefix='molab-file-list')
+        self.transfers = ThreadPoolExecutor(max_workers=MAX_PARALLEL, thread_name_prefix='studio-transfer')
+        self.reads = ThreadPoolExecutor(max_workers=2, thread_name_prefix='studio-file-list')
         self._transfer_slots = threading.Semaphore(MAX_PARALLEL)
-        self._legacy_tasks = set()
         self._speed_samples = {}
         self.state = {'revision': 0, 'connected': provider is not None, 'error': '', 'notice': '', 'panes': {}, 'tasks': []}
         self.positions = {}
         self.nav_generation = {'drive': 0, 'local': 0}
-        for bookmark, remote_id in DRIVE_ROOTS.items():
-            entry = Entry('drive', 'root' if bookmark == 'root' else 'bookmark:' + bookmark,
-                          (), 'directory', '我的云端硬盘' if bookmark == 'root' else LABELS[bookmark],
-                          remote_id=remote_id, chain=('root',) if bookmark == 'root' else ())
-            self._bookmarks['drive'][bookmark] = entry
-            self._register(entry)
+        entry = Entry('drive', 'root', (), 'directory', '我的云端硬盘', remote_id='root', chain=('root',))
+        self._bookmarks['drive']['root'] = entry
+        self._register(entry)
         for bookmark, path in self.local_roots.items():
             parts = path.relative_to(self.local_roots['root']).parts
             entry = Entry('local', 'root', parts, 'directory', path.name if parts else '/')
@@ -371,8 +361,8 @@ class TransferController:
 
     def _pane_state(self, entry, children, *, loading=False):
         pane = entry.pane
-        roots = DRIVE_ROOTS if pane == 'drive' else self.local_roots
-        root_label = '我的云端硬盘' if pane == 'drive' else '/'
+        roots = self._bookmarks[pane]
+        root_label = '我的云端硬盘' if pane == 'drive' else str(self.local_roots['root'])
         crumbs = [{'id': self._token(self._root(pane, 'root')), 'label': root_label}]
         for depth, name in enumerate(entry.parts, 1):
             parent = Entry(pane, 'root', entry.parts[:depth], 'directory', name,
@@ -389,7 +379,6 @@ class TransferController:
         with self.lock:
             state = copy.deepcopy(self.state)
             state['tasks'] = copy.deepcopy(self.tasks[-64:])
-            state['parallelism'] = MAX_PARALLEL
             return state
 
     def _publish(self):
@@ -397,9 +386,6 @@ class TransferController:
             with self.lock:
                 now = time.monotonic()
                 for task in self.tasks:
-                    if task['id'] in self._legacy_tasks and task['status'] != 'running':
-                        self._legacy_tasks.remove(task['id'])
-                        self._transfer_slots.release()
                     task['percent'] = round(100 * task['bytes'] / task['total'], 1) if task['total'] else 0
                     if task['status'] == 'running':
                         samples = self._speed_samples.setdefault(task['id'], deque(maxlen=64))
@@ -419,9 +405,6 @@ class TransferController:
             except Exception:
                 # Widget teardown must never leak an exception containing internals.
                 pass
-            for listener in list(getattr(self, 'tools_listeners', [])):
-                try: listener()
-                except Exception: pass
 
     def start(self):
         """Read-only listing; no transfer and no saved command replay."""
@@ -429,15 +412,18 @@ class TransferController:
             self._schedule_navigation(pane, self.positions[pane])
 
     def _connected(self):
-        if self.provider is None and self.provider_factory is not None:
-            try:
-                self.provider = self.provider_factory()
-            except Exception:
-                raise TransferError('Drive 连接待更新，请点击“连接 Google Drive”重新授权。') from None
-            with self.lock:
-                self.state['connected'] = self.provider is not None
         if self.provider is None:
             raise TransferError('点击“连接 Google Drive”完成首次授权。')
+
+    def connect(self, provider):
+        with self.lock:
+            if self.closed:
+                raise TransferError('本次传输会话已结束')
+            if any(item['task']['status'] in {'queued', 'running'} for item in self.task_internal.values()):
+                raise TransferError('请等 Drive 传输完成后再重新连接')
+            self.provider = provider
+            self.state['connected'] = True
+        self._schedule_navigation('drive', self._root('drive', 'root'))
 
     def _resolve_bookmark(self, entry):
         if entry.pane != 'drive' or entry.chain:
@@ -610,8 +596,7 @@ class TransferController:
                 if pane not in self.positions:
                     raise TransferError('面板无效')
                 if action == 'root':
-                    roots = DRIVE_ROOTS if pane == 'drive' else self.local_roots
-                    if message.get('root') not in roots:
+                    if message.get('root') not in self._bookmarks[pane]:
                         raise TransferError('目录超出授权范围')
                     entry = self._root(pane, message['root'])
                 elif action == 'navigate':

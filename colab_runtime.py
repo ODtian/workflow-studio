@@ -9,9 +9,9 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 
-ROOT = Path("/content/workflow-studio-colab")
-COMFY = ROOT / "ComfyUI"
 STUDIO = Path(__file__).resolve().parent
+ROOT = STUDIO.parent
+COMFY = ROOT / "ComfyUI"
 COMFY_REF = "355cd6b14c92c19ac3188fe528e47a3f21ef5178"  # v0.42.0
 COMFY_PORT = 8188
 STUDIO_PORT = 2718

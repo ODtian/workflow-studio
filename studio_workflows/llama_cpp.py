@@ -8,14 +8,15 @@ import strata_runner
 for module in (gguf_roles, template_parameters, llama_runner):
     importlib.reload(module)
 
-from llama_runner import (MODELS, DEFAULT_MODEL, DEFAULT_MTP, DEFAULT_MMPROJ,
-                          model_files, companion_files, prepare_llama, run_llama, thinking_control, reasoning_control)
+from llama_runner import (MODELS, model_files, companion_files, prepare_llama, run_llama,
+                          thinking_control, reasoning_control)
 from pi_runner import prepare_pi, run_pi
 
 _models = model_files()
-_model = DEFAULT_MODEL if DEFAULT_MODEL in _models else next(iter(_models), '')
+_model = next(iter(_models), '')
 _projectors = companion_files('mmproj')
 _drafts = companion_files('mtp')
+_embedded = [{"label": "使用主模型内嵌 MTP", "value": "embedded"}] if set(_models).intersection(_drafts) else []
 SPEC = {
     "name": "pi · 对话", "tab_name": "pi", "chat_engine": "pi", "output": "text", "chat": True, "images": True,
     "run_label": "发送", "refresh_label": "刷新模型列表", "model_root": str(MODELS / "LLM"),
@@ -29,6 +30,7 @@ SPEC = {
         {"key": "strata_ram_gb", "label": "Strata 内存缓存 GB（-1 自动）", "type": "number",
          "section": "加载", "default": -1, "min": -1, "step": 1},
         {"key": "dspark_file", "label": "DSpark 草稿模型", "type": "select", "section": "加载",
+         "model_file": True,
          "default": "", "options": [{"label": "关闭", "value": ""}] + companion_files("dspark")},
         {"key": "model", "label": "GGUF 模型", "type": "select", "area": "models", "options": _models,
          "default": _model},
@@ -54,14 +56,15 @@ SPEC = {
          "options": [{"label": "保留模型，加快下轮对话", "value": "keep"},
                      {"label": "生成后释放显存", "value": "release"}]},
         {"key": "mmproj", "label": "图像投影器 mmproj", "type": "select", "section": "加载",
-         "default": DEFAULT_MMPROJ if _model == DEFAULT_MODEL and DEFAULT_MMPROJ in _projectors else '',
+         "model_file": True,
+         "default": "",
          "hint": "按 GGUF 元数据筛选图像投影器；手动选择后随主模型保存。",
          "options": [{"label": "关闭", "value": ""}] + _projectors},
         {"key": "mtp", "label": "MTP 草稿头", "type": "select", "section": "加载",
-         "default": DEFAULT_MTP if _model == DEFAULT_MODEL and DEFAULT_MTP in _drafts else '',
+         "model_file": True,
+         "default": "",
          "hint": "按 GGUF 元数据筛选含 MTP 权重的文件；主模型自带 MTP 时选择内嵌。",
-         "options": [{"label": "关闭", "value": ""},
-                     {"label": "使用主模型内嵌 MTP", "value": "embedded"}] + _drafts},
+         "options": [{"label": "关闭", "value": ""}] + _embedded + _drafts},
         {"key": "speculative_tokens", "label": "MTP 预测步数", "type": "number", "section": "加载",
          "default": 2, "min": 0, "max": 4, "step": 1, "hint": "0 关闭；当前模型推荐 2。"},
         {"key": "n_ctx", "label": "上下文长度", "type": "number", "area": "advanced",

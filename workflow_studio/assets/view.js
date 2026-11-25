@@ -31166,9 +31166,9 @@ function bytes(value) {
 const taskStatus = { queued: "等待中", running: "传输中", completed: "已完成", failed: "失败", cancelled: "已停止" };
 var root_1$2 = /* @__PURE__ */ from_html(`<i></i>`);
 var root_2$2 = /* @__PURE__ */ from_html(`<a class="drive-authorization-link svelte-1ml1ipk" target="_blank" rel="noopener noreferrer">1. 前往 Google 授权 ↗</a> <p class="svelte-1ml1ipk">完成 Google 授权后，按下面的顺序继续。</p> <form class="svelte-1ml1ipk"><!> <!></form>`, 1);
-var root_3$2 = /* @__PURE__ */ from_html(`<p role="status" class="svelte-1ml1ipk">正在验证授权并保存连接…</p>`);
+var root_3$2 = /* @__PURE__ */ from_html(`<p role="status" class="svelte-1ml1ipk">正在连接 Google Drive…</p>`);
 var root_4$2 = /* @__PURE__ */ from_html(`<p class="error-text svelte-1ml1ipk" role="alert"> </p>`);
-var root_5$2 = /* @__PURE__ */ from_html(`<section class="drive-authorization svelte-1ml1ipk" aria-label="Google Drive 连接"><p class="svelte-1ml1ipk"> </p> <!> <!> <!></section>`);
+var root_5$2 = /* @__PURE__ */ from_html(`<section class="drive-authorization svelte-1ml1ipk" aria-label="Google Drive 连接"><p class="svelte-1ml1ipk">Google Drive 授权只在当前工作台会话内有效。</p> <!> <!> <!></section>`);
 var root_6$2 = /* @__PURE__ */ from_html(`<option> </option>`);
 var root_7$2 = /* @__PURE__ */ from_html(`<p class="empty-resource">读取目录…</p>`);
 var root_8$2 = /* @__PURE__ */ from_html(`<div><input type="checkbox"/> <button class="file-entry-name"><!><span> </span></button><small> </small></div>`);
@@ -31262,9 +31262,7 @@ function FilePane($$anchor, $$props) {
   {
     var consequent_6 = ($$anchor2) => {
       var section_1 = root_5$2();
-      var p = child(section_1);
-      var text_2 = only_child(p, true);
-      var node_4 = sibling(p, 2);
+      var node_4 = sibling(child(section_1), 2);
       {
         var consequent_3 = ($$anchor3) => {
           var fragment_4 = root_2$2();
@@ -31292,8 +31290,8 @@ function FilePane($$anchor, $$props) {
                 return get($0);
               },
               children: ($$anchor4, $$slotProps) => {
-                var text_3 = text$1("3. 完成连接");
-                append($$anchor4, text_3);
+                var text_2 = text$1("3. 完成连接");
+                append($$anchor4, text_2);
               },
               $$slots: { default: true }
             });
@@ -31314,8 +31312,8 @@ function FilePane($$anchor, $$props) {
       var node_7 = sibling(node_4, 2);
       {
         var consequent_4 = ($$anchor3) => {
-          var p_1 = root_3$2();
-          append($$anchor3, p_1);
+          var p = root_3$2();
+          append($$anchor3, p);
         };
         if_block(node_7, ($$render) => {
           if (auth().phase === "working") $$render(consequent_4);
@@ -31324,16 +31322,15 @@ function FilePane($$anchor, $$props) {
       var node_8 = sibling(node_7, 2);
       {
         var consequent_5 = ($$anchor3) => {
-          var p_2 = root_4$2();
-          var text_4 = only_child(p_2, true);
-          template_effect(() => set_text(text_4, auth().error));
-          append($$anchor3, p_2);
+          var p_1 = root_4$2();
+          var text_3 = only_child(p_1, true);
+          template_effect(() => set_text(text_3, auth().error));
+          append($$anchor3, p_1);
         };
         if_block(node_8, ($$render) => {
           if (auth().error) $$render(consequent_5);
         });
       }
-      template_effect(() => set_text(text_2, auth().storage_description || "首次授权保存在本 Notebook 的 Secrets，后续打开自动重连。"));
       append($$anchor2, section_1);
     };
     if_block(node_3, ($$render) => {
@@ -31360,15 +31357,15 @@ function FilePane($$anchor, $$props) {
   }
   var select = sibling(node_9);
   var option = child(select);
-  var text_5 = only_child(option, true);
+  var text_4 = only_child(option, true);
   var option_value = {};
   var node_10 = sibling(option);
   each(node_10, 17, () => pane().roots || [], index$1, ($$anchor2, root2) => {
     var option_1 = root_6$2();
-    var text_6 = only_child(option_1);
+    var text_5 = only_child(option_1);
     var option_1_value = {};
     template_effect(() => {
-      set_text(text_6, `常用 · ${get(root2).label ?? ""}`);
+      set_text(text_5, `常用 · ${get(root2).label ?? ""}`);
       if (option_1_value !== (option_1_value = "root:" + get(root2).id)) {
         option_1.value = option_1.__value = option_1_value;
       }
@@ -31378,10 +31375,10 @@ function FilePane($$anchor, $$props) {
   var node_11 = sibling(node_10);
   each(node_11, 17, () => (pane().breadcrumbs || []).slice(0, -1), index$1, ($$anchor2, crumb) => {
     var option_2 = root_6$2();
-    var text_7 = only_child(option_2, true);
+    var text_6 = only_child(option_2, true);
     var option_2_value = {};
     template_effect(() => {
-      set_text(text_7, get(crumb).label);
+      set_text(text_6, get(crumb).label);
       if (option_2_value !== (option_2_value = get(crumb).id)) {
         option_2.value = (option_2.__value = option_2_value) ?? "";
       }
@@ -31411,8 +31408,8 @@ function FilePane($$anchor, $$props) {
   var node_13 = child(div_4);
   {
     var consequent_7 = ($$anchor2) => {
-      var p_3 = root_7$2();
-      append($$anchor2, p_3);
+      var p_2 = root_7$2();
+      append($$anchor2, p_2);
     };
     if_block(node_13, ($$render) => {
       if (pane().loading) $$render(consequent_7);
@@ -31438,9 +31435,9 @@ function FilePane($$anchor, $$props) {
       });
     }
     var span = sibling(node_15);
-    var text_8 = only_child(span, true);
+    var text_7 = only_child(span, true);
     var small = sibling(button);
-    var text_9 = only_child(small, true);
+    var text_8 = only_child(small, true);
     template_effect(
       ($0, $1, $2) => {
         classes_1 = set_class(div_5, 1, "file-entry", null, classes_1, { selected: $0 });
@@ -31448,8 +31445,8 @@ function FilePane($$anchor, $$props) {
         set_checked(input_1, $1);
         input_1.disabled = pane().loading || get(entry).copyable === false;
         set_attribute(button, "title", get(entry).name);
-        set_text(text_8, get(entry).name);
-        set_text(text_9, $2);
+        set_text(text_7, get(entry).name);
+        set_text(text_8, $2);
       },
       [
         () => get(selected).includes(get(entry).id),
@@ -31464,10 +31461,10 @@ function FilePane($$anchor, $$props) {
   var node_16 = sibling(node_14, 2);
   {
     var consequent_9 = ($$anchor2) => {
-      var p_4 = root_9$2();
-      var text_10 = only_child(p_4, true);
-      template_effect(() => set_text(text_10, pane().error));
-      append($$anchor2, p_4);
+      var p_3 = root_9$2();
+      var text_9 = only_child(p_3, true);
+      template_effect(() => set_text(text_9, pane().error));
+      append($$anchor2, p_3);
     };
     var consequent_10 = ($$anchor2) => {
       var div_6 = root_10$2();
@@ -31483,9 +31480,9 @@ function FilePane($$anchor, $$props) {
   var div_7 = sibling(div_4, 2);
   var div_8 = child(div_7);
   var span_1 = child(div_8);
-  var text_11 = only_child(span_1, true);
-  var p_5 = sibling(span_1);
-  var text_12 = only_child(p_5);
+  var text_10 = only_child(span_1, true);
+  var p_4 = sibling(span_1);
+  var text_11 = only_child(p_4);
   var node_18 = sibling(div_8);
   {
     let $0 = /* @__PURE__ */ user_derived(() => !get(selected).length || !$$props.connected || !target().canReceive || pane().loading || target().loading);
@@ -31507,10 +31504,10 @@ function FilePane($$anchor, $$props) {
       },
       children: ($$anchor2, $$slotProps) => {
         var fragment_9 = root_11$2();
-        var text_13 = first_child(fragment_9);
-        var node_19 = sibling(text_13);
+        var text_12 = first_child(fragment_9);
+        var node_19 = sibling(text_12);
         Arrow_right(node_19, { size: 14 });
-        template_effect(() => set_text(text_13, `复制到 ${$$props.name === "drive" ? "Molab" : "Drive"} `));
+        template_effect(() => set_text(text_12, `复制到 ${$$props.name === "drive" ? "运行时" : "Drive"} `));
         append($$anchor2, fragment_9);
       },
       $$slots: { default: true }
@@ -31518,11 +31515,11 @@ function FilePane($$anchor, $$props) {
   }
   template_effect(
     ($0, $1) => {
-      set_attribute(section, "aria-label", $$props.name === "drive" ? "Drive 文件" : "Molab 文件");
-      set_text(text2, $$props.name === "drive" ? "Google Drive" : "Molab");
+      set_attribute(section, "aria-label", $$props.name === "drive" ? "Drive 文件" : "运行时文件");
+      set_text(text2, $$props.name === "drive" ? "Google Drive" : "运行时");
       set_attribute(select, "aria-label", $$props.name + "目录");
       select.disabled = pane().loading;
-      set_text(text_5, $0);
+      set_text(text_4, $0);
       if (option_value !== (option_value = pane().directory_id || "")) {
         option.value = (option.__value = option_value) ?? "";
       }
@@ -31530,10 +31527,10 @@ function FilePane($$anchor, $$props) {
         select.value = (select.__value = select_value) ?? "", select_option(select, select_value);
       }
       set_checked(input, $1);
-      set_attribute(div_4, "aria-label", $$props.name === "drive" ? "Drive 目录内容" : "Molab 目录内容");
-      set_text(text_11, get(selected).length ? `已选 ${get(selected).length} / ${get(entries2).length} 项` : `${get(entries2).length} 项`);
-      set_attribute(p_5, "title", get(targetPath));
-      set_text(text_12, `目标 · ${(get(targetPath) || "选择目标目录") ?? ""}`);
+      set_attribute(div_4, "aria-label", $$props.name === "drive" ? "Drive 目录内容" : "运行时目录内容");
+      set_text(text_10, get(selected).length ? `已选 ${get(selected).length} / ${get(entries2).length} 项` : `${get(entries2).length} 项`);
+      set_attribute(p_4, "title", get(targetPath));
+      set_text(text_11, `目标 · ${(get(targetPath) || "选择目标目录") ?? ""}`);
     },
     [
       () => (pane().breadcrumbs || []).map((i) => i.label).join("/") || "当前位置",
@@ -31558,7 +31555,7 @@ var root_1$1 = /* @__PURE__ */ from_html(`<!>传输记录`, 1);
 var root_2$1 = /* @__PURE__ */ from_html(`<!><!><!>`, 1);
 var root_3$1 = /* @__PURE__ */ from_html(`<!>新增快捷复制`, 1);
 var root_4$1 = /* @__PURE__ */ from_html(`<!>Google Drive<i></i>`, 1);
-var root_5$1 = /* @__PURE__ */ from_html(`<!>Molab`, 1);
+var root_5$1 = /* @__PURE__ */ from_html(`<!>运行时`, 1);
 var root_6$1 = /* @__PURE__ */ from_html(`<div><!></div>`);
 var root_7$1 = /* @__PURE__ */ from_html(`<nav class="file-pane-tabs" aria-label="文件位置"><!><!></nav><div class="transfer-panes"></div>`, 1);
 var root_8$1 = /* @__PURE__ */ from_html(`<!> `, 1);
@@ -31682,8 +31679,7 @@ function FilesView($$anchor, $$props) {
                 direction: "download",
                 source_kind: "file",
                 drive_id: "",
-                local_path: "/tmp/molab-comfy-runtime/models/LLM",
-                enabled: true
+                local_path: files().model_directory || ""
               }),
               children: ($$anchor5, $$slotProps2) => {
                 var fragment_5 = root_3$1();
@@ -31828,7 +31824,7 @@ function FilesView($$anchor, $$props) {
                     variant: "secondary",
                     children: ($$anchor7, $$slotProps3) => {
                       var text_2 = text$1();
-                      template_effect(() => set_text(text_2, get(item).source_provider === "huggingface" ? "HF → 本机" : get(item).direction === "download" ? "Drive → Molab" : "Molab → Drive"));
+                      template_effect(() => set_text(text_2, get(item).source_provider === "huggingface" ? "HF → 本机" : get(item).direction === "download" ? "Drive → 运行时" : "运行时 → Drive"));
                       append($$anchor7, text_2);
                     },
                     $$slots: { default: true }
@@ -32159,7 +32155,7 @@ function FilesView($$anchor, $$props) {
         if (select_value !== (select_value = get(draft).source_provider === "huggingface" ? "huggingface" : get(draft).direction)) {
           select.value = (select.__value = select_value) ?? "", select_option(select, select_value);
         }
-        set_text(text_11, get(draft).source_provider === "huggingface" ? "本机（molab）目标目录" : "Molab 完整路径");
+        set_text(text_11, get(draft).source_provider === "huggingface" ? "运行时目标目录" : "运行时完整路径");
       });
       delegated("change", select, (event2) => {
         const value = event2.currentTarget.value;

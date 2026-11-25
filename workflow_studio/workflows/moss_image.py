@@ -1,5 +1,5 @@
 """MOSS Base/SFT: select files from the existing Comfy model directories."""
-from moss_runner import MODELS, model_files, preferred, prepare_moss, run_moss
+from moss_runner import MODELS, model_files, prepare_moss, run_moss
 from runtime_options import sampling_options
 from size_presets import common_size_presets
 
@@ -22,11 +22,11 @@ SPEC = {
                    "模型目录已建立。将 DiT、TE、VAE 放入对应子目录，模型列表会自动更新。",
     "fields": [
         {"key": "model", "label": "扩散模型", "type": "select", "section": "模型文件", "area": "models",
-         "options": _files["diffusion_models"], "default": preferred(_files["diffusion_models"], "moss", "sft")},
+         "options": _files["diffusion_models"], "default": next(iter(_files["diffusion_models"]), "")},
         {"key": "text_encoder", "label": "文本编码器", "type": "select", "section": "模型文件", "area": "models",
-         "options": _files["text_encoders"], "default": preferred(_files["text_encoders"], "qwen3.5", "9b")},
+         "options": _files["text_encoders"], "default": next(iter(_files["text_encoders"]), "")},
         {"key": "vae", "label": "VAE", "type": "select", "section": "模型文件", "area": "models",
-         "options": _files["vae"], "default": preferred(_files["vae"], "flux2")},
+         "options": _files["vae"], "default": next(iter(_files["vae"]), "")},
         {"key": "loras", "label": "LoRA", "type": "lora_stack", "section": "LoRA",
          "options": _files["loras"], "default": []},
         {"key": "prompt", "label": "提示词", "type": "textarea", "section": "创作", "area": "prompts", "rows": 4,

@@ -115,8 +115,10 @@ class WorkflowSession:
         spec = owner.load(workflow_id).SPEC
         defaults = {field["key"]: field.get("default", "") for field in spec["fields"]}
         self.params = {**defaults, **configuration_parameters(spec['fields'], params or {})}
+        self.refresh_model_choices(spec)
         if spec.get("model_binding_fields"):
             self.params.update(owner.model_bindings.get(self.params["model"], {}))
+            self.refresh_model_choices(spec)
         self.state = {"id": self.id, "selected": workflow_id, "spec": spec,
                       "params": self.params, "busy": False, "phase": "idle",
                       "message": "工作流已就绪", "step": 0, "total": 0, "elapsed": 0, "metadata": {},
@@ -129,6 +131,15 @@ class WorkflowSession:
                 CHATS[key] = ChatTree()
             self.chat = CHATS[key]
             self.publish_chat()
+
+    def refresh_model_choices(self, spec):
+        for field in spec["fields"]:
+            if field.get("type") != "select" or not (field.get("area") == "models" or field.get("model_file")):
+                continue
+            key = field["key"]
+            options = [option["value"] if isinstance(option, dict) else option for option in field.get("options", [])]
+            if self.params.get(key) not in options:
+                self.params[key] = field.get("default", "")
 
     def publish_chat(self):
         self.owner.set_payload("chats", self.id, self.chat.snapshot())
@@ -438,7 +449,8 @@ class WorkflowPanel(anywidget.AnyWidget):
         roots = {Path(module.SPEC["model_root"]) for _, module in self._modules.values()
                  if module.SPEC.get("model_root")}
         return sorted(str(path) for root in roots for path in root.rglob("*")
-                      if path.is_file() and path.suffix.lower() in (".safetensors", ".gguf", ".pth"))
+                      if path.is_file() and (path.suffix.lower() in (".safetensors", ".gguf", ".pth", ".ckpt")
+                                             or path.name == "model_index.json"))
 
     def refresh_models(self):
         if self.model_entries() != self._model_entries:
@@ -454,10 +466,8 @@ class WorkflowPanel(anywidget.AnyWidget):
         for session in self.sessions.values():
             spec = self.load(session.state["selected"]).SPEC
             for field in spec["fields"]:
-                key = field["key"]
-                session.params.setdefault(key, field.get("default", ""))
-                if field.get("area") == "models" and field["type"] == "select" and not session.params[key]:
-                    session.params[key] = field.get("default", "")
+                session.params.setdefault(field["key"], field.get("default", ""))
+            session.refresh_model_choices(spec)
             session.state = {**session.state, "spec": spec,
                              "params": {field["key"]: session.params[field["key"]] for field in spec["fields"]}}
         self._model_entries = self.model_entries()

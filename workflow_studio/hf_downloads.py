@@ -1,14 +1,10 @@
-"""Send Hugging Face file downloads through Studio's existing transfer history."""
-from functools import wraps
+"""Run downloads that were requested in the Studio file panel."""
 from pathlib import Path
 import threading
 import time
 import uuid
 import re
 from urllib.parse import urlsplit, unquote
-
-_active = None
-
 
 def source_from_recipe(recipe):
     address = recipe.get("hf_url", recipe.get("repo_id", "")).strip()
@@ -37,12 +33,6 @@ def source_from_recipe(recipe):
     return source
 
 
-def replay_recipe(recipe):
-    from huggingface_hub import snapshot_download
-    for source in recipe["hf_sources"]:
-        snapshot_download(**{"local_dir": recipe["local_path"], "max_workers": 2, **source})
-
-
 class HuggingFaceDownloads:
     def __init__(self, bridge):
         self.bridge = bridge
@@ -57,6 +47,19 @@ class HuggingFaceDownloads:
             )
         self.controller._publish()
 
+    def download(self, recipe):
+        from huggingface_hub import snapshot_download
+
+        local_dir = recipe["local_path"]
+        for source in recipe["hf_sources"]:
+            files = snapshot_download(**source, local_dir=local_dir, dry_run=True, max_workers=2)
+            if not files:
+                raise ValueError("没有找到符合文件范围的 Hugging Face 文件。")
+            for file in files:
+                options = {"repo_id": source["repo_id"], "revision": file.commit_hash,
+                           "filename": file.filename, "local_dir": local_dir}
+                self.controller.transfers.submit(self.run, options).result()
+
     def save(self):
         with self.controller.lock:
             history = [dict(task) for task in self.controller.tasks
@@ -64,34 +67,35 @@ class HuggingFaceDownloads:
                        and task["status"] in ("completed", "failed", "cancelled")][-64:]
         self.bridge.store.edit(lambda state: state.update(hf_downloads=history))
 
-    def run(self, original, kwargs, task_id=None):
+    def run(self, options, task_id=None):
+        from huggingface_hub import hf_hub_download
         from huggingface_hub.utils import tqdm
         from transfer_core import Cancelled
         controller = self.controller
         if task_id is None:
             task_id = uuid.uuid4().hex
             task = {
-                "id": task_id, "name": "Hugging Face · " + kwargs["repo_id"] + "/" + kwargs["filename"],
+                "id": task_id, "name": "Hugging Face · " + options["repo_id"] + "/" + options["filename"],
                 "source": "huggingface", "kind": "file", "direction": "download",
                 "status": "queued", "bytes": 0, "total": 0, "speed": 0, "error": "",
-                "retryable": True, "repo_id": kwargs["repo_id"], "filename": kwargs["filename"],
+                "retryable": True,
             }
             cancel = threading.Event()
-            self.operations[task_id] = (original, dict(kwargs), task, cancel)
             with controller.lock:
+                self.operations[task_id] = (options, task, cancel)
                 controller.tasks.append(task)
         else:
-            original, kwargs, task, cancel = self.operations[task_id]
-            cancel.clear()
-        task.update(status="running", bytes=0, error="")
+            options, task, cancel = self.operations[task_id]
+        with controller.lock:
+            task.update(status="running", bytes=0, error="")
         controller._publish()
-        base = kwargs.get("tqdm_class") or tqdm
         last_publish = [0.0]
 
-        class TransferProgress(base):
+        class TransferProgress(tqdm):
             def __init__(self, *args, **options):
                 self.downloaded = options.get("initial", 0)
                 self.download_total = options.get("total", 0)
+                options["disable"] = True
                 super().__init__(*args, **options)
                 self.report()
 
@@ -112,11 +116,14 @@ class HuggingFaceDownloads:
                 return result
 
         try:
-            result = original(**{**kwargs, "tqdm_class": TransferProgress})
+            if cancel.is_set() or controller.closed:
+                raise Cancelled("Hugging Face 下载已停止")
+            result = hf_hub_download(**options, tqdm_class=TransferProgress)
             path = Path(result)
             size = path.stat().st_size
             with controller.lock:
                 task.update(status="completed", bytes=size, total=size, local_path=str(path), speed=0)
+                self.operations.pop(task_id, None)
             return result
         except Exception as error:
             with controller.lock:
@@ -128,40 +135,23 @@ class HuggingFaceDownloads:
 
     def receive(self, command):
         task_id = command.get("task_id")
-        if task_id not in self.operations:
-            return False
-        original, kwargs, task, cancel = self.operations[task_id]
-        if command["action"] == "cancel":
-            cancel.set()
-        elif command["action"] == "retry":
-            self.controller.transfers.submit(self.run, original, kwargs, task_id)
-        else:
-            return False
+        with self.controller.lock:
+            operation = self.operations.get(task_id)
+            if operation is None:
+                return False
+            options, task, cancel = operation
+            if command["action"] == "cancel":
+                cancel.set()
+            elif command["action"] == "retry":
+                if task["status"] in ("failed", "cancelled"):
+                    cancel.clear()
+                    task.update(status="queued", error="")
+                    self.controller.transfers.submit(self.run, options, task_id)
+            else:
+                return False
         return True
 
-
-def bind(bridge):
-    global _active
-    install()
-    manager = getattr(bridge.controller, "hf_downloads", None)
-    if manager is None:
-        manager = HuggingFaceDownloads(bridge)
-        bridge.controller.hf_downloads = manager
-    _active = manager
-    return manager
-
-
-def install():
-    import huggingface_hub.file_download as downloads
-    if getattr(downloads._hf_hub_download_to_local_dir, "_workflow_studio_history", False):
-        return
-    def tracked(original):
-        @wraps(original)
-        def download(**kwargs):
-            if _active is None or kwargs.get("dry_run"):
-                return original(**kwargs)
-            return _active.run(original, kwargs)
-        download._workflow_studio_history = True
-        return download
-    for name in ("_hf_hub_download_to_local_dir", "_hf_hub_download_to_cache_dir"):
-        setattr(downloads, name, tracked(getattr(downloads, name)))
+    def close(self):
+        with self.controller.lock:
+            for _, _, cancel in self.operations.values():
+                cancel.set()

@@ -3,19 +3,38 @@ from __future__ import annotations
 
 import gc
 import importlib.util
+import json
 from pathlib import Path
 import secrets
 import subprocess
 import sys
+from studio_paths import model_directory
 
 _cache_key = None
 _pipeline = None
 
 
+def models(family):
+    root = model_directory()
+    files = [path for path in (root / "checkpoints").rglob("*")
+             if path.is_file() and path.suffix.lower() in {".safetensors", ".ckpt"}]
+    pipeline = "StableDiffusionXL" if family == "sdxl" else "StableDiffusion"
+    for index in (root / "diffusers").rglob("model_index.json"):
+        try:
+            config = json.loads(index.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(config, dict) and config.get("_class_name") == f"{pipeline}Pipeline":
+            files.append(index.parent)
+    return [{"label": path.relative_to(root).as_posix(), "value": str(path)} for path in sorted(files)]
+
+
 def fields(family):
+    options = models(family)
     return [
-        {"key": "model", "label": "本地模型目录 / checkpoint", "type": "text", "section": "模型",
-         "default": "", "required": True, "hint": "填写本地 Diffusers 模型目录或该架构的 checkpoint 文件路径。"},
+        {"key": "model", "label": "本地模型", "type": "select", "area": "models",
+         "default": options[0]["value"] if options else "", "options": options, "required": True,
+         "hint": "扫描模型目录内的 checkpoints 和 diffusers。"},
         {"key": "prompt", "label": "提示词", "type": "textarea", "section": "创作", "rows": 5,
          "default": "A small ceramic house in a moss garden, soft morning light, macro photography", "required": True},
         {"key": "negative_prompt", "label": "负面提示词", "type": "textarea", "section": "创作", "rows": 2, "default": ""},
@@ -37,8 +56,8 @@ def fields(family):
 
 def run_diffusion(family, params, ctx):
     model = params["model"].strip()
-    if not model or not Path(model).exists():
-        raise FileNotFoundError("缺少本地模型文件或目录：" + model)
+    if model not in {item["value"] for item in models(family)}:
+        raise FileNotFoundError("请从模型目录中选一个已检测到的本地模型。")
     if any(importlib.util.find_spec(name) is None for name in ("diffusers", "accelerate")):
         ctx.status("准备此工作流的 Diffusers 依赖…")
         subprocess.run(["uv", "pip", "install", "--no-deps", "--python", sys.executable,
