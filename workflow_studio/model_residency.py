@@ -16,10 +16,13 @@ def release(group='all'):
     moss = sys.modules.get('moss_runner')
     h3 = sys.modules.get('h3_runner')
     if group in ('all','moss') and moss is not None:
-        for value in moss._loaded or ():
+        for value in (*(moss._loaded or ()), *moss._dit_sources.values()):
+            if value is None:
+                continue
             patcher = getattr(value, 'patcher', value)
             targets.add(id(patcher.model))
         moss._loaded = moss._loaded_key = None
+        moss._dit_sources.clear()
         moss._adapted = moss._adapted_key = None
         moss._compiled = moss._compiled_key = None
         moss._conditioning.clear()

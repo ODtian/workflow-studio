@@ -19,6 +19,7 @@ MODELS = model_directory()
 CORE = Path(os.environ.get("WORKFLOW_COMFY_ROOT", ROOT / f"runtime/comfy-core-{CORE_VERSION}"))
 _loaded = None
 _loaded_key = None
+_dit_sources = {}
 _adapted = None
 _adapted_key = None
 _compiled = None
@@ -79,11 +80,56 @@ def prepare_core(ctx, *, spark=False):
     _core_ready = True
 
 
+def _diffusion_selection(params):
+    base = MODELS / "diffusion_models" / params["model"]
+    if not params.get("mix_enabled"):
+        return (base,), 0.0
+    try:
+        weight = float(params.get("mix_weight", 0.5))
+    except (TypeError, ValueError):
+        raise ValueError("第二模型权重应在 0 到 1 之间") from None
+    if not 0.0 <= weight <= 1.0:
+        raise ValueError("第二模型权重应在 0 到 1 之间")
+    if weight == 0.0:
+        return (base,), weight
+    selection = params.get("mix_model")
+    if not selection:
+        raise ValueError("请在模型配置中选择第二个扩散模型")
+    secondary = MODELS / "diffusion_models" / selection
+    if weight == 1.0:
+        return (secondary,), weight
+    if base.resolve() == secondary.resolve():
+        raise ValueError("请选择两个不同的扩散模型")
+    return (base, secondary), weight
+
+
+def _merge_diffusion_models(base, secondary, weight):
+    if type(base.model) is not type(secondary.model):
+        raise ValueError("两个扩散模型的架构不匹配")
+    source = secondary.clone()
+    state_dict = source.model_state_dict
+    tensors = {name for name, _ in source.model.named_parameters(remove_duplicate=False)}
+    tensors.update(name for name, _ in source.model.named_buffers(remove_duplicate=False))
+
+    def tensor_state_dict(filter_prefix=None):
+        # Quantized state dicts can include serialized keys with no live tensor attribute.
+        return {name: value for name, value in state_dict(filter_prefix).items() if name in tensors}
+
+    source.model_state_dict = tensor_state_dict
+    mixed = base.clone()
+    applied = mixed.add_patches(source.get_key_patches("diffusion_model."), weight, 1.0 - weight)
+    if not applied:
+        raise ValueError("没有可融合的扩散模型张量")
+    return mixed
+
+
 def load_models(params, ctx):
     global _loaded, _loaded_key, _adapted, _adapted_key, _compiled, _compiled_key
-    paths = [MODELS / folder / params[key] for folder, key in
-             (("diffusion_models", "model"), ("text_encoders", "text_encoder"), ("vae", "vae"))]
-    selected = paths + [MODELS / "loras" / item["name"] for item in params.get("loras", []) if item["strength"]]
+    dit_paths, mix_weight = _diffusion_selection(params)
+    te_path = MODELS / "text_encoders" / params["text_encoder"]
+    vae_path = MODELS / "vae" / params["vae"]
+    selected = [*dit_paths, te_path, vae_path,
+                *(MODELS / "loras" / item["name"] for item in params.get("loras", []) if item["strength"])]
     missing = [str(path) for path in selected if not path.is_file()]
     if missing:
         raise FileNotFoundError("缺少本地模型文件：\n" + "\n".join(missing))
@@ -94,31 +140,54 @@ def load_models(params, ctx):
     import comfy.model_management
     ctx.metadata(运行库准备秒=round(time.monotonic() - started, 3))
 
-    key = tuple((str(path), path.stat().st_mtime_ns) for path in paths)
+    dit_keys = tuple((path, path.stat().st_mtime_ns) for path in dit_paths)
+    dit_key = (dit_keys, mix_weight if len(dit_keys) == 2 else 0.0)
+    key = (dit_key, (te_path, te_path.stat().st_mtime_ns), (vae_path, vae_path.stat().st_mtime_ns))
     if _loaded_key != key:
         parts = list(_loaded or (None, None, None))
+        cached_keys = list(_loaded_key or (None, None, None))
         _adapted, _adapted_key = None, None
         _compiled, _compiled_key = None, None
         _conditioning.clear()
         for index, label in enumerate(("DiT", "TE", "VAE")):
-            if _loaded_key is not None and _loaded_key[index] == key[index]:
+            if cached_keys[index] == key[index] and parts[index] is not None:
                 continue
             parts[index] = None
+            cached_keys[index] = None
             _loaded = tuple(parts)
+            _loaded_key = tuple(cached_keys)
             comfy.model_management.cleanup_models()
-            ctx.status(f"加载 {label} · " + paths[index].name)
             started = time.monotonic()
             if index == 0:
-                parts[index] = comfy.sd.load_diffusion_model(str(paths[index]))
+                for cached in tuple(_dit_sources):
+                    if cached not in dit_keys:
+                        del _dit_sources[cached]
+                for source_key in dit_keys:
+                    if source_key not in _dit_sources:
+                        path, _ = source_key
+                        ctx.status("加载 DiT · " + path.name)
+                        dit = comfy.sd.load_diffusion_model(str(path))
+                        if dit is None:
+                            raise ValueError(f"无法识别扩散模型：{path.name}")
+                        _dit_sources[source_key] = dit
+                parts[index] = _dit_sources[dit_keys[0]]
+                if len(dit_keys) == 2:
+                    ctx.status("正在融合两个扩散模型…")
+                    parts[index] = _merge_diffusion_models(parts[index], _dit_sources[dit_keys[1]], mix_weight)
             elif index == 1:
-                parts[index] = comfy.sd.load_clip([str(paths[index])], clip_type=comfy.sd.CLIPType.MOSS_IMAGE,
+                ctx.status("加载 TE · " + te_path.name)
+                parts[index] = comfy.sd.load_clip([str(te_path)], clip_type=comfy.sd.CLIPType.MOSS_IMAGE,
                                                  embedding_directory=[str(MODELS / "embeddings")])
             else:
-                state, metadata = comfy.utils.load_torch_file(str(paths[index]), return_metadata=True)
+                ctx.status("加载 VAE · " + vae_path.name)
+                state, metadata = comfy.utils.load_torch_file(str(vae_path), return_metadata=True)
                 parts[index] = comfy.sd.VAE(sd=state, metadata=metadata)
+            cached_keys[index] = key[index]
             _loaded = tuple(parts)
+            _loaded_key = tuple(cached_keys)
             ctx.metadata(**{label + "加载秒": round(time.monotonic() - started, 3)})
-        _loaded_key = key
+    if params.get("mix_enabled"):
+        ctx.metadata(第二扩散模型=params.get("mix_model", ""), 第二模型权重=mix_weight)
     return _loaded
 
 

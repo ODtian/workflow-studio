@@ -15,7 +15,7 @@ SPEC = {
     "run_label": "生成图片",
     "refresh_label": "刷新模型列表",
     "model_root": str(MODELS),
-    "prepare_fields": ["model", "text_encoder", "vae", "loras"],
+    "prepare_fields": ["model", "mix_enabled", "mix_model", "mix_weight", "text_encoder", "vae", "loras"],
     "ready": _ready,
     "size_presets": common_size_presets(),
     "description": "选择目录中的模型文件，加载器自动识别模型和量化格式。" if _ready else
@@ -23,6 +23,13 @@ SPEC = {
     "fields": [
         {"key": "model", "label": "扩散模型", "type": "select", "section": "模型文件", "area": "models",
          "options": _files["diffusion_models"], "default": next(iter(_files["diffusion_models"]), "")},
+        {"key": "mix_enabled", "label": "双模融合", "type": "boolean", "area": "models", "default": False},
+        {"key": "mix_model", "label": "第二扩散模型", "type": "select", "area": "models", "default": "",
+         "options": [{"label": "请选择第二个模型", "value": ""}, *_files["diffusion_models"]],
+         "when": {"mix_enabled": True}},
+        {"key": "mix_weight", "label": "第二模型权重", "type": "number", "area": "models", "default": 0.5,
+         "min": 0, "max": 1, "step": 0.01, "when": {"mix_enabled": True},
+         "hint": "0 使用第一个模型，1 使用第二个模型，0.5 为等权融合。"},
         {"key": "text_encoder", "label": "文本编码器", "type": "select", "section": "模型文件", "area": "models",
          "options": _files["text_encoders"], "default": next(iter(_files["text_encoders"]), "")},
         {"key": "vae", "label": "VAE", "type": "select", "section": "模型文件", "area": "models",
